@@ -1,0 +1,9 @@
+{% if list_list %}
+    <ul>
+    {% for list in list_list %}
+        <li>{{ list.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No lists.</p>
+{% endif %}
