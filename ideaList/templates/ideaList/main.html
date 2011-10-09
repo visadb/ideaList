@@ -1,4 +1,11 @@
+{% extends "ideaList/base.html" %}
+
+{% block title %}main{% endblock %}
+
+
+{% block content %}
 {% if list_list %}
+    <p>Lol: {{ list_list|join:", " }} </p>
     <ul>
     {% for list in list_list %}
         <li>{{ list.name }}</a></li>
@@ -7,3 +14,4 @@
 {% else %}
     <p>No lists.</p>
 {% endif %}
+{% endblock %}

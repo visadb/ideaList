@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" 
+    lang="{{ LANGUAGE_CODE|default:"en-us" }}"
+    xml:lang="{{ LANGUAGE_CODE|default:"en-us" }}">
+{% load i18n %}
+<head>
+    <title>ideaList - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/base.css" />
+    {% block extrahead %}{% endblock %}
+</head>
+<body>
+<div id="container">
+    <div id="header">
+        {% if user.is_active %}
+        <div id="user-tools">
+            {% trans 'Hi,' %}
+            <strong>{% filter force_escape %}{% firstof user.first_name user.username %}{% endfilter %}</strong>.
+            {% block userlinks %}
+                <a href="{{ root_path }}logout/">{% trans 'Log out' %}</a>
+            {% endblock %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if messages %}
+    <ul class="messagelist">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <!-- Content -->
+    <div id="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    {% block footer %}<div id="footer"></div>{% endblock %}
+</div>
+</body>
+</html>
