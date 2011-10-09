@@ -69,8 +69,7 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
+    # '/media/puhveli/visa/koodaus/django/puhveli/ideaList/media',
     # Don't forget to use absolute paths, not relative paths.
 )
 
@@ -115,7 +114,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    #'django.contrib.admindocs',
+    'django.contrib.admindocs',
     #'django_extensions',
     'ideaList',
 )
