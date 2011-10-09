@@ -5,7 +5,7 @@ class ItemInline(admin.TabularInline):
     model = Item
     extra = 3
 class ListAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owners_first_name', 'nr_of_items')
+    list_display = ('name', 'owners_first_name', 'n_items')
     search_fields = ['name']
     inlines = [ItemInline]
     def owners_first_name(self, obj):

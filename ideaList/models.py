@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 class List(models.Model):
     """
-    A list of items (:model:`ideaList.Item`)
+    A list of items (:model:`ideaList.Item`).
     """
     name = models.CharField(max_length=50, unique=True)
     owner = models.ForeignKey(User, related_name='lists_owned')
@@ -11,9 +11,9 @@ class List(models.Model):
             related_name='subscribed_lists', through='Subscription')
     def __unicode__(self):
         return self.name
-    def nr_of_items(self):
+    def n_items(self):
         return self.items.count()
-    nr_of_items.short_description = u'# of items'
+    n_items.short_description = u'# of items'
 
 class Item(models.Model):
     """
