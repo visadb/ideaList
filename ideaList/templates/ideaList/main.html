@@ -2,13 +2,16 @@
 
 {% block title %}main{% endblock %}
 
-
 {% block content %}
-{% if list_list %}
-    <p>Lol: {{ list_list|join:", " }} </p>
+{% if lists %}
     <ul>
-    {% for list in list_list %}
+    {% for list in lists %}
         <li>{{ list.name }}</a></li>
+        <ul>
+        {% for item in list.items.all %}
+            <li>{{ item.text }}</li>
+        {% endfor %}
+        </ul>
     {% endfor %}
     </ul>
 {% else %}

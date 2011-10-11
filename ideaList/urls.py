@@ -1,11 +1,8 @@
 from django.conf.urls.defaults import patterns
-from django.views.generic import ListView
-from ideaList.models import List
+#from django.views.generic import ListView
+#from ideaList.models import List
+from ideaList.views import main
 
 urlpatterns = patterns('',
-    (r'^$', 
-        ListView.as_view(
-            # TODO: List of logged in user's subscribed lists
-            queryset=List.objects.order_by('name'),
-            template_name='ideaList/main.html')),
+    (r'^$', main),
 )
