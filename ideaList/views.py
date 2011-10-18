@@ -1,13 +1,19 @@
-from django.views.generic import ListView
 from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
-#from ideaList.models import List
+from django.template import RequestContext
 
-class MainListView(ListView):
-    pass
+def render_to(template_name):
+    def renderer(func):
+        def wrapper(request, *args, **kw):
+            output = func(request, *args, **kw)
+            if not isinstance(output, dict):
+                return output
+            return render_to_response(template_name, output,
+                    RequestContext(request))
+        return wrapper
+    return renderer
 
 @login_required
+@render_to('ideaList/main.html')
 def main(request):
-    lists = [request.user.subscribed_lists.get(pk=i)
-             for i in request.user.get_subscription_order()]
-    return render_to_response('ideaList/main.html', {'lists':lists})
+    return {'lists':[s.list for s in request.user.subscriptions.all()]}
