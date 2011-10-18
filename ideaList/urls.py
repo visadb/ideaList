@@ -1,7 +1,5 @@
-from django.conf.urls.defaults import patterns
-#from django.views.generic import ListView
-from ideaList.views import main
+from django.conf.urls.defaults import patterns, url
 
 urlpatterns = patterns('',
-    (r'^$', main),
+    url(r'^$', 'ideaList.views.main'),
 )

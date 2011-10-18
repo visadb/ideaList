@@ -5,6 +5,7 @@
     lang="{{ LANGUAGE_CODE|default:"en-us" }}"
     xml:lang="{{ LANGUAGE_CODE|default:"en-us" }}">
 {% load i18n %}
+{% load url from future %}
 <head>
     <title>ideaList - {% block title %}{% endblock %}</title>
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/base.css" />
@@ -16,7 +17,10 @@
         {% if user.is_active %}
         <div id="user-tools">
             {% trans 'Hi,' %}
-            <strong>{% filter force_escape %}{% firstof user.first_name user.username %}{% endfilter %}</strong>.
+            <strong>
+                <a href="{% url 'django.contrib.auth.views.password_change' %}">{% filter force_escape %}{% firstof user.first_name user.username %}{% endfilter %}</a>
+            </strong>
+            /
             {% block userlinks %}
                 <a href="{{ root_path }}logout/">{% trans 'Log out' %}</a>
             {% endblock %}

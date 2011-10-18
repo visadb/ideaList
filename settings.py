@@ -9,10 +9,14 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+SESSION_COOKIE_AGE = 15724800
+
+SITE_DIR='/media/puhveli/visa/koodaus/django/puhveli'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/media/puhveli/visa/koodaus/django/puhveli/puhveli.sqlite3',
+        'NAME': SITE_DIR+'/puhveli.sqlite3',
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -41,7 +45,10 @@ USE_I18N = True
 
 # If you set this to False, Django will not format dates, numbers and
 # calendars according to the current locale
-USE_L10N = True
+USE_L10N = False
+
+LOGIN_URL='/login/'
+LOGIN_REDIRECT_URL='/'
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
@@ -103,7 +110,7 @@ ROOT_URLCONF = 'puhveli.urls'
 
 TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
-    #'/home/visa/koodaus/django/puhveli/ideaList/templates',
+    SITE_DIR+'/templates',
 )
 
 INSTALLED_APPS = (
@@ -115,7 +122,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.admindocs',
-    #'django_extensions',
+    'django_extensions',
     'ideaList',
 )
 
