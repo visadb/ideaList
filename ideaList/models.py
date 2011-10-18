@@ -35,8 +35,6 @@ class Item(models.Model):
     class Meta:
         order_with_respect_to = 'list'
 
-    #TODO: Add method that returns the items in order
-
     def __unicode__(self):
         return self.list.name+": "+self.text
 
