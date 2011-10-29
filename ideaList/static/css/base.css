@@ -12,3 +12,11 @@
 #content {
     margin: 10px 15px;
 }
+
+/* BEGIN MAIN PAGE STYLE */
+.newitem {
+}
+.newitem_blur {
+    color: #aaa;
+}
+/* END MAIN PAGE STYLE */

@@ -1,5 +1,11 @@
 {% extends "ideaList/base.html" %}
 
+{% block extrahead %}
+    <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/main.js"></script>
+{% endblock %}
+
+
 {% block title %}main{% endblock %}
 
 {% block content %}
@@ -11,10 +17,12 @@
         {% for item in list.items.all %}
             <li>{{ item.text }}</li>
         {% endfor %}
+        <li><input id="{{list.id}}.new" class="newitem" type="text" value="New item..."></input></li>
         </ul>
     {% endfor %}
     </ul>
 {% else %}
     <p>No lists.</p>
 {% endif %}
+<div id="debug"></div>
 {% endblock %}
