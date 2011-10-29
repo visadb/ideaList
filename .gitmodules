@@ -1,0 +1,3 @@
+[submodule "django-positions"]
+	path = django-positions
+	url = https://github.com/jpwatts/django-positions.git
