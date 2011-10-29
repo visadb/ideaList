@@ -4,7 +4,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^$',      include('ideaList.urls')),
+    url(r'^ideaList/',      include('ideaList.urls')),
     url(r'^login/$', 'django.contrib.auth.views.login'),
     url(r'^logout/$', 'django.contrib.auth.views.logout_then_login'),
     url(r'^passwd/$', 'django.contrib.auth.views.password_change'),
