@@ -1,9 +1,9 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseBadRequest, Http404
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_protect
-from ideaList.models import Item, List
+from ideaList.models import Item
 from django.forms import ModelForm
 from django.core import serializers
 
@@ -51,3 +51,19 @@ def additem(request):
 
     return render_to_response('ideaList/additem.html', {'form':form},
             RequestContext(request))
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def removeitem(request):
+    if request.method != 'POST':
+        return HttpResponseBadRequest('{msg: "Only POST supported"}')
+    if 'item_id' not in request.POST:
+        return HttpResponseBadRequest('{msg: "item_id not provided"}')
+    try:
+        i = Item.objects.get(pk=request.POST['item_id'])
+    except ValueError:
+        return HttpResponseBadRequest('{msg: "item_id not provided"}')
+    except Item.DoesNotExist:
+        return HttpResponseNotFound('{msg: "No such item"}')
+    i.delete()
+    return HttpResponse('{msg: "Item deleted"}');

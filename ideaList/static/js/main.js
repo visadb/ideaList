@@ -18,13 +18,14 @@ function init_additem_fields() {
   }).keydown(function(e) {
     if(e.keyCode == 13) {
       var val = $(this).val();
+      var addfield = $(this); //For resetting later...
       if (val.length == 0)
-        return true;
-      res = /^add_to_(end|begin)_of_(\d+)$/.exec($(this).attr('id'))
+        return false;
+      var res = /^add_to_(end|begin)_of_(\d+)$/.exec($(this).attr('id'));
       if (res.length != 3)
-        return true;
-      pos = res[1];
-      list_id = res[2];
+        return false;
+      var pos = res[1];
+      var list_id = res[2];
       var position = (pos == 'begin' ? 0 : -1);
       $.ajax('/ideaList/additem/', {
         dataType: "json",
@@ -36,25 +37,50 @@ function init_additem_fields() {
         var text = item['fields']['text'];
         var pos = item['fields']['position'];
         var curitems = $('#list_'+list_id+' > ul > li.item');
-        var newhtml = '<li id="item_'+item['pk']+'" class="item">'+text+'</li>';
+        var newhtml = '<li id="item_'+item['pk']+'" class="item">'+text
+          +' <a id="remove_item_'+item['pk']+'" class="removeitem"'
+          +' href="#">del</a></li>';
         //debug("Success: "+list_id+" "+text+" "+pos);
         if(curitems.length == 0 || pos == 0) {
-          $('#list_'+list_id).prepend(newhtml);
+          $('#list_'+list_id+' > ul').prepend(newhtml);
         } else {
           curitems.filter(':eq('+(pos-1)+')').after(newhtml);
         }
-        // TODO: Reset input box
+        $('#remove_item_'+item['pk']).click(removeitem_handler);
+        addfield.val("").blur(); // Reset additem field
       }).fail(function(jqXHR, textStatus) {
-          debug("Error: "+textStatus);
+        debug("Error in add item: "+textStatus);
       });
     }
   }).filter('[value="'+newitem_text+'"]').addClass("newitem_blur");
 }
-function init_removeitem_links() {
-  $('.removeitem').click(function(e) {
-    e.preventDefault();
-    debug("Item "+$(this).attr('id')+" removed");
+
+function removeitem_handler(e) {
+  e.preventDefault();
+  var item_elem = $(this).parent();
+  var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
+  if (res.length != 2)
+    return false;
+  var item_id = res[1];
+  //debug("Item "+item_id+" removed");
+  $.ajax('/ideaList/removeitem/', {
+    dataType: "text",
+    type: "POST",
+    data: {item_id:item_id},
+  }).done(function() {
+    item_elem.remove()
+  }).fail(function(jqXHR, textStatus) {
+    if (jqXHR.status == 404) {
+      // There was no such item: make it disappear
+      item_elem.remove()
+      return;
+    }
+    debug("Error in remove item: "+textStatus);
   });
+}
+
+function init_removeitem_links() {
+  $('.removeitem').click(removeitem_handler);
 }
 
 $(document).ready(function() {
