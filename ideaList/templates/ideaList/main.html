@@ -12,13 +12,17 @@
 {% if lists %}
     <ul>
     {% for list in lists %}
-        <li>{{ list.name }}</a></li>
-        <ul>
-        {% for item in list.items.all %}
-            <li>{{ item.text }}</li>
-        {% endfor %}
-        <li><input id="{{list.id}}.new" class="newitem" type="text" value="New item..."></input></li>
-        </ul>
+        <li id="list_{{ list.id }}" class="list">{{ list.name }}
+            <ul>
+            {% for item in list.items.all %}
+                <li id="item_{{item.id}}" class="item">
+                    {{ item.text }}
+                    <a id="remove_item_{{item.id}}" class="removeitem" href="#">del</a>
+                </li>
+            {% endfor %}
+            <li><input id="add_to_end_of_{{list.id}}" class="newitem" type="text" value="New item..."></input></li>
+            </ul>
+        </li>
     {% endfor %}
     </ul>
 {% else %}
