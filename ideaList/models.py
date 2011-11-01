@@ -1,4 +1,5 @@
 from django.db import models
+from positions.fields import PositionField
 from django.contrib.auth.models import User
 
 class List(models.Model):
@@ -29,11 +30,12 @@ class Item(models.Model):
     )
     priority = models.CharField(max_length=2, choices=PRIORITY_CHOICES,
             default=u'NO')
+    position = PositionField(collection='list', default=-1)
     last_changed = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        order_with_respect_to = 'list'
+        ordering = ['position']
 
     def __unicode__(self):
         return self.list.name+": "+self.text
@@ -46,9 +48,10 @@ class Subscription(models.Model):
     user = models.ForeignKey(User, related_name='subscriptions')
     list = models.ForeignKey(List, related_name='subscriptions')
     minimized = models.BooleanField(default=False)
+    position = PositionField(collection='user', default=-1)
 
     class Meta:
-        order_with_respect_to = 'user'
+        ordering = ['position']
 
     def __unicode__(self):
         return self.user.first_name+": "+self.list.name
