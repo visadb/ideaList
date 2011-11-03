@@ -32,6 +32,7 @@
   font-size: x-small;
   vertical-align: middle;
   text-decoration: none;
+  color: blue;
 }
 .itemaction:hover
 {
