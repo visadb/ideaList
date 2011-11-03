@@ -1,21 +1,29 @@
+var newitemText = "New item..."
+var pendingAjaxCalls = 0;
 
-var newitem_text = "New item..."
+var editableUrl = '/ideaList/edittext/';
+var editableSettings = {
+    tooltip: "Click to edit",
+    style:   "inherit",
+    id:      "element_id",
+    name:    "text",
+  };
 
 function debug(str) {
   var item = $('<div>'+str+'<br /></div>');
   $("#debug").prepend(item);
-  item.delay(1000).hide(1000, function(){item.remove()});
+  item.delay(5000).hide(1000, function(){item.remove()});
 }
 
-function init_additem_fields() {
+function initAdditemFields() {
   $(".newitem").blur(function() {
     if($(this).val() == "") {
-      $(this).val(newitem_text)
+      $(this).val(newitemText)
         .addClass("newitem_blur");
     }
   }).focus(function() {
     $(this).removeClass("newitem_blur");
-    if($(this).val() == newitem_text)
+    if($(this).val() == newitemText)
       $(this).val("");
   }).keydown(function(e) {
     if(e.keyCode == 13) {
@@ -42,8 +50,8 @@ function init_additem_fields() {
         var newhtml = $('<li id="item_'+item['pk']+'" class="item">'
           +text
           +' <a id="remove_item_'+item['pk']+'" class="itemaction removeitem" href="#remove">&#10005;</a>'
-          +' <a id="move_item_'+item['pk']+'_up" class="itemaction moveitem" href="#up">&#8679;</a>'
-          +' <a id="move_item_'+item['pk']+'_down" class="itemaction moveitem" href="#down">&#8681;</a>'
+          +' <a id="move_item_'+item['pk']+'_up" class="itemaction moveitem" href="#up">&uarr;</a>'
+          +' <a id="move_item_'+item['pk']+'_down" class="itemaction moveitem" href="#down">&darr;</a>'
           +'</li>');
         //debug("Success: "+list_id+" "+text+" "+pos);
         if(curitems.length == 0 || pos == 0) {
@@ -51,18 +59,18 @@ function init_additem_fields() {
         } else {
           curitems.filter(':eq('+(pos-1)+')').after(newhtml);
         }
-        $('#remove_item_'+item['pk'], newhtml).click(removeitem_handler);
-        $('#move_item_'+item['pk']+'_up', newhtml).click(moveitem_handler);
-        $('#move_item_'+item['pk']+'_down', newhtml).click(moveitem_handler);
+        $('#remove_item_'+item['pk'], newhtml).click(removeitemHandler);
+        $('#move_item_'+item['pk']+'_up', newhtml).click(moveitemHandler);
+        $('#move_item_'+item['pk']+'_down', newhtml).click(moveitemHandler);
         addfield.val("").blur(); // Reset additem field
       }).fail(function(jqXHR, textStatus) {
         debug("Error in add item: "+textStatus);
       });
     }
-  }).filter('[value="'+newitem_text+'"]').addClass("newitem_blur");
+  }).filter('[value="'+newitemText+'"]').addClass("newitem_blur");
 }
 
-function removeitem_handler(e) {
+function removeitemHandler(e) {
   e.preventDefault();
   var item_elem = $(this).parent();
   var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
@@ -86,7 +94,7 @@ function removeitem_handler(e) {
   });
 }
 
-function moveitem_handler(e) {
+function moveitemHandler(e) {
   e.preventDefault();
   var item_elem = $(this).parent();
   var res = /^move_item_(\d+)_(up|down)$/.exec($(this).attr('id'));
@@ -121,17 +129,41 @@ function moveitem_handler(e) {
   });
 }
 
+
+
 $(document).ready(function() {
-  init_additem_fields();
-  $('.removeitem').click(removeitem_handler);
-  $('.moveitem').click(moveitem_handler);
+  setStatusLight();
+  initAdditemFields();
+  $('.removeitem').click(removeitemHandler);
+  $('.moveitem').click(moveitemHandler);
+  $('.item-text').editable(editableUrl, editableSettings);
 });
 
-// TODO: maintain ideaList state on client-side and update by polling/push
-// TODO: Design an object that holds the whole state
-// Send current state and ask for instructions to update it
+// TODO: Send current timestamp and ask for instructions to update state
 
 $.ajaxSetup({timeout:3000});
+
+function setStatusLight() {
+  if (pendingAjaxCalls > 0)
+    $('#status-light').attr('class', 'yellow');
+  else
+    $('#status-light').attr('class', 'green');
+}
+
+$(document).ajaxSend(function() {
+  pendingAjaxCalls++;
+  setStatusLight();
+});
+$(document).ajaxSuccess(function() {
+  pendingAjaxCalls--;
+  setStatusLight();
+});
+$(document).ajaxError(function() {
+  pendingAjaxCalls--;
+  $('#status-light').attr('class', 'red');
+  setTimeout('setStatusLight()', 2000);
+});
+
 
 // CSRF protection for AJAX calls
 $(document).ajaxSend(function(event, xhr, settings) {

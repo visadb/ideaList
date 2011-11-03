@@ -1,3 +1,4 @@
+import re
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import render_to_response
@@ -114,3 +115,29 @@ def moveitem(request):
     i.position = newpos
     i.save()
     return HttpResponse('{"msg": "Item moved to index '+str(i.position)+'"}');
+
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def edittext(request):
+    """
+    View to use with jeditable for editing the text of items. Request must have
+    POST entries 'element_id' of form 'item_<item_id>_text' and 'text'. Will set the
+    text of element item_id to the value of 'text'.
+    """
+    if request.method != 'POST':
+        return HttpResponseBadRequest('{"msg": "Only POST supported"}')
+    if 'element_id' not in request.POST:
+        return HttpResponseBadRequest('{"msg": "param element_id not provided"}')
+    match = re.match('^item_(\d+)_text$', request.POST['element_id'])
+    if not match:
+        return HttpResponseBadRequest('{"msg": "param element_id invalid"}')
+    try:
+        i = Item.objects.get(pk=match.group(1))
+    except Item.DoesNotExist:
+        return HttpResponseNotFound('{"msg": "No such item"}')
+
+    text = request.POST['text']
+    i.text = text
+    i.save()
+    return HttpResponse(text);

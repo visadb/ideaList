@@ -14,6 +14,9 @@
 }
 
 /* BEGIN MAIN PAGE STYLE */
+.red { color: #f00; }
+.green { color: #0f0; }
+.yellow { color: #d5d500; }
 .listlist {
   display: table-cell;
   list-style-type: none;

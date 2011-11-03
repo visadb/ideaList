@@ -7,7 +7,7 @@
 {% load i18n %}
 {% load url from future %}
 <head>
-  <title>ideaList - {% block title %}{% endblock %}</title>
+  <title>{% block title %}ideaList{% endblock %}</title>
   <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/base.css" />
   {% block extrahead %}{% endblock %}
 </head>
@@ -16,6 +16,7 @@
   <div id="header">
     {% if user.is_active %}
     <div id="user-tools">
+      {% block user-tools-before %}{% endblock %}
       {% trans 'Hi,' %}
       <strong>
         <a href="{% url 'django.contrib.auth.views.password_change' %}">{% filter force_escape %}{% firstof user.first_name user.username %}{% endfilter %}</a>
