@@ -4,4 +4,5 @@ urlpatterns = patterns('ideaList.views',
     url(r'^$', 'main'),
     url(r'^additem/$', 'additem'),
     url(r'^removeitem/$', 'removeitem'),
+    url(r'^moveitem/$', 'moveitem'),
 )

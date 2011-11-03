@@ -2,7 +2,9 @@
 var newitem_text = "New item..."
 
 function debug(str) {
-  $("#debug").append(str+"<br />");
+  var item = $('<div>'+str+'<br /></div>');
+  $("#debug").prepend(item);
+  item.delay(1000).hide(1000, function(){item.remove()});
 }
 
 function init_additem_fields() {
@@ -71,21 +73,53 @@ function removeitem_handler(e) {
     item_elem.remove()
   }).fail(function(jqXHR, textStatus) {
     if (jqXHR.status == 404) {
-      // There was no such item: make it disappear
-      item_elem.remove()
+      debug("Item "+item_id+" has disappeared.");
+      item_elem.remove();
       return;
     }
     debug("Error in remove item: "+textStatus);
   });
 }
 
-function init_removeitem_links() {
-  $('.removeitem').click(removeitem_handler);
+function moveitem_handler(e) {
+  e.preventDefault();
+  var item_elem = $(this).parent();
+  var res = /^move_item_(\d+)_(up|down)$/.exec($(this).attr('id'));
+  if (res.length != 3)
+    return false;
+  var item_id = res[1];
+  var direction = res[2];
+  var item_before = null; // Item before which to insert item_elem
+  if (direction == 'up')
+    item_before = item_elem.prev();
+  else
+    item_before = item_elem.next().next();
+  if (item_before.length != 1)
+    return false;
+  $.ajax('/ideaList/moveitem/', {
+    dataType: "text",
+    type: "POST",
+    data: {
+      item_id:item_id,
+      where:direction,
+    },
+  }).done(function() {
+    item_before.before(item_elem.detach());
+  }).fail(function(jqXHR, textStatus) {
+    if (jqXHR.status == 404) {
+      // There was no such item: make it disappear
+      debug("Item "+item_id+" has disappeared.");
+      item_elem.remove();
+      return;
+    }
+    debug("Error in remove item: "+textStatus);
+  });
 }
 
 $(document).ready(function() {
   init_additem_fields();
-  init_removeitem_links();
+  $('.removeitem').click(removeitem_handler);
+  $('.moveitem').click(moveitem_handler);
 });
 
 // TODO: maintain ideaList state on client-side and update by polling/push

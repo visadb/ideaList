@@ -10,16 +10,39 @@
   text-align: right;
 }
 #content {
-  margin: 10px 15px;
+  /* margin: 10px 15px; */
 }
 
 /* BEGIN MAIN PAGE STYLE */
+.listlist {
+  list-style-type: none;
+  padding-left: 1em;
+}
+.list {
+  margin-top: 1em;
+  font-weight: bold;
+  font-size: medium;
+}
+.itemlist {
+  font-weight: normal;
+  list-style-type: circle;
+}
+
+.itemaction {
+  font-size: x-small;
+  vertical-align: middle;
+  text-decoration: none;
+}
+.itemaction:hover
+{
+  color: red;
+}
+
 .newitem {
 }
 .newitem_blur {
   color: #aaa;
 }
 .removeitem {
-  font-size: 10px;
 }
 /* END MAIN PAGE STYLE */

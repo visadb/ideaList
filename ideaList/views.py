@@ -56,14 +56,61 @@ def additem(request):
 @csrf_protect # Unnecessary, handled by the csrf middleware
 def removeitem(request):
     if request.method != 'POST':
-        return HttpResponseBadRequest('{msg: "Only POST supported"}')
+        return HttpResponseBadRequest('{"msg": "Only POST supported"}')
     if 'item_id' not in request.POST:
-        return HttpResponseBadRequest('{msg: "item_id not provided"}')
+        return HttpResponseBadRequest('{"msg": "item_id not provided"}')
     try:
         i = Item.objects.get(pk=request.POST['item_id'])
     except ValueError:
-        return HttpResponseBadRequest('{msg: "item_id not provided"}')
+        return HttpResponseBadRequest('{"msg": "invalid item_id"}')
     except Item.DoesNotExist:
-        return HttpResponseNotFound('{msg: "No such item"}')
+        return HttpResponseNotFound('{"msg": "No such item"}')
     i.delete()
-    return HttpResponse('{msg: "Item deleted"}');
+    return HttpResponse('{"msg": "Item deleted"}');
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def moveitem(request):
+    """ 
+    Request must have POST keys 'item_id' and 'where'. 'where' is either up/down
+    or item_id's new position as an integer.
+    """
+    if request.method != 'POST':
+        return HttpResponseBadRequest('{"msg": "Only POST supported"}')
+    if 'where' not in request.POST:
+        return HttpResponseBadRequest('{"msg": "param where not provided"}')
+    where = request.POST['where']
+    if where not in ('up', 'down'):
+        try:
+            where = int(where)
+        except ValueError:
+            return HttpResponseBadRequest('{"msg": "param where invalid"}')
+
+    if 'item_id' not in request.POST:
+        return HttpResponseBadRequest('{"msg": "param item_id not provided"}')
+    try:
+        i = Item.objects.get(pk=request.POST['item_id'])
+    except ValueError:
+        return HttpResponseBadRequest('{"msg": "invalid item_id"}')
+    except Item.DoesNotExist:
+        return HttpResponseNotFound('{"msg": "No such item"}')
+
+    # Calculate new position
+    if where == 'up':
+        oldpos = i.position
+        if oldpos > 0:
+            newpos = oldpos - 1
+        else:
+            return HttpResponse('{"msg": "Could not raise: was on top"}');
+    elif where == 'down':
+        oldpos = i.position
+        if oldpos < Item.objects.count()-1:
+            newpos = oldpos + 1
+        else:
+            return HttpResponse('{"msg": "Could not lower: was on bottom"}');
+    else:
+        newpos = where
+
+    i.position = newpos
+    i.save()
+    return HttpResponse('{"msg": "Item moved to index '+str(i.position)+'"}');
