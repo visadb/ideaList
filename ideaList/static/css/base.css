@@ -15,6 +15,7 @@
 
 /* BEGIN MAIN PAGE STYLE */
 .listlist {
+  display: table-cell;
   list-style-type: none;
   padding-left: 1em;
 }
