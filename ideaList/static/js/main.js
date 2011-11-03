@@ -39,16 +39,21 @@ function init_additem_fields() {
         var text = item['fields']['text'];
         var pos = item['fields']['position'];
         var curitems = $('#list_'+list_id+' > ul > li.item');
-        var newhtml = '<li id="item_'+item['pk']+'" class="item">'+text
-          +' <a id="remove_item_'+item['pk']+'" class="removeitem"'
-          +' href="#">del</a></li>';
+        var newhtml = $('<li id="item_'+item['pk']+'" class="item">'
+          +text
+          +' <a id="remove_item_'+item['pk']+'" class="itemaction removeitem" href="#remove">&#10005;</a>'
+          +' <a id="move_item_'+item['pk']+'_up" class="itemaction moveitem" href="#up">&#8679;</a>'
+          +' <a id="move_item_'+item['pk']+'_down" class="itemaction moveitem" href="#down">&#8681;</a>'
+          +'</li>');
         //debug("Success: "+list_id+" "+text+" "+pos);
         if(curitems.length == 0 || pos == 0) {
           $('#list_'+list_id+' > ul').prepend(newhtml);
         } else {
           curitems.filter(':eq('+(pos-1)+')').after(newhtml);
         }
-        $('#remove_item_'+item['pk']).click(removeitem_handler);
+        $('#remove_item_'+item['pk'], newhtml).click(removeitem_handler);
+        $('#move_item_'+item['pk']+'_up', newhtml).click(moveitem_handler);
+        $('#move_item_'+item['pk']+'_down', newhtml).click(moveitem_handler);
         addfield.val("").blur(); // Reset additem field
       }).fail(function(jqXHR, textStatus) {
         debug("Error in add item: "+textStatus);
