@@ -22,7 +22,7 @@
       </strong>
       /
       {% block userlinks %}
-      <a href="{{ root_path }}logout/">{% trans 'Log out' %}</a>
+      <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">{% trans 'Log out' %}</a>
       {% endblock %}
     </div>
     {% endif %}
