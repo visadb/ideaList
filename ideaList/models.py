@@ -76,6 +76,7 @@ class Subscription(models.Model):
 
     class Meta:
         ordering = ['position']
+        unique_together = (('user','list'),)
 
     def __unicode__(self):
         return self.user.first_name+": "+self.list.name
