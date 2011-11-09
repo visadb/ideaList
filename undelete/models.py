@@ -29,6 +29,8 @@ class Trashable(models.Model):
             super(models.Model, self).delete(*args, **kwargs)
 
     def restore(self):
+        if self.trashed_at == None:
+            return
         self.trashed_at = None
         # Cannot call .save() because it tries to find current object with the
         # objects manager
