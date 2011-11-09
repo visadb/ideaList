@@ -12,7 +12,10 @@ class List(Trashable):
     subscribers = models.ManyToManyField(User,
             related_name='subscribed_lists', through='Subscription')
     def __unicode__(self):
-        return self.name
+        val = self.name
+        if self.trashed_at:
+            val += " (trashed)"
+        return val
     def n_items(self):
         return self.items.count()
     n_items.short_description = u'# of items'
