@@ -3,7 +3,7 @@ from positions.fields import PositionField
 from django.contrib.auth.models import User
 from undelete.models import Trashable
 
-class List(models.Model):
+class List(Trashable):
     """
     A list of items (:model:`ideaList.Item`).
     """
