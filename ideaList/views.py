@@ -23,7 +23,8 @@ def render_to(template_name):
 @login_required
 @render_to('ideaList/main.html')
 def main(request):
-    return {'lists':[s.list for s in request.user.subscriptions.all()]}
+    return {'lists':[s.list for s in
+        request.user.subscriptions.filter(list__trashed_at__isnull=True)]}
 
 def csrf_failure(request, reason=""):
     return HttpResponse("CSRF failure: "+reason)
