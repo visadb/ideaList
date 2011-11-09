@@ -1,8 +1,7 @@
-from datetime import datetime
 from django.db import models
 from positions.fields import PositionField
 from django.contrib.auth.models import User
-from managers import TrashedManager, NonTrashedManager
+from undelete.models import Trashable
 
 class List(models.Model):
     """
@@ -18,7 +17,7 @@ class List(models.Model):
         return self.items.count()
     n_items.short_description = u'# of items'
 
-class Item(models.Model):
+class Item(Trashable):
     """
     A list item (:model:`ideaList.List`)
     """
@@ -33,30 +32,11 @@ class Item(models.Model):
     priority = models.CharField(max_length=2, choices=PRIORITY_CHOICES,
             default=u'NO')
     position = PositionField(collection='list', default=-1)
-    trashed_at = models.DateTimeField('Trashed', editable=False, blank=True, null=True)
     last_changed = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
-    objects = NonTrashedManager()
-    trash = TrashedManager()
-
     class Meta:
         ordering = ['position']
-
-    def delete(self, trash=True, *args, **kwargs):
-        if not self.trashed_at and trash:
-            self.trashed_at = datetime.now()
-            self.save()
-        else:
-            super(models.Model, self).delete(*args, **kwargs)
-
-    def restore(self):
-        from django.db import connection, transaction
-        self.trashed_at = None
-        cursor = connection.cursor()
-        cursor.execute('UPDATE idealist_item SET trashed_at=NULL WHERE id=%s',
-                [self.id])
-        transaction.commit_unless_managed()
 
     def __unicode__(self):
         val = self.list.name+": "+self.text

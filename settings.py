@@ -131,6 +131,7 @@ INSTALLED_APPS = (
     #'debug_toolbar',
     'south',
     'positions',
+    'undelete',
     'ideaList',
 )
 
