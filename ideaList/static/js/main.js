@@ -49,9 +49,9 @@ function initAdditemFields() {
         var curitems = $('#list_'+list_id+' > ul > li.item');
         var newhtml = $('<li id="item_'+item['pk']+'" class="item">'
           +text
-          +' <a id="remove_item_'+item['pk']+'" class="itemaction removeitem" href="#remove">&#10005;</a>'
-          +' <a id="move_item_'+item['pk']+'_up" class="itemaction moveitem" href="#up">&uarr;</a>'
-          +' <a id="move_item_'+item['pk']+'_down" class="itemaction moveitem" href="#down">&darr;</a>'
+          +' <a id="remove_item_'+item['pk']+'" class="itemaction removeitem" href="#">&#10005;</a>'
+          +' <a id="move_item_'+item['pk']+'_up" class="itemaction moveitem" href="#">&uarr;</a>'
+          +' <a id="move_item_'+item['pk']+'_down" class="itemaction moveitem" href="#">&darr;</a>'
           +'</li>');
         //debug("Success: "+list_id+" "+text+" "+pos);
         if(curitems.length == 0 || pos == 0) {

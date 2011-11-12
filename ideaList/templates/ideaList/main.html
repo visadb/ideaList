@@ -20,9 +20,9 @@
           {% for item in list.items.all %}
             <li id="item_{{item.id}}" class="item">
               <span id="item_{{item.id}}_text" class="item-text">{{ item.text|escape }}</span>
-              <a id="remove_item_{{item.id}}" class="itemaction removeitem" href="#remove">&#10005;</a>
-              <a id="move_item_{{item.id}}_up" class="itemaction moveitem" href="#up">&uarr;</a>
-              <a id="move_item_{{item.id}}_down" class="itemaction moveitem" href="#down">&darr;</a>
+              <a id="remove_item_{{item.id}}" class="itemaction removeitem" href="#">&#10005;</a>
+              <a id="move_item_{{item.id}}_up" class="itemaction moveitem" href="#">&uarr;</a>
+              <a id="move_item_{{item.id}}_down" class="itemaction moveitem" href="#">&darr;</a>
             </li>
           {% endfor %}
           <li><input id="add_to_end_of_{{list.id}}" class="newitem" type="text" value="New item..."></input></li>
