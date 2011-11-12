@@ -18,7 +18,8 @@ class Trashable(models.Model):
     """
     trashed_at = models.DateTimeField('Trashed', editable=False, blank=True, null=True)
 
-    objects = NonTrashedManager()
+    objects = models.Manager()
+    nontrash = NonTrashedManager()
     trash = TrashedManager()
 
     def delete(self, trash=True, *args, **kwargs):
@@ -26,19 +27,20 @@ class Trashable(models.Model):
             self.trashed_at = datetime.now()
             self.save()
         else:
-            super(models.Model, self).delete(*args, **kwargs)
+            super(Trashable, self).delete(*args, **kwargs)
 
     def restore(self):
-        if self.trashed_at == None:
-            return
+        #if self.trashed_at == None:
+        #    return
         self.trashed_at = None
+        self.save()
         # Cannot call .save() because it tries to find current object with the
         # objects manager
-        from django.db import connection, transaction
-        cursor = connection.cursor()
-        cursor.execute('UPDATE '+self._meta.db_table
-                +' SET trashed_at=NULL WHERE id=%s', [self.id])
-        transaction.commit_unless_managed()
+        #from django.db import connection, transaction
+        #cursor = connection.cursor()
+        #cursor.execute('UPDATE '+self._meta.db_table
+        #        +' SET trashed_at=NULL WHERE id=%s', [self.id])
+        #transaction.commit_unless_managed()
 
     class Meta:
         abstract = True
