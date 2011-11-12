@@ -14,8 +14,9 @@ class ListAdmin(admin.ModelAdmin):
 admin.site.register(List, ListAdmin)
 
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('list', 'text', 'priority', 'last_changed')
-    list_filter = ('list', 'priority', 'last_changed')
+    list_display = ('list', 'position', 'text', 'priority')
+    list_filter = ('list', 'priority')
+    ordering = ('list','position')
 admin.site.register(Item, ItemAdmin)
 
 class SubscriptionAdmin(admin.ModelAdmin):
