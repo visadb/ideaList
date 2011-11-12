@@ -17,7 +17,7 @@
     {% for list in lists %}
       <li id="list_{{ list.id }}" class="list">{{ list.name }}
         <ul class="itemlist">
-          {% for item in list.items.all %}
+          {% for item in list.nontrashed_items %}
             <li id="item_{{item.id}}" class="item">
               <span id="item_{{item.id}}_text" class="item-text">{{ item.text|escape }}</span>
               <a id="remove_item_{{item.id}}" class="itemaction removeitem" href="#">&#10005;</a>

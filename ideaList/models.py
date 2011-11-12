@@ -11,13 +11,15 @@ class List(Trashable):
     owner = models.ForeignKey(User, related_name='lists_owned')
     subscribers = models.ManyToManyField(User,
             related_name='subscribed_lists', through='Subscription')
+    def nontrashed_items(self):
+        return self.items.filter(trashed_at__isnull=True)
+    def n_items(self):
+        return self.items.count()
     def __unicode__(self):
         val = self.name
         if self.trashed_at:
             val += " (trashed)"
         return val
-    def n_items(self):
-        return self.items.count()
     n_items.short_description = u'# of items'
 
 class Item(Trashable):
