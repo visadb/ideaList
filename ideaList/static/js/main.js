@@ -12,7 +12,40 @@ var editableSettings = {
 function debug(str) {
   var item = $('<div>'+str+'<br /></div>');
   $("#debug").prepend(item);
-  item.delay(5000).hide(1000, function(){item.remove()});
+  //item.delay(5000).hide(1000, function(){item.remove()});
+}
+
+function makeItem(itemdata) {
+  var item_id = itemdata['pk'];
+  var text = itemdata['fields']['text'];
+  removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
+  moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
+  moveDownHtml = $('<a id="move_item_'+item_id+'_down" class="itemaction moveitem" href="#">&darr;</a>').click(moveitemHandler);
+  itemHtml = $('<li id="item_'+item_id+'" class="item">'+text+'</li>')
+    .data('itemdata', itemdata);
+  itemHtml
+    .append('&nbsp;').append(removeHtml)
+    .append('&nbsp;').append(moveUpHtml)
+    .append('&nbsp;').append(moveDownHtml);
+  return itemHtml;
+}
+
+//TODO: function addSubscription(subscriptiondata)
+
+function addItem(itemdata) {
+  var list_id = itemdata['fields']['list'];
+  var pos = itemdata['fields']['position'];
+  var curitems = $('#list_'+list_id+' > ul > li.item');
+  var newhtml = makeItem(itemdata)
+  // TODO: Remove true once we have proper dynamic loading of content
+  if(true || curitems.length == 0 || pos == 0) {
+    $('#list_'+list_id+' > ul').prepend(newhtml);
+  } else {
+    curitems.each(function(index, elem) {
+      // if elem's position smaller than pos, insert before elem
+    });
+    // curitems.filter(':eq('+(pos-1)+')').after(newhtml);
+  }
 }
 
 function initAdditemFields() {
@@ -42,26 +75,8 @@ function initAdditemFields() {
         type: "POST",
         data: {list:list_id, text:val, position:position},
       }).done(function(data) {
-        var item = data[0];
-        var list_id = item['fields']['list'];
-        var text = item['fields']['text'];
-        var pos = item['fields']['position'];
-        var curitems = $('#list_'+list_id+' > ul > li.item');
-        var newhtml = $('<li id="item_'+item['pk']+'" class="item">'
-          +text
-          +' <a id="remove_item_'+item['pk']+'" class="itemaction removeitem" href="#">&#10005;</a>'
-          +' <a id="move_item_'+item['pk']+'_up" class="itemaction moveitem" href="#">&uarr;</a>'
-          +' <a id="move_item_'+item['pk']+'_down" class="itemaction moveitem" href="#">&darr;</a>'
-          +'</li>');
-        //debug("Success: "+list_id+" "+text+" "+pos);
-        if(curitems.length == 0 || pos == 0) {
-          $('#list_'+list_id+' > ul').prepend(newhtml);
-        } else {
-          curitems.filter(':eq('+(pos-1)+')').after(newhtml);
-        }
-        $('#remove_item_'+item['pk'], newhtml).click(removeitemHandler);
-        $('#move_item_'+item['pk']+'_up', newhtml).click(moveitemHandler);
-        $('#move_item_'+item['pk']+'_down', newhtml).click(moveitemHandler);
+        // Will receive an array containing the item.
+        addItem(data[0])
         addfield.val("").blur(); // Reset additem field
       }).fail(function(jqXHR, textStatus) {
         debug("Error in add item: "+textStatus);

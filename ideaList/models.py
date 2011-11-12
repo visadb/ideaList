@@ -1,6 +1,10 @@
 from django.db import models
-from positions.fields import PositionField
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes import generic
+from positions.fields import PositionField
 from undelete.models import Trashable
 
 class List(Trashable):
@@ -66,7 +70,24 @@ class Subscription(models.Model):
     def __unicode__(self):
         return self.user.first_name+": "+self.list.name
 
-#class ChangeLog(models.Model):
-#    """
-#    Keeps track of changes to data.
-#    """
+@receiver(post_save)
+def change_detect(sender, **kwargs):
+    if sender not in (List, Item, Subscription):
+        return
+    print "saved: "+str(sender)
+
+class ChangeLog(models.Model):
+    """
+    Keeps track of changes to ideaList data.
+    """
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    content_object = generic.GenericForeignKey('content_type', 'object_id')
+    CHANGE_TYPE_CHOICES = (
+            (u'DE',u'Delete'),
+            (u'AD',u'Add'),
+            (u'ED',u'Edit'), #Should this include move?
+    )
+    change_type = models.CharField(max_length=2, choices=CHANGE_TYPE_CHOICES)
+    time = models.DateTimeField(db_index=True)
+    user = models.ForeignKey(User, related_name='changes')
