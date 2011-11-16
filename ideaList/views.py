@@ -42,8 +42,7 @@ def additem(request):
         form = ItemForm(request.POST, instance=i)
         if form.is_valid():
             newitem = form.save()
-            json_serializer = serializers.get_serializer("json")()
-            return HttpResponse(json_serializer.serialize([newitem],
+            return HttpResponse(serializers.serialize('json', [newitem],
                 ensure_ascii=False))
         else:
             if request.is_ajax():
