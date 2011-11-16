@@ -1,4 +1,5 @@
 import re
+import json
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import render_to_response
@@ -23,8 +24,11 @@ def render_to(template_name):
 @login_required
 @render_to('ideaList/main.html')
 def main(request):
-    return {'lists':[s.list for s in
-        request.user.subscriptions.filter(list__trashed_at__isnull=True)]}
+    lists = [s.list for s in
+            request.user.subscriptions_of_nontrashed_lists()]
+    init_data = json.dumps([s.as_dict() for s in
+        request.user.subscriptions_of_nontrashed_lists()])
+    return {'lists': lists, 'init_data': init_data}
 
 def csrf_failure(request, reason=""):
     return HttpResponse("CSRF failure: "+reason)

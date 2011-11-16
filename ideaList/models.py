@@ -7,6 +7,10 @@ from django.contrib.contenttypes import generic
 from positions.fields import PositionField
 from undelete.models import Trashable
 
+def _subscriptions_of_nontrashed_lists(self):
+    return self.subscriptions.filter(list__trashed_at__isnull=True)
+User.subscriptions_of_nontrashed_lists = _subscriptions_of_nontrashed_lists
+
 class List(Trashable):
     """
     A list of items (:model:`ideaList.Item`).
@@ -19,12 +23,15 @@ class List(Trashable):
         return self.items.filter(trashed_at__isnull=True)
     def n_items(self):
         return self.items.count()
+    n_items.short_description = u'# of items'
+    def as_dict(self):
+        return {'id':self.id, 'name':self.name, 'owner_id':self.owner_id,
+                'items': [i.as_dict() for i in self.nontrashed_items()]}
     def __unicode__(self):
         val = self.name
         if self.trashed_at:
             val += " (trashed)"
         return val
-    n_items.short_description = u'# of items'
 
 class Item(Trashable):
     """
@@ -47,6 +54,10 @@ class Item(Trashable):
     class Meta:
         ordering = ['position']
 
+    def as_dict(self):
+        return {'id':self.id, 'list_id':self.list_id, 'text':self.text,
+                'url':self.url, 'priority':self.priority,
+                'position':self.position}
     def __unicode__(self):
         val = self.list.name+": "+self.text
         if self.trashed_at:
@@ -67,6 +78,10 @@ class Subscription(models.Model):
         ordering = ['position']
         unique_together = (('user','list'),)
 
+    def as_dict(self):
+        return {'id':self.id, 'user_id':self.user_id,
+                'list':self.list.as_dict(), 'minimized': self.minimized,
+                'position': self.position}
     def __unicode__(self):
         return self.user.first_name+": "+self.list.name
 
