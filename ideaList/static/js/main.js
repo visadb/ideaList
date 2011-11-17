@@ -16,12 +16,12 @@ function debug(str) {
 }
 
 function makeItem(itemdata) {
-  var item_id = itemdata['pk'];
-  var text = itemdata['fields']['text'];
-  removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
-  moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
-  moveDownHtml = $('<a id="move_item_'+item_id+'_down" class="itemaction moveitem" href="#">&darr;</a>').click(moveitemHandler);
-  itemHtml = $('<li id="item_'+item_id+'" class="item">'+text+'</li>')
+  var item_id = itemdata['id'];
+  var text = itemdata['text'];
+  var removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
+  var moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
+  var moveDownHtml = $('<a id="move_item_'+item_id+'_down" class="itemaction moveitem" href="#">&darr;</a>').click(moveitemHandler);
+  var itemHtml = $('<li id="item_'+item_id+'" class="item">'+text+'</li>')
     .data('itemdata', itemdata);
   itemHtml
     .append('&nbsp;').append(removeHtml)
@@ -33,8 +33,8 @@ function makeItem(itemdata) {
 //TODO: function addSubscription(subscriptiondata)
 
 function addItem(itemdata) {
-  var list_id = itemdata['fields']['list'];
-  var pos = itemdata['fields']['position'];
+  var list_id = itemdata['list_id'];
+  var pos = itemdata['position'];
   var curitems = $('#list_'+list_id+' > ul > li.item');
   var newhtml = makeItem(itemdata)
   // TODO: Remove true once we have proper dynamic loading of content
@@ -76,7 +76,7 @@ function initAdditemFields() {
         data: {list:list_id, text:val, position:position},
       }).done(function(data) {
         // Will receive an array containing the item.
-        addItem(data[0])
+        addItem(data)
         addfield.val("").blur(); // Reset additem field
       }).fail(function(jqXHR, textStatus) {
         debug("Error in add item: "+textStatus);

@@ -7,7 +7,6 @@ from django.template import RequestContext
 from django.views.decorators.csrf import csrf_protect
 from ideaList.models import Item
 from django.forms import ModelForm
-from django.core import serializers
 
 # Decorator that adds RequestContext
 def render_to(template_name):
@@ -46,8 +45,7 @@ def additem(request):
         form = ItemForm(request.POST, instance=i)
         if form.is_valid():
             newitem = form.save()
-            return HttpResponse(serializers.serialize('json', [newitem],
-                ensure_ascii=False))
+            return HttpResponse(json.dumps(newitem.as_dict()))
         else:
             if request.is_ajax():
                 return HttpResponseBadRequest('{}')
