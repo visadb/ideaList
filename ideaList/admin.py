@@ -5,7 +5,7 @@ class ItemInline(admin.TabularInline):
     model = Item
     extra = 3
 class ListAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owners_first_name', 'n_items')
+    list_display = ('name', 'owners_first_name', 'n_items', 'trashed_at')
     search_fields = ['name']
     inlines = [ItemInline]
     def owners_first_name(self, obj):
@@ -14,8 +14,8 @@ class ListAdmin(admin.ModelAdmin):
 admin.site.register(List, ListAdmin)
 
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ('list', 'position', 'text', 'priority')
-    list_filter = ('list', 'priority')
+    list_display = ('list', 'position', 'text', 'trashed_at')
+    list_filter = ('list', 'priority', 'trashed_at')
     ordering = ('list','position')
 admin.site.register(Item, ItemAdmin)
 
