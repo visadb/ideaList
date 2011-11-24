@@ -18,38 +18,43 @@ function debug(str) {
 function makeItem(itemdata) {
   var item_id = itemdata['id'];
   var text = itemdata['text'];
+  var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);;
   var removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
   var moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
   var moveDownHtml = $('<a id="move_item_'+item_id+'_down" class="itemaction moveitem" href="#">&darr;</a>').click(moveitemHandler);
-  var itemHtml = $('<li id="item_'+item_id+'" class="item">'+text+'</li>')
+  var itemHtml = $('<li id="item_'+item_id+'" class="item"></li>')
     .data('itemdata', itemdata);
   itemHtml
+    .append(itemTextHtml)
     .append('&nbsp;').append(removeHtml)
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
   return itemHtml;
 }
 
-//TODO: function addSubscription(subscriptiondata)
-
 function addItem(itemdata) {
   var list_id = itemdata['list_id'];
   var pos = itemdata['position'];
   var curitems = $('#list_'+list_id+' > ul > li.item');
-  var newhtml = makeItem(itemdata)
-  // TODO: Remove true once we have proper dynamic loading of content
-  if(true || curitems.length == 0 || pos == 0) {
-    $('#list_'+list_id+' > ul').prepend(newhtml);
+  var itemHtml = makeItem(itemdata)
+  if(curitems.length == 0 || pos == 0) {
+    $('#list_'+list_id+' > ul').prepend(itemHtml);
   } else {
-    curitems.each(function(index, elem) {
-      // if elem's position smaller than pos, insert before elem
+    var lastitem = curitems.last();
+    curitems.each(function(index) {
+      if ($(this)[0] === lastitem[0]) {
+        lastitem.after(itemHtml);
+        return false;
+      } else if ($(this).data()['position'] > pos) {
+        elem.before(itemHtml);
+        return false;
+      }
     });
-    // curitems.filter(':eq('+(pos-1)+')').after(newhtml);
   }
 }
 
-function initAdditemFields() {
-  $(".newitem").blur(function() {
+function initAddItemField(field) {
+  return field.blur(function() {
     if($(this).val() == "") {
       $(this).val(newitemText)
         .addClass("newitem_blur");
@@ -82,8 +87,36 @@ function initAdditemFields() {
         debug("Error in add item: "+textStatus);
       });
     }
-  }).filter('[value="'+newitemText+'"]').addClass("newitem_blur");
+  }).addClass("newitem_blur");
 }
+function makeAddItemField(list_id, pos) {
+  if (pos == null)
+    pos = 'end';
+  var addItemHtml = $('<input id="add_to_'+pos+'_of_'+list_id+'"'
+    +' class="newitem" type="text" value="'+newitemText+'"></input>');
+  initAddItemField(addItemHtml);
+  return addItemHtml;
+}
+
+function makeList(subscriptiondata) {
+  var l = subscriptiondata['list'];
+  var listHtml = $('<li id="list_'+l['id']+'" class="list">'+l['name']+'</li>\n')
+    .data(subscriptiondata);
+  var itemListHtml = $('<ul class="itemlist"></ul>\n');
+  for (var i in l['items']) {
+    var itemHtml = makeItem(l['items'][i]);
+    itemListHtml.append(itemHtml);
+  }
+  itemListHtml.append($('<li></li>').append(makeAddItemField(l['id'], 'end')));
+  listHtml.append(itemListHtml);
+  return listHtml;
+}
+
+function addSubscription(subscriptiondata) {
+  var listHtml = makeList(subscriptiondata);
+  $('#listlist').append(listHtml);
+}
+
 
 function removeitemHandler(e) {
   e.preventDefault();
@@ -148,10 +181,13 @@ function moveitemHandler(e) {
 
 $(document).ready(function() {
   setStatusLight();
-  initAdditemFields();
-  $('.removeitem').click(removeitemHandler);
-  $('.moveitem').click(moveitemHandler);
-  $('.item-text').editable(editableUrl, editableSettings);
+  for (i in init_subscriptions) {
+    addSubscription(init_subscriptions[i]);
+  }
+  //initAdditemFields();
+  //$('.removeitem').click(removeitemHandler);
+  //$('.moveitem').click(moveitemHandler);
+  //$('.item-text').editable(editableUrl, editableSettings);
 });
 
 // TODO: Send current timestamp and ask for instructions to update state
