@@ -30,17 +30,13 @@ class Trashable(models.Model):
             super(Trashable, self).delete(*args, **kwargs)
 
     def restore(self):
-        #if self.trashed_at == None:
-        #    return
         self.trashed_at = None
         self.save()
-        # Cannot call .save() because it tries to find current object with the
-        # objects manager
-        #from django.db import connection, transaction
-        #cursor = connection.cursor()
-        #cursor.execute('UPDATE '+self._meta.db_table
-        #        +' SET trashed_at=NULL WHERE id=%s', [self.id])
-        #transaction.commit_unless_managed()
+
+    @classmethod
+    def empty_trash(cls):
+        for i in cls.trash.all():
+            i.delete()
 
     class Meta:
         abstract = True
