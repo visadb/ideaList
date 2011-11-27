@@ -22,6 +22,9 @@ class Trashable(models.Model):
     nontrash = NonTrashedManager()
     trash = TrashedManager()
 
+    def is_trash(self):
+        return self.trashed_at != None
+
     def delete(self, trash=True, *args, **kwargs):
         if not self.trashed_at and trash:
             self.trashed_at = datetime.now()
