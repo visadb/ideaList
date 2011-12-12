@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -6,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from positions.fields import PositionField
 from undelete.models import Trashable
+from undelete.signals import pre_trash, pre_restore
 #from django.utils import unittest
 from django import test
 
@@ -96,7 +98,7 @@ class ItemTest(test.TestCase):
         self.assertEqual(i.priority, u'NO')
         self.assertEqual(i.position, 0)
 
-class Subscription(models.Model):
+class Subscription(Trashable):
     """
     A user's (:model:`django.contrib.auth.User`) subscription of a certain List
     (:model:`ideaList.List`)
@@ -129,26 +131,109 @@ class SubscriptionTest(test.TestCase):
         self.assertEqual(s.minimized, False)
         self.assertEqual(s.position, 0)
 
+### Change log stuff: ###
+
 @receiver(post_save)
-def change_detect(sender, **kwargs):
+def detect_add_and_update(sender, **kwargs):
     if sender not in (List, Item, Subscription):
         return
-    print "saved: "+str(sender)
+    if kwargs['created']:
+        change_type = ADD
+    elif hasattr(kwargs['instance'], 'update_is_trash'):
+        change_type = DELETE
+        delattr(kwargs['instance'], 'update_is_trash')
+    elif hasattr(kwargs['instance'], 'update_is_restore'):
+        change_type = UNDELETE
+        delattr(kwargs['instance'], 'update_is_restore')
+    else:
+        change_type = UPDATE
+    c = LogEntry(content_object=kwargs['instance'],
+                  change_type=change_type,
+                  time=datetime.now())
+    c.save()
 
-class ChangeLog(models.Model):
+@receiver(pre_trash)
+def detect_trash(sender, **kwargs):
+    if sender not in (List, Item, Subscription):
+        return
+    kwargs['instance'].update_is_trash = True
+
+@receiver(pre_restore)
+def detect_restore(sender, **kwargs):
+    if sender not in (List, Item, Subscription):
+        return
+    kwargs['instance'].update_is_restore = True
+
+ADD = 1
+UPDATE = 2
+DELETE = 3
+UNDELETE = 4
+class LogEntry(models.Model):
     """
     Keeps track of changes to ideaList data.
     """
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, related_name='log_entries')
     object_id = models.PositiveIntegerField()
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     CHANGE_TYPE_CHOICES = (
-            (u'DE',u'Delete'),
-            (u'AD',u'Add'),
-            (u'ED',u'Edit'), #Should this include move?
+            (ADD,u'Add'),
+            (UPDATE,u'Update'),
+            (DELETE,u'Delete'),
+            (UNDELETE,u'Undelete'),
     )
-    change_type = models.CharField(max_length=2, choices=CHANGE_TYPE_CHOICES)
+    change_type = models.SmallIntegerField(choices=CHANGE_TYPE_CHOICES)
     time = models.DateTimeField(db_index=True)
-    user = models.ForeignKey(User, related_name='changes')
-class ChangeLogTest(test.TestCase):
-    pass
+    class Meta:
+        ordering = ['time']
+    #user = models.ForeignKey(User, related_name='changes', null=True)
+
+class LogTest(test.TestCase):
+    fixtures = ['auth.json']
+    def setUp(self):
+        self.setup_time = datetime.now()
+
+class ListLogTest(LogTest):
+    def setUp(self):
+        super(ListLogTest, self).setUp()
+        self.assertEqual(LogEntry.objects.count(), 0)
+        self.l = List.objects.create(name='List1', owner=User.objects.all()[0])
+        self.assertEqual(LogEntry.objects.count(), 1)
+    def test_list_add(self):
+        cl = LogEntry.objects.all()[0]
+        self.assertIs(List, cl.content_type.model_class())
+        self.assertEqual(self.l, cl.content_object)
+        self.assertEqual(cl.change_type, ADD)
+        self.assertTrue(cl.time >= self.setup_time)
+    def test_list_update(self):
+        self.l.name = 'List2'
+        self.l.save()
+        self.assertEqual(LogEntry.objects.count(), 2)
+        updates = LogEntry.objects.filter(change_type=UPDATE)
+        self.assertEqual(updates.count(), 1)
+        cl = updates[0]
+        self.assertIs(List, cl.content_type.model_class())
+        self.assertEqual(self.l, cl.content_object)
+        self.assertEqual(cl.change_type, UPDATE)
+        self.assertTrue(cl.time >= self.setup_time)
+    def test_list_delete(self):
+        self.l.delete()
+        self.assertEqual(LogEntry.objects.count(), 2)
+        deletes = LogEntry.objects.filter(change_type=DELETE)
+        self.assertEqual(deletes.count(), 1)
+        cl = deletes[0]
+        self.assertIs(List, cl.content_type.model_class())
+        self.assertEqual(self.l, cl.content_object)
+        self.assertEqual(cl.change_type, DELETE)
+        self.assertTrue(cl.time >= self.setup_time)
+    def test_list_undelete(self):
+        self.l.delete()
+        self.assertEqual(LogEntry.objects.count(), 2)
+        self.l.restore()
+        self.assertEqual(LogEntry.objects.count(), 3)
+        undeletes = LogEntry.objects.filter(change_type=UNDELETE)
+        self.assertEqual(undeletes.count(), 1)
+        cl = undeletes[0]
+        self.assertIs(List, cl.content_type.model_class())
+        self.assertEqual(self.l, cl.content_object)
+        self.assertEqual(cl.change_type, UNDELETE)
+        self.assertTrue(cl.time >= self.setup_time)
