@@ -1,5 +1,6 @@
 from datetime import datetime
 from django.db import models
+import signals
 
 class NonTrashedManager(models.Manager):
     ''' Query only objects which have not been trashed. '''
@@ -11,6 +12,7 @@ class TrashedManager(models.Manager):
     def get_query_set(self):
         query_set = super(TrashedManager, self).get_query_set()
         return query_set.filter(trashed_at__isnull=False)
+
 
 class Trashable(models.Model):
     """
@@ -27,14 +29,18 @@ class Trashable(models.Model):
 
     def delete(self, trash=True, *args, **kwargs):
         if not self.trashed_at and trash:
+            signals.pre_trash.send(sender=type(self), instance=self)
             self.trashed_at = datetime.now()
             self.save()
+            signals.post_trash.send(sender=type(self), instance=self)
         else:
             super(Trashable, self).delete(*args, **kwargs)
 
     def restore(self):
+        signals.pre_restore.send(sender=type(self), instance=self)
         self.trashed_at = None
         self.save()
+        signals.post_restore.send(sender=type(self), instance=self)
 
     @classmethod
     def empty_trash(cls):
