@@ -1,5 +1,6 @@
 import re
 import json
+import time
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import render_to_response
@@ -27,7 +28,8 @@ def main(request):
             request.user.subscriptions_of_nontrashed_lists()]
     init_data = json.dumps([s.as_dict() for s in
         request.user.subscriptions_of_nontrashed_lists()])
-    return {'lists': lists, 'init_data': init_data}
+    return {'lists': lists, 'init_data': init_data,
+            'data_timestamp': repr(time.time())}
 
 def csrf_failure(request, reason=""):
     return HttpResponse("CSRF failure: "+reason)
