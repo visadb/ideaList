@@ -168,10 +168,21 @@ ADD = 1
 UPDATE = 2
 DELETE = 3
 UNDELETE = 4
+
+class LogEntryManager(models.Manager):
+    ''' Query only objects which have not been trashed. '''
+    def newer_than(self, time):
+        if isinstance(time, float) or isinstance(time, int):
+            dt = datetime.fromtimestamp(time)
+        if isinstance(time, datetime):
+            dt = time
+        return self.filter(time__gt=dt)
+
 class LogEntry(models.Model):
     """
     Keeps track of changes to ideaList data.
     """
+    objects = LogEntryManager()
     content_type = models.ForeignKey(ContentType, related_name='log_entries')
     object_id = models.PositiveIntegerField()
     content_object = generic.GenericForeignKey('content_type', 'object_id')
@@ -186,14 +197,25 @@ class LogEntry(models.Model):
     class Meta:
         ordering = ['time']
     #user = models.ForeignKey(User, related_name='changes', null=True)
+    def __unicode__(self):
+        return dict(self.CHANGE_TYPE_CHOICES)[self.change_type]+" "+\
+                self.content_type.name+": "+self.content_object.__unicode__()
 
 class LogTest(test.TestCase):
     fixtures = ['auth.json']
     def setUp(self):
         self.setup_time = datetime.now()
+    def test_newer_than(self):
+        self.assertEqual(LogEntry.objects.newer_than(self.setup_time).count(),0)
+        self.l = List.objects.create(name='List1', owner=User.objects.all()[0])
+        d2 = datetime.now()
+        self.assertEqual(LogEntry.objects.newer_than(self.setup_time).count(),1)
+        self.assertEqual(LogEntry.objects.newer_than(d2).count(),0)
 
-class ListLogTest(LogTest):
+class ListLogTest(test.TestCase):
+    fixtures = ['auth.json']
     def setUp(self):
+        self.setup_time = datetime.now()
         super(ListLogTest, self).setUp()
         self.assertEqual(LogEntry.objects.count(), 0)
         self.l = List.objects.create(name='List1', owner=User.objects.all()[0])
