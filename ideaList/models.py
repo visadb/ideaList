@@ -132,38 +132,6 @@ class SubscriptionTest(test.TestCase):
         self.assertEqual(s.position, 0)
 
 ### Change log stuff: ###
-
-@receiver(post_save)
-def detect_add_and_update(sender, **kwargs):
-    if sender not in (List, Item, Subscription):
-        return
-    if kwargs['created']:
-        change_type = ADD
-    elif hasattr(kwargs['instance'], 'update_is_trash'):
-        change_type = DELETE
-        delattr(kwargs['instance'], 'update_is_trash')
-    elif hasattr(kwargs['instance'], 'update_is_restore'):
-        change_type = UNDELETE
-        delattr(kwargs['instance'], 'update_is_restore')
-    else:
-        change_type = UPDATE
-    c = LogEntry(content_object=kwargs['instance'],
-                  change_type=change_type,
-                  time=datetime.now())
-    c.save()
-
-@receiver(pre_trash)
-def detect_trash(sender, **kwargs):
-    if sender not in (List, Item, Subscription):
-        return
-    kwargs['instance'].update_is_trash = True
-
-@receiver(pre_restore)
-def detect_restore(sender, **kwargs):
-    if sender not in (List, Item, Subscription):
-        return
-    kwargs['instance'].update_is_restore = True
-
 ADD = 1
 UPDATE = 2
 DELETE = 3
@@ -197,9 +165,48 @@ class LogEntry(models.Model):
     class Meta:
         ordering = ['time']
     #user = models.ForeignKey(User, related_name='changes', null=True)
+    def create_patch(self, time):
+        changes = self.__class__.objects.newer_than(time)
+        return [change.as_dict() for change in changes]
+    def as_dict(self):
+        """
+        Returns all information required by the client to display the change.
+        """
+        #TODO: Implement
     def __unicode__(self):
         return dict(self.CHANGE_TYPE_CHOICES)[self.change_type]+" "+\
                 self.content_type.name+": "+self.content_object.__unicode__()
+
+@receiver(post_save)
+def detect_change(sender, **kwargs):
+    if sender not in (List, Item, Subscription):
+        return
+    if kwargs['created']:
+        change_type = ADD
+    elif hasattr(kwargs['instance'], 'update_is_trash'):
+        change_type = DELETE
+        delattr(kwargs['instance'], 'update_is_trash')
+    elif hasattr(kwargs['instance'], 'update_is_restore'):
+        change_type = UNDELETE
+        delattr(kwargs['instance'], 'update_is_restore')
+    else:
+        change_type = UPDATE
+    c = LogEntry(content_object=kwargs['instance'],
+                  change_type=change_type,
+                  time=datetime.now())
+    c.save()
+
+@receiver(pre_trash)
+def detect_trash(sender, **kwargs):
+    if sender not in (List, Item, Subscription):
+        return
+    kwargs['instance'].update_is_trash = True
+
+@receiver(pre_restore)
+def detect_restore(sender, **kwargs):
+    if sender not in (List, Item, Subscription):
+        return
+    kwargs['instance'].update_is_restore = True
 
 class LogTest(test.TestCase):
     fixtures = ['auth.json']
@@ -216,7 +223,6 @@ class ListLogTest(test.TestCase):
     fixtures = ['auth.json']
     def setUp(self):
         self.setup_time = datetime.now()
-        super(ListLogTest, self).setUp()
         self.assertEqual(LogEntry.objects.count(), 0)
         self.l = List.objects.create(name='List1', owner=User.objects.all()[0])
         self.assertEqual(LogEntry.objects.count(), 1)
