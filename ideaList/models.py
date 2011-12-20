@@ -28,6 +28,11 @@ class List(Trashable):
     def n_items(self):
         return self.items.count()
     n_items.short_description = u'# of items'
+    def subscription_for(self, user):
+        try:
+            return self.subscriptions.filter(user=user)[0]
+        except IndexError:
+            return None
     def as_dict(self):
         return {'id':self.id, 'name':self.name, 'owner_id':self.owner_id,
                 'items': [i.as_dict() for i in self.nontrashed_items()]}
@@ -37,8 +42,9 @@ class List(Trashable):
             val += " (trashed)"
         return val
 class ListTest(test.TestCase):
+    fixtures = ['auth.json']
     def setUp(self):
-        self.u = User.objects.create_user('pena', 'lol@lol.lol', 'passwd')
+        self.u = User.objects.all()[0]
         self.l1 = List.objects.create(name='List1', owner=self.u)
     def test_fields(self):
         self.assertTrue(List.objects.count() >= 1)
@@ -53,6 +59,12 @@ class ListTest(test.TestCase):
         self.assertEqual(self.l1.nontrashed_items()[0].text, 'testitem')
         i.delete()
         self.assertEqual(self.l1.nontrashed_items().count(), 0)
+    def test_subscription_for(self):
+        self.assertEqual(self.l1.subscription_for(self.u), None)
+        s = Subscription.objects.create(user=self.u, list=self.l1)
+        self.assertEqual(self.l1.subscription_for(self.u), s)
+        u2 = User.objects.all()[1]
+        self.assertEqual(self.l1.subscription_for(u2), None)
 
 class Item(Trashable):
     """
