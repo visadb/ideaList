@@ -173,9 +173,10 @@ class LogEntry(models.Model):
             (UNDELETE,u'Undelete'),
     )
     change_type = models.SmallIntegerField(choices=CHANGE_TYPE_CHOICES)
-    time = models.DateTimeField(db_index=True)
+    time = models.DateTimeField(db_index=True, auto_now_add=True)
     class Meta:
         ordering = ['time']
+        get_latest_by = 'time'
     #user = models.ForeignKey(User, related_name='changes', null=True)
     def create_patch(self, time):
         changes = self.__class__.objects.newer_than(time)
@@ -204,8 +205,7 @@ def detect_change(sender, **kwargs):
     else:
         change_type = UPDATE
     c = LogEntry(content_object=kwargs['instance'],
-                  change_type=change_type,
-                  time=datetime.now())
+            change_type=change_type)
     c.save()
 
 @receiver(pre_trash)
