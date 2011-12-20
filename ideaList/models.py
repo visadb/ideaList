@@ -178,17 +178,54 @@ class LogEntry(models.Model):
         ordering = ['time']
         get_latest_by = 'time'
     #user = models.ForeignKey(User, related_name='changes', null=True)
-    def create_patch(self, time):
+    def create_patch(self, time, user):
         changes = self.__class__.objects.newer_than(time)
-        return [change.as_dict() for change in changes]
-    def as_dict(self):
+        instructions = [change.client_instruction() for change in changes]
+        return filter(None, instructions)
+    def client_instruction(self, user):
         """
         Returns all information required by the client to display the change.
+        Returns None if nothing is required.
         """
-        #TODO: Implement
+        def action_string(change_type):
+            if change_type in (ADD,UNDELETE):
+                return 'add'
+            elif change_type == UPDATE:
+                return 'update'
+            else:
+                return 'remove'
+        if self.content_type.name == 'item':
+            if self.content_object.list.subscription_for(user) is None:
+                return None
+            return {'content_type':'item',
+                    'action':action_string(self.change_type),
+                    'object':self.content_object.as_dict()}
+        elif self.content_type.name in ('list', 'subscription'):
+            if self.content_type.name == 'list':
+                if self.change_type == ADD:
+                    return None
+                s = self.content_object.subscription_for(user)
+                if not s:
+                    return None
+                obj = s.as_dict()
+            else: #content_type is subscription
+                if self.content_object.user != user:
+                    return None
+                obj = self.content_object.as_dict()
+            return {'content_type':'subscription',
+                    'action':action_string(self.change_type),
+                    'object':obj}
+
     def __unicode__(self):
-        return dict(self.CHANGE_TYPE_CHOICES)[self.change_type]+" "+\
+        return self.change_type_string()+" "+\
                 self.content_type.name+": "+self.content_object.__unicode__()
+
+    def change_type_string(self):
+        return type(self).change_type_to_string(self.change_type)
+    @classmethod
+    def change_type_to_string(cls, change_type):
+        return dict(cls.CHANGE_TYPE_CHOICES)[change_type].lower()
+
 
 @receiver(post_save)
 def detect_change(sender, **kwargs):
@@ -231,7 +268,7 @@ class LogTest(test.TestCase):
         self.assertEqual(LogEntry.objects.newer_than(self.setup_time).count(),1)
         self.assertEqual(LogEntry.objects.newer_than(d2).count(),0)
 
-class ListLogTest(test.TestCase):
+class LogDetectTest(test.TestCase):
     fixtures = ['auth.json']
     def setUp(self):
         self.setup_time = datetime.now()
@@ -277,3 +314,69 @@ class ListLogTest(test.TestCase):
         self.assertEqual(self.l, cl.content_object)
         self.assertEqual(cl.change_type, UNDELETE)
         self.assertTrue(cl.time >= self.setup_time)
+class LogInstructionTest(test.TestCase):
+    fixtures = ['auth.json']
+    def setUp(self):
+        self.u1, self.u2 = User.objects.all()[:2]
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.assertIsNone(LogEntry.objects.latest().client_instruction(self.u1),
+                'List add should not cause any client action')
+        self.l2 = List.objects.create(name='List2', owner=self.u1)
+        self.s = Subscription.objects.create(user=self.u1,list=self.l1)
+    def assertKeys(self, ci):
+        self.assertIsNotNone(ci)
+        self.assertTrue('action' in ci)
+        self.assertTrue('content_type' in ci)
+        self.assertTrue('object' in ci)
+    def test_add_subscription(self):
+        # Subscription added as last part of setUp
+        le = LogEntry.objects.latest()
+        self.assertEqual(le.content_object, self.s)
+        ci_u1 = le.client_instruction(self.u1)
+        self.assertKeys(ci_u1)
+        self.assertEqual(ci_u1['action'], 'add')
+        self.assertEqual(ci_u1['content_type'], 'subscription')
+        ci_u2 = le.client_instruction(self.u2)
+        self.assertIsNone(ci_u2,
+                'Adding a subscription yielded an instruction for unrelated user')
+    def test_add_item(self):
+        i = Item.objects.create(list=self.l1, text='testitem')
+        le = LogEntry.objects.latest()
+        self.assertEqual(le.content_object, i)
+        ci_u1 = le.client_instruction(self.u1)
+        self.assertKeys(ci_u1)
+        self.assertEqual(ci_u1['action'], 'add')
+        self.assertEqual(ci_u1['content_type'], 'item')
+        ci_u2 = le.client_instruction(self.u2)
+        self.assertIsNone(ci_u2,
+                'Adding a item yielded an instruction for unrelated user')
+    def test_update_item(self):
+        i = Item.objects.create(list=self.l1, text='testitem')
+        i.text="updated testitem"
+        i.save()
+        le = LogEntry.objects.latest()
+        self.assertEqual(le.content_object, i)
+        ci_u1 = le.client_instruction(self.u1)
+        self.assertKeys(ci_u1)
+        self.assertEqual(ci_u1['action'], 'update')
+        self.assertEqual(ci_u1['content_type'], 'item')
+    def test_list_delete(self):
+        self.l1.delete()
+        le = LogEntry.objects.latest()
+        self.assertEqual(le.content_object, self.l1)
+        ci_u1 = le.client_instruction(self.u1)
+        self.assertKeys(ci_u1)
+        self.assertEqual(ci_u1['action'], 'remove')
+        self.assertEqual(ci_u1['content_type'], 'subscription')
+        ci_u2 = le.client_instruction(self.u2)
+        self.assertIsNone(ci_u2,
+                'Deleting a list yielded an instruction for unrelated user')
+    def test_list_undelete(self):
+        self.l1.delete()
+        self.l1.restore()
+        le = LogEntry.objects.latest()
+        self.assertEqual(le.content_object, self.l1)
+        ci_u1 = le.client_instruction(self.u1)
+        self.assertKeys(ci_u1)
+        self.assertEqual(ci_u1['action'], 'add')
+        self.assertEqual(ci_u1['content_type'], 'subscription')
