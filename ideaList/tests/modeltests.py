@@ -71,36 +71,37 @@ class LogDetectTest(test.TestCase):
     fixtures = ['auth.json']
     def setUp(self):
         self.setup_time = datetime.now()
+        self.u1, self.u2 = User.objects.all()[:2]
         self.assertEqual(LogEntry.objects.count(), 0)
-        self.l = List.objects.create(name='List1', owner=User.objects.all()[0])
+        self.l = List.objects.create(name='List1', owner=self.u1)
         self.assertEqual(LogEntry.objects.count(), 1)
     def test_list_add(self):
-        cl = LogEntry.objects.all()[0]
-        self.assertIs(List, cl.content_type.model_class())
-        self.assertEqual(self.l, cl.content_object)
-        self.assertEqual(cl.change_type, LogEntry.ADD)
-        self.assertTrue(cl.time >= self.setup_time)
+        le = LogEntry.objects.all()[0]
+        self.assertIs(List, le.content_type.model_class())
+        self.assertEqual(self.l, le.content_object)
+        self.assertEqual(le.change_type, LogEntry.ADD)
+        self.assertTrue(le.time >= self.setup_time)
     def test_list_update(self):
         self.l.name = 'List2'
         self.l.save()
         self.assertEqual(LogEntry.objects.count(), 2)
         updates = LogEntry.objects.filter(change_type=LogEntry.UPDATE)
         self.assertEqual(updates.count(), 1)
-        cl = updates[0]
-        self.assertIs(List, cl.content_type.model_class())
-        self.assertEqual(self.l, cl.content_object)
-        self.assertEqual(cl.change_type, LogEntry.UPDATE)
-        self.assertTrue(cl.time >= self.setup_time)
+        le = updates[0]
+        self.assertIs(List, le.content_type.model_class())
+        self.assertEqual(self.l, le.content_object)
+        self.assertEqual(le.change_type, LogEntry.UPDATE)
+        self.assertTrue(le.time >= self.setup_time)
     def test_list_delete(self):
         self.l.delete()
         self.assertEqual(LogEntry.objects.count(), 2)
         deletes = LogEntry.objects.filter(change_type=LogEntry.DELETE)
         self.assertEqual(deletes.count(), 1)
-        cl = deletes[0]
-        self.assertIs(List, cl.content_type.model_class())
-        self.assertEqual(self.l, cl.content_object)
-        self.assertEqual(cl.change_type, LogEntry.DELETE)
-        self.assertTrue(cl.time >= self.setup_time)
+        le = deletes[0]
+        self.assertIs(List, le.content_type.model_class())
+        self.assertEqual(self.l, le.content_object)
+        self.assertEqual(le.change_type, LogEntry.DELETE)
+        self.assertTrue(le.time >= self.setup_time)
     def test_list_undelete(self):
         self.l.delete()
         self.assertEqual(LogEntry.objects.count(), 2)
@@ -108,11 +109,45 @@ class LogDetectTest(test.TestCase):
         self.assertEqual(LogEntry.objects.count(), 3)
         undeletes = LogEntry.objects.filter(change_type=LogEntry.UNDELETE)
         self.assertEqual(undeletes.count(), 1)
-        cl = undeletes[0]
-        self.assertIs(List, cl.content_type.model_class())
-        self.assertEqual(self.l, cl.content_object)
-        self.assertEqual(cl.change_type, LogEntry.UNDELETE)
-        self.assertTrue(cl.time >= self.setup_time)
+        le = undeletes[0]
+        self.assertIs(List, le.content_type.model_class())
+        self.assertEqual(self.l, le.content_object)
+        self.assertEqual(le.change_type, LogEntry.UNDELETE)
+        self.assertTrue(le.time >= self.setup_time)
+    def test_subscription_add(self):
+        s = Subscription.objects.create(user=self.u1, list=self.l)
+        le = LogEntry.objects.latest()
+        self.assertIs(Subscription, le.content_type.model_class())
+        self.assertEqual(s, le.content_object)
+        self.assertEqual(le.change_type, LogEntry.ADD)
+        self.assertTrue(le.time >= self.setup_time)
+    def test_subscription_update(self):
+        s = Subscription.objects.create(user=self.u1, list=self.l)
+        s.minimized = True
+        s.save()
+        le = LogEntry.objects.latest()
+        self.assertIs(Subscription, le.content_type.model_class())
+        self.assertEqual(s, le.content_object)
+        self.assertEqual(le.change_type, LogEntry.UPDATE)
+        self.assertTrue(le.time >= self.setup_time)
+    def test_subscription_delete(self):
+        s = Subscription.objects.create(user=self.u1, list=self.l)
+        s.delete()
+        le = LogEntry.objects.latest()
+        self.assertIs(Subscription, le.content_type.model_class())
+        self.assertEqual(s, le.content_object)
+        self.assertEqual(le.change_type, LogEntry.DELETE)
+        self.assertTrue(le.time >= self.setup_time)
+    def test_subscription_undelete(self):
+        s = Subscription.objects.create(user=self.u1, list=self.l)
+        s.delete()
+        s.restore()
+        le = LogEntry.objects.latest()
+        self.assertIs(Subscription, le.content_type.model_class())
+        self.assertEqual(s, le.content_object)
+        self.assertEqual(le.change_type, LogEntry.UNDELETE)
+        self.assertTrue(le.time >= self.setup_time)
+
 class LogInstructionTest(test.TestCase):
     fixtures = ['auth.json']
     def setUp(self):
