@@ -177,6 +177,36 @@ function moveitemHandler(e) {
   });
 }
 
+function handlePatch(patch) {
+  for (inst in patch) {
+    if (inst['content_type'] == 'item') {
+      switch (inst['action']) {
+      case 'add':
+        break;
+      case 'update':
+        break;
+      case 'remove':
+        break;
+      default:
+        debug("handlePatch: Uknown action in inst "+inst)
+      }
+    } else if (inst['content_type'] == 'subscription') {
+      switch (inst['action']) {
+      case 'add':
+        break;
+      case 'update':
+        break;
+      case 'remove':
+        break;
+      default:
+        debug("handlePatch: Uknown action in inst "+inst)
+      }
+    }
+    else {
+      debug("handlePatch: Uknown content_type in inst "+inst)
+    }
+  }
+}
 
 
 $(document).ready(function() {
@@ -184,10 +214,6 @@ $(document).ready(function() {
   for (i in init_subscriptions) {
     addSubscription(init_subscriptions[i]);
   }
-  //initAdditemFields();
-  //$('.removeitem').click(removeitemHandler);
-  //$('.moveitem').click(moveitemHandler);
-  //$('.item-text').editable(editableUrl, editableSettings);
 });
 
 // TODO: Send current timestamp and ask for instructions to update state
