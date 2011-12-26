@@ -126,32 +126,37 @@ class LogEntry(models.Model):
     )
     change_type = models.SmallIntegerField(choices=CHANGE_TYPE_CHOICES)
     time = models.DateTimeField(db_index=True, auto_now_add=True)
+    #user = models.ForeignKey(User, related_name='changes', null=True)
     class Meta:
         ordering = ['time']
         get_latest_by = 'time'
-    #user = models.ForeignKey(User, related_name='changes', null=True)
-    def create_patch(self, time, user):
-        changes = self.__class__.objects.newer_than(time)
-        instructions = [change.client_instruction() for change in changes]
+    @classmethod
+    def create_patch(cls, time, user):
+        changes = cls.objects.newer_than(time)
+        instructions = [change.client_instruction(user) for change in changes]
         return filter(None, instructions)
     def client_instruction(self, user):
         """
         Returns all information required by the client to display the change.
         Returns None if nothing is required.
         """
-        def action_string(change_type):
-            if change_type in (LogEntry.ADD,LogEntry.UNDELETE):
+        def action_string():
+            if self.change_type in (LogEntry.ADD,LogEntry.UNDELETE):
                 return 'add'
-            elif change_type == LogEntry.UPDATE:
+            elif self.change_type == LogEntry.UPDATE:
                 return 'update'
             else:
                 return 'remove'
         if self.content_type.name == 'item':
             if self.content_object.list.subscription_for(user) is None:
                 return None
+            if self.change_type == LogEntry.DELETE:
+                obj = {'id': self.object_id}
+            else:
+                obj = self.content_object.as_dict()
             return {'content_type':'item',
-                    'action':action_string(self.change_type),
-                    'object':self.content_object.as_dict()}
+                    'action':action_string(),
+                    'object':obj}
         elif self.content_type.name in ('list', 'subscription'):
             if self.content_type.name == 'list':
                 if self.change_type == LogEntry.ADD:
@@ -159,13 +164,19 @@ class LogEntry(models.Model):
                 s = self.content_object.subscription_for(user)
                 if not s:
                     return None
-                obj = s.as_dict()
+                if self.change_type == LogEntry.DELETE:
+                    obj = {'id': s.id}
+                else:
+                    obj = s.as_dict()
             else: #content_type is subscription
                 if self.content_object.user != user:
                     return None
-                obj = self.content_object.as_dict()
+                if self.change_type == LogEntry.DELETE:
+                    obj = {'id': self.object_id}
+                else:
+                    obj = self.content_object.as_dict()
             return {'content_type':'subscription',
-                    'action':action_string(self.change_type),
+                    'action':action_string(),
                     'object':obj}
 
     def __unicode__(self):
