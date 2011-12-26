@@ -91,7 +91,10 @@ class Subscription(Trashable):
                 'list':self.list.as_dict(), 'minimized': self.minimized,
                 'position': self.position}
     def __unicode__(self):
-        return self.user.first_name+": "+self.list.name
+        val = self.user.first_name+": "+self.list.name
+        if self.trashed_at:
+            val += " (trashed)"
+        return val
 
 ### Change log stuff: ###
 class LogEntryManager(models.Manager):
