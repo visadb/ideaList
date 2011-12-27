@@ -142,6 +142,7 @@ def edittext(request):
         return HttpResponseNotFound('{"msg": "No such item"}')
 
     text = request.POST['text']
-    i.text = text
-    i.save()
+    if i.text != text:
+        i.text = text
+        i.save()
     return HttpResponse(text);
