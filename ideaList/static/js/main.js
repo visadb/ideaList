@@ -33,24 +33,40 @@ function makeItem(itemdata) {
 }
 
 function addItem(itemdata) {
+  console.debug('Adding item '+itemdata['id']);
   var list_id = itemdata['list_id'];
+  if ($('#item_'+itemdata['id']).length != 0) {
+    debug('Tried to add item '+itemdata['id']+', but it already exists');
+    return;
+  }
+  if ($('#list_'+list_id).length == 0) {
+    debug('Tried to add item '+itemdata['id']+' to a nonexisting list');
+    return;
+  }
   var pos = itemdata['position'];
   var curitems = $('#list_'+list_id+' > ul > li.item');
   var itemHtml = makeItem(itemdata)
-  if(curitems.length == 0 || pos == 0) {
+  if (curitems.length == 0 || pos == 0) {
     $('#list_'+list_id+' > ul').prepend(itemHtml);
   } else {
-    var lastitem = curitems.last();
-    curitems.each(function(index) {
-      if ($(this)[0] === lastitem[0]) {
-        lastitem.after(itemHtml);
-        return false;
-      } else if ($(this).data()['position'] > pos) {
-        elem.before(itemHtml);
-        return false;
+    items_array = curitems.toArray();
+    for (var i in items_array) {
+      item = items_array[i];
+      if ($(item).data('itemdata')['position'] > pos) {
+        $(item).before(itemHtml);
+        return;
       }
-    });
+      curitems.last().after(itemHtml);
+    }
   }
+}
+
+function removeItem(id,instant) {
+  console.debug('Removing item '+id);
+  if (instant)
+    $('#item_'+id).remove();
+  else
+    $('#item_'+id).hide(1000, function(){$(this).remove()});
 }
 
 function initAddItemField(field) {
@@ -101,7 +117,7 @@ function makeAddItemField(list_id, pos) {
 function makeList(subscriptiondata) {
   var l = subscriptiondata['list'];
   var listHtml = $('<li id="list_'+l['id']+'" class="list">'+l['name']+'</li>\n')
-    .data(subscriptiondata);
+    .data('subscriptiondata', subscriptiondata);
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
   for (var i in l['items']) {
     var itemHtml = makeItem(l['items'][i]);
@@ -112,11 +128,48 @@ function makeList(subscriptiondata) {
   return listHtml;
 }
 
-function addSubscription(subscriptiondata) {
-  var listHtml = makeList(subscriptiondata);
-  $('#listlist').append(listHtml);
-}
 
+function addList(subscriptiondata) {
+  var list_id = subscriptiondata['list']['id'];
+  if ($('#list_'+list_id).length != 0) {
+    debug('Tried to add list '+list_id+', but it already exists');
+    return;
+  }
+  var pos = subscriptiondata['list']['id'];
+  var curlists = $('#listlist > li.list');
+  var listHtml = makeList(subscriptiondata);
+  if (curlists.length == 0 || pos == 0) {
+    $('#listlist').prepend(listHtml);
+  } else {
+    lists_array = curlists.toArray();
+    for (var i in lists_array) {
+      list = lists_array[i];
+      if ($(list).data('subscriptiondata')['position'] > pos) {
+        $(list).before(listHtml);
+        return;
+      }
+      $('#listlist').append(listHtml);
+    }
+  }
+}
+function removeList(id,instant) {
+  console.debug('Removing list '+id);
+  if (instant)
+    $('#list_'+id).remove();
+  else
+    $('#list_'+id).hide(1000, function(){$(this).remove()});
+}
+function removeSubscription(id, instant) {
+  console.debug('Removing subscription '+id);
+  // Find list that corresponds to this subscription id
+  $('#listlist > li.list').each(function() {
+    var subscriptiondata = $(this).data('subscriptiondata'); 
+    if (subscriptiondata['id'] == id) {
+      removeList(subscriptiondata['list']['id'], instant);
+      return false;
+    }
+  });
+}
 
 function removeitemHandler(e) {
   e.preventDefault();
@@ -178,14 +231,19 @@ function moveitemHandler(e) {
 }
 
 function handlePatch(patch) {
-  for (inst in patch) {
+  for (i in patch) {
+    inst = patch[i];
     if (inst['content_type'] == 'item') {
       switch (inst['action']) {
       case 'add':
+        addItem(inst['object']);
         break;
       case 'update':
+        removeItem(inst['object']['id'], true);
+        addItem(inst['object']);
         break;
       case 'remove':
+        removeItem(inst['object']['id']);
         break;
       default:
         debug("handlePatch: Uknown action in inst "+inst)
@@ -193,10 +251,14 @@ function handlePatch(patch) {
     } else if (inst['content_type'] == 'subscription') {
       switch (inst['action']) {
       case 'add':
+        addList(inst['object']);
         break;
       case 'update':
+        removeSubscription(inst['object']['id'], true);
+        addList(inst['object']);
         break;
       case 'remove':
+        removeSubscription(inst['object']['id']);
         break;
       default:
         debug("handlePatch: Uknown action in inst "+inst)
@@ -212,7 +274,7 @@ function handlePatch(patch) {
 $(document).ready(function() {
   setStatusLight();
   for (i in init_subscriptions) {
-    addSubscription(init_subscriptions[i]);
+    addList(init_subscriptions[i]);
   }
 });
 
