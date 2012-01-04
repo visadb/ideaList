@@ -151,15 +151,12 @@ class LogEntry(models.Model):
             else:
                 return 'remove'
         if self.content_type.name == 'item':
-            if self.content_object.list.subscription_for(user) is None:
+            s = self.content_object.list.subscription_for(user)
+            if s is None:
                 return None
-            if self.change_type == LogEntry.DELETE:
-                obj = {'id': self.object_id}
-            else:
-                obj = self.content_object.as_dict()
-            return {'content_type':'item',
-                    'action':action_string(),
-                    'object':obj}
+            return {'content_type':'subscription',
+                    'action':'update',
+                    'object':s.as_dict()}
         elif self.content_type.name in ('list', 'subscription'):
             if self.content_type.name == 'list':
                 if self.change_type == LogEntry.ADD:
