@@ -133,8 +133,11 @@ class LogEntry(models.Model):
     @classmethod
     def create_patch(cls, time, user):
         changes = cls.objects.newer_than(time)
-        instructions = [change.client_instruction(user) for change in changes]
-        return filter(None, instructions)
+        time = LogEntry.objects.latest().time
+        timestamp = time.mktime(time.timetuple()) + time.microsecond/1000000.
+        insts = filter(None, [c.client_instruction(user) for c in changes])
+        return {'timestamp': timestamp, 'instructions': insts }
+
     def client_instruction(self, user):
         """
         Returns all information required by the client to display the change.
