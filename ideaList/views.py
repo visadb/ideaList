@@ -1,6 +1,5 @@
 import re
 import json
-import time
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import render_to_response
@@ -21,18 +20,19 @@ def render_to(template_name):
         return wrapper
     return renderer
 
+# Return all state that is used in client's main view
+def make_state(user):
+    subscriptions = [s.as_dict() for s in user.nontrash_subscriptions()]
+    return {'subscriptions':subscriptions}
+
 @login_required
 @render_to('ideaList/main.html')
 def main(request):
-    lists = [s.list for s in
-            request.user.subscriptions_of_nontrashed_lists()]
-    init_data = json.dumps([s.as_dict() for s in
-        request.user.subscriptions_of_nontrashed_lists()])
-    return {'lists': lists, 'init_data': init_data,
-            'data_timestamp': repr(time.time())}
+    return {'init_state': json.dumps(make_state(request.user))}
 
-def csrf_failure(request, reason=""):
-    return HttpResponse("CSRF failure: "+reason)
+def state_response(request, code=200, msg=''):
+    return HttpResponse(status=code, content_type="application/json",
+            content=json.dumps({'state': make_state(request.user), 'msg':msg}))
 
 class ItemForm(ModelForm):
     class Meta:
@@ -46,11 +46,11 @@ def additem(request):
     if request.method == 'POST':
         form = ItemForm(request.POST, instance=i)
         if form.is_valid():
-            newitem = form.save()
-            return HttpResponse(json.dumps(newitem.as_dict()))
-        else:
-            if request.is_ajax():
-                return HttpResponseBadRequest('{}')
+            # Success:
+            form.save()
+            return state_response(request)
+        elif request.is_ajax():
+            return state_response(request, code=400, msg='invalid args')
     else:
         form = ItemForm(instance=i)
 

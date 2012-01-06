@@ -8,11 +8,11 @@ from django.contrib.contenttypes import generic
 from positions.fields import PositionField
 from undelete.models import Trashable
 from undelete.signals import pre_trash, pre_restore
-#from django.utils import unittest
 
-def _subscriptions_of_nontrashed_lists(self):
-    return self.subscriptions.filter(list__trashed_at__isnull=True)
-User.subscriptions_of_nontrashed_lists = _subscriptions_of_nontrashed_lists
+def _nontrash_subscriptions_of_user(self):
+    return self.subscriptions.filter(
+            trashed_at__isnull=True, list__trashed_at__isnull=True)
+User.nontrash_subscriptions = _nontrash_subscriptions_of_user
 
 class List(Trashable):
     """
