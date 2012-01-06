@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from django.db import models
 from django.db.models.signals import post_save
@@ -131,10 +132,10 @@ class LogEntry(models.Model):
         ordering = ['time']
         get_latest_by = 'time'
     @classmethod
-    def create_patch(cls, time, user):
-        changes = cls.objects.newer_than(time)
-        time = LogEntry.objects.latest().time
-        timestamp = time.mktime(time.timetuple()) + time.microsecond/1000000.
+    def create_patch(cls, from_time, user):
+        changes = cls.objects.newer_than(from_time)
+        t = LogEntry.objects.latest().time
+        timestamp = time.mktime(t.timetuple()) + t.microsecond/1000000.
         insts = filter(None, [c.client_instruction(user) for c in changes])
         return {'timestamp': timestamp, 'instructions': insts }
 
