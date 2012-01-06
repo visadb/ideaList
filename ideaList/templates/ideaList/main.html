@@ -5,8 +5,7 @@
   <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.jeditable.js"></script>
   <script type="text/javascript" src="{{ STATIC_URL }}js/main.js"></script>
   <script type="text/javascript">
-    var init_subscriptions = {{ init_data|safe }};
-    var data_timestamp = {{ data_timestamp|safe }};
+    var init_state = {{ init_state|safe }};
   </script>
 {% endblock %}
 

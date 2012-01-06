@@ -36,11 +36,11 @@ function addItem(itemdata) {
   console.debug('Adding item '+itemdata['id']);
   var list_id = itemdata['list_id'];
   if ($('#item_'+itemdata['id']).length != 0) {
-    debug('Tried to add item '+itemdata['id']+', but it already exists');
+    console.debug('Tried to add item '+itemdata['id']+', but it already exists');
     return;
   }
   if ($('#list_'+list_id).length == 0) {
-    debug('Tried to add item '+itemdata['id']+' to a nonexisting list');
+    console.debug('Tried to add item '+itemdata['id']+' to a nonexisting list');
     return;
   }
   var pos = itemdata['position'];
@@ -67,6 +67,11 @@ function removeItem(id,instant) {
     $('#item_'+id).remove();
   else
     $('#item_'+id).hide(1000, function(){$(this).remove()});
+}
+
+function mergeState(state) {
+  // TODO: see which subscriptions to add/remove/update
+
 }
 
 function initAddItemField(field) {
@@ -96,11 +101,15 @@ function initAddItemField(field) {
         type: "POST",
         data: {list:list_id, text:val, position:position},
       }).done(function(data) {
-        // Will receive an array containing the item.
-        addItem(data)
         addfield.val("").blur(); // Reset additem field
-      }).fail(function(jqXHR, textStatus) {
-        debug("Error in add item: "+textStatus);
+        mergeState(data['state']);
+      }).fail(function(jqXHR, textStatus, errorThrown) {
+        msg = textStatus;
+        if (textStatus == 'error' && errorThrown[0] == '{') {
+          msg = errorThrown['msg'];
+          mergeState(errorThrown['state']);
+        }
+        console.debug("Error in adding item: "+msg);
       });
     }
   }).addClass("newitem_blur");
@@ -130,12 +139,13 @@ function makeList(subscriptiondata) {
 
 
 function addList(subscriptiondata) {
+  console.debug('Adding subscription '+subscriptiondata['id']);
   var list_id = subscriptiondata['list']['id'];
   if ($('#list_'+list_id).length != 0) {
-    debug('Tried to add list '+list_id+', but it already exists');
+    console.debug('Tried to add list '+list_id+', but it already exists');
     return;
   }
-  var pos = subscriptiondata['list']['id'];
+  var pos = subscriptiondata['position'];
   var curlists = $('#listlist > li.list');
   var listHtml = makeList(subscriptiondata);
   if (curlists.length == 0 || pos == 0) {
@@ -153,7 +163,6 @@ function addList(subscriptiondata) {
   }
 }
 function removeList(id,instant) {
-  console.debug('Removing list '+id);
   if (instant)
     $('#list_'+id).remove();
   else
@@ -187,11 +196,11 @@ function removeitemHandler(e) {
     item_elem.remove()
   }).fail(function(jqXHR, textStatus) {
     if (jqXHR.status == 404) {
-      debug("Item "+item_id+" has disappeared.");
+      console.debug("Item "+item_id+" has disappeared.");
       item_elem.remove();
       return;
     }
-    debug("Error in remove item: "+textStatus);
+    console.debug("Error in remove item: "+textStatus);
   });
 }
 
@@ -222,65 +231,25 @@ function moveitemHandler(e) {
   }).fail(function(jqXHR, textStatus) {
     if (jqXHR.status == 404) {
       // There was no such item: make it disappear
-      debug("Item "+item_id+" has disappeared.");
+      console.debug("Item "+item_id+" has disappeared.");
       item_elem.remove();
       return;
     }
-    debug("Error in remove item: "+textStatus);
+    console.debug("Error in remove item: "+textStatus);
   });
-}
-
-function handlePatch(patch) {
-  for (i in patch) {
-    inst = patch[i];
-    if (inst['content_type'] == 'item') {
-      switch (inst['action']) {
-      case 'add':
-        addItem(inst['object']);
-        break;
-      case 'update':
-        removeItem(inst['object']['id'], true);
-        addItem(inst['object']);
-        break;
-      case 'remove':
-        removeItem(inst['object']['id']);
-        break;
-      default:
-        debug("handlePatch: Uknown action in inst "+inst)
-      }
-    } else if (inst['content_type'] == 'subscription') {
-      switch (inst['action']) {
-      case 'add':
-        addList(inst['object']);
-        break;
-      case 'update':
-        removeSubscription(inst['object']['id'], true);
-        addList(inst['object']);
-        break;
-      case 'remove':
-        removeSubscription(inst['object']['id']);
-        break;
-      default:
-        debug("handlePatch: Uknown action in inst "+inst)
-      }
-    }
-    else {
-      debug("handlePatch: Uknown content_type in inst "+inst)
-    }
-  }
 }
 
 
 $(document).ready(function() {
   setStatusLight();
+  var init_subscriptions = init_state['subscriptions']
   for (i in init_subscriptions) {
     addList(init_subscriptions[i]);
   }
 });
 
-// TODO: Send current timestamp and ask for instructions to update state
-
 $.ajaxSetup({timeout:3000});
+
 
 function setStatusLight() {
   if (pendingAjaxCalls > 0)
