@@ -179,8 +179,8 @@ class LogInstructionTest(test.TestCase):
         self.assertEqual(le.content_object, i)
         ci_u1 = le.client_instruction(self.u1)
         self.assertKeys(ci_u1)
-        self.assertEqual(ci_u1['action'], 'add')
-        self.assertEqual(ci_u1['content_type'], 'item')
+        self.assertEqual(ci_u1['action'], 'update')
+        self.assertEqual(ci_u1['content_type'], 'subscription')
         ci_u2 = le.client_instruction(self.u2)
         self.assertIsNone(ci_u2,
                 'Adding a item yielded an instruction for unrelated user')
@@ -193,7 +193,7 @@ class LogInstructionTest(test.TestCase):
         ci_u1 = le.client_instruction(self.u1)
         self.assertKeys(ci_u1)
         self.assertEqual(ci_u1['action'], 'update')
-        self.assertEqual(ci_u1['content_type'], 'item')
+        self.assertEqual(ci_u1['content_type'], 'subscription')
     def test_list_delete(self):
         self.l1.delete()
         le = LogEntry.objects.latest()
