@@ -1,5 +1,2 @@
 from ideaList.tests.modeltests import *
-
-__test__ = {
-        'mytest': 'modeltests'
-        }
+from ideaList.tests.viewtests import *
