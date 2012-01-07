@@ -35,6 +35,10 @@ def state_response(request, code=200, msg=''):
     return HttpResponse(status=code, content_type="application/json",
             content=json.dumps({'state': make_state(request.user), 'msg':msg}))
 
+@login_required
+def get_state(req):
+    return state_response(req)
+
 class ItemForm(ModelForm):
     class Meta:
         model = Item

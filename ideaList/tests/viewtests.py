@@ -35,6 +35,14 @@ class MainViewTest(MyViewTest):
         self.assertIn('init_state', r.context)
         self.assertIn('ideaList/main.html', [t.name for t in r.templates])
 
+class GetStateViewTest(MyViewTest):
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.get_state')
+    def test_get(self):
+        r = self.c.get(reverse('ideaList.views.get_state'))
+        self.assertEqual(r.status_code, 200)
+        self.check_state_in_response(r)
+
 class AdditemViewTest(MyViewTest):
     def setUp(self):
         super(AdditemViewTest, self).setUp()
