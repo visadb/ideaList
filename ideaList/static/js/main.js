@@ -75,13 +75,13 @@ function makeItem(itemdata) {
     if (item_before.length != 1 || !item_before.hasClass('item'))
       return false;
     $.ajax('/ideaList/moveitem/', {
-      dataType: "text",
+      dataType: "json",
       type: "POST",
       data: {
         item_id:item_id,
         where:direction,
       },
-    }).done(function() {
+    }).done(function(data) {
       mergeState(data['state']);
     }).fail(function(jqXHR, textStatus, errorThrown) {
       debug("Error in remove item: "+textStatus);
