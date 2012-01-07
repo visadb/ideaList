@@ -257,22 +257,22 @@ function makeAddItemField(subscr, pos) {
   initAddItemField(addItemHtml);
   return addItemHtml;
 }
-
 function makeSubscription(s) {
-  var l = s['list'];
-  var listHtml = $('<li id="subscription_'+s['id']+'" class="list">'+l['name']+'</li>\n')
-    .data('subscriptiondata', s);
+  var l = s.list;
+  var listHtml = $('<li id="subscription_'+s.id+'" class="list">'
+    +l.name+'</li>\n').data('subscriptiondata', s);
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
-  for (var i in l['items']) {
-    var itemHtml = makeItem(l['items'][i]);
+  var items = $.map(l.items, function(x) {return x;}).sort(function(a,b) {
+    return a.position-b.position;
+  });
+  for (var i in items) {
+    var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
   }
   itemListHtml.append($('<li></li>').append(makeAddItemField(s, 'end')));
   listHtml.append(itemListHtml);
   return listHtml;
 }
-
-
 function addSubscription(subscriptiondata) {
   debug('Adding subscription '+subscriptiondata['id']);
   var list_id = subscriptiondata['list']['id'];
