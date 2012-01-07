@@ -39,9 +39,9 @@ function mergeState(newstate) {
     +"("+subs_to_add+")/("+subs_to_remove+")/("+subs_to_update+")");
 
   for(var i in subs_to_add)
-    addSubscription(newstate.subscriptions[subs_to_add[i]]);
+    addSubscription(newstate.subscriptions[subs_to_add[i]], init_done);
   for(var i in subs_to_remove)
-    removeSubscription(subs_to_remove[i]);
+    removeSubscription(subs_to_remove[i], true);
   for(var i in subs_to_update)
     updateSubscription(newstate.subscriptions[subs_to_update[i]]);
   state = newstate;
@@ -73,12 +73,12 @@ function makeItem(itemdata) {
       data: {item_id:item_id},
     }).done(function(data) {
       debug("Item "+item_id+" removed");
-      mergeState(data['state']);
+      mergeState(data.state);
     }).fail(function(jqXHR, textStatus, errorThrown) {
       debug("Error in remove item: "+textStatus);
       var data = parseErrorThrown(errorThrown);
-      if (data && data['state'])
-        mergeState(data['state']);
+      if (data && data.state)
+        mergeState(data.state);
     });
   }
   function moveitemHandler(e) {
@@ -104,16 +104,16 @@ function makeItem(itemdata) {
         where:direction,
       },
     }).done(function(data) {
-      mergeState(data['state']);
+      mergeState(data.state);
     }).fail(function(jqXHR, textStatus, errorThrown) {
       debug("Error in remove item: "+textStatus);
       var data = parseErrorThrown(errorThrown);
-      if (data && data['state'])
-        mergeState(data['state']);
+      if (data && data.state)
+        mergeState(data.state);
     });
   }
-  var item_id = itemdata['id'];
-  var text = itemdata['text'];
+  var item_id = itemdata.id;
+  var text = itemdata.text;
   var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);;
   var removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
   var moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
@@ -127,12 +127,12 @@ function makeItem(itemdata) {
     .append('&nbsp;').append(moveDownHtml);
   return itemHtml;
 }
-function addItem(itemdata, subscription_id) {
-  debug('Adding item '+itemdata['id']);
-  var list_id = itemdata['list_id'];
+function addItem(item, subscription_id, animate) {
+  debug('Adding item '+item.id);
+  var list_id = item.list_id;
   if (subscription_id === undefined) {
     // Deduce subscription id from list_id
-    for (var s in state['subscriptions'])
+    for (var s in state.subscriptions)
       if (s.list.id == list_id)
         subscription_id = s.id;
     if (subscription_id === undefined) {
@@ -140,24 +140,26 @@ function addItem(itemdata, subscription_id) {
       return false;
     }
   }
-  if ($('#item_'+itemdata['id']).length != 0) {
-    debug('Tried to add item '+itemdata['id']+', but it already exists');
+  if ($('#item_'+item.id).length != 0) {
+    debug('Tried to add item '+item.id+', but it already exists');
     return;
   }
   if ($('#subscription_'+subscription_id).length == 0) {
-    debug('Tried to add item '+itemdata['id']+' to a nonexisting subscription');
+    debug('Tried to add item '+item.id+' to a nonexisting subscription');
     return;
   }
-  var pos = itemdata['position'];
+  var pos = item.position;
   var curitems = $('#subscription_'+subscription_id+' > ul > li.item');
-  var itemHtml = makeItem(itemdata)
+  var itemHtml = makeItem(item)
+  if (animate)
+    itemHtml.hide().delay(50).show(2000);
   if (curitems.length == 0 || pos == 0) {
     $('#subscription_'+subscription_id+' > ul').prepend(itemHtml);
   } else {
     items_array = curitems.toArray();
     for (var i in items_array) {
       item = items_array[i];
-      if ($(item).data('itemdata')['position'] > pos) {
+      if ($(item).data('itemdata').position > pos) {
         $(item).before(itemHtml);
         return;
       }
@@ -165,15 +167,15 @@ function addItem(itemdata, subscription_id) {
     }
   }
 }
-function removeItem(id,instant) {
+function removeItem(id, animate) {
   debug('Removing item '+id);
-  if (instant)
-    $('#item_'+id).remove();
-  else
+  if (animate)
     $('#item_'+id).hide(1000, function(){$(this).remove()});
+  else
+    $('#item_'+id).remove();
 }
 function updateItem(i, subscription_id) {
-  removeItem(i.id, true);
+  removeItem(i.id);
   addItem(i, subscription_id);
 }
 
@@ -207,15 +209,15 @@ function initAddItemField(field) {
         data: {list:list_id, text:val, position:position},
       }).done(function(data) {
         addfield.val("").blur(); // Reset additem field
-        mergeState(data['state']);
+        mergeState(data.state);
       }).fail(function(jqXHR, textStatus, errorThrown) {
         msg = textStatus;
         var data = parseErrorThrown(errorThrown);
         if (data) {
-          if (data['msg'])
-            msg = data['msg'];
-          if (data['state'])
-            mergeState(data['state']);
+          if (data.msg)
+            msg = data.msg;
+          if (data.state)
+            mergeState(data.state);
         }
         debug("Error in adding item: "+msg);
       });
@@ -226,7 +228,7 @@ function makeAddItemField(subscr, pos) {
   if (pos == null)
     pos = 'end';
   var addItemHtml =
-    $('<input id="add_to_'+pos+'_of_list_'+subscr['list']['id']+'"'
+    $('<input id="add_to_'+pos+'_of_list_'+subscr.list.id+'"'
     +' class="newitem" type="text" value="'+newitemText+'"></input>');
   initAddItemField(addItemHtml);
   return addItemHtml;
@@ -247,23 +249,25 @@ function makeSubscription(s) {
   listHtml.append(itemListHtml);
   return listHtml;
 }
-function addSubscription(subscriptiondata) {
-  debug('Adding subscription '+subscriptiondata['id']);
-  var list_id = subscriptiondata['list']['id'];
+function addSubscription(s, animate) {
+  debug('Adding subscription '+s.id);
+  var list_id = s.list.id;
   if ($('#list_'+list_id).length != 0) {
     debug('Tried to add list '+list_id+', but it already exists');
     return;
   }
-  var pos = subscriptiondata['position'];
+  var pos = s.position;
   var curlists = $('#listlist > li.list');
-  var listHtml = makeSubscription(subscriptiondata);
+  var listHtml = makeSubscription(s);
+  if (animate)
+    listHtml.hide().delay(50).show(2000);
   if (curlists.length == 0 || pos == 0) {
     $('#listlist').prepend(listHtml);
   } else {
     lists_array = curlists.toArray();
     for (var i in lists_array) {
       var list = lists_array[i];
-      if ($(list).data('subscriptiondata')['position'] > pos) {
+      if ($(list).data('subscriptiondata').position > pos) {
         $(list).before(listHtml);
         return;
       }
@@ -271,23 +275,23 @@ function addSubscription(subscriptiondata) {
     }
   }
 }
-function removeSubscription(id, instant) {
+function removeSubscription(id, animate) {
   debug('Removing subscription '+id);
   // Find list that corresponds to this subscription id
   var sub = $('#subscription_'+id);
   if (sub.length == 0)
     debug('Could not remove subscription '+id+": not found");
-  if (instant)
-    $('#subscription_'+id).remove();
+  if (animate)
+    $('#subscription_'+id).hide(2000, function(){$(this).remove()});
   else
-    $('#subscription_'+id).hide(1000, function(){$(this).remove()});
+    $('#subscription_'+id).remove();
 }
 function updateSubscription(s) {
   // TODO: make this more like mergeState
   // Note: this should never be called before initialization is complete
-  var old_item_ids = $.map(state['subscriptions'][s.id]['list']['items'],
-      function(i){return i['id']});
-  var new_item_ids = $.map(s.list.items, function(i){return i['id']});
+  var old_item_ids = $.map(state.subscriptions[s.id].list.items,
+      function(i){return i.id});
+  var new_item_ids = $.map(s.list.items, function(i){return i.id});
   var items_to_remove = array_diff(old_item_ids, new_item_ids);
   var items_to_add = array_diff(new_item_ids, old_item_ids);
   var items_to_update = array_intersect(old_item_ids, new_item_ids);
@@ -296,7 +300,7 @@ function updateSubscription(s) {
   for(var i in items_to_add)
     addItem(s.list.items[items_to_add[i]], s.id);
   for(var i in items_to_remove)
-    removeItem(items_to_remove[i]);
+    removeItem(items_to_remove[i], true);
   for(var i in items_to_update)
     updateItem(s.list.items[items_to_update[i]], s.id);
 
@@ -304,9 +308,6 @@ function updateSubscription(s) {
   //TODO: update minimized-state when minimization is implemented
   //TODO: set subscriptiondata on object
   //TODO: move subscription to correct_position
-
-  //removeSubscription(s['id'], true);
-  //addSubscription(s);
 }
 
 ///////////// STATUSLIGHT RELATED STUFF /////////////
