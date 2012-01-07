@@ -1,6 +1,9 @@
-var newitemText = "New item..."
-var pendingAjaxCalls = 0;
-var init_done = false;
+////////////////////////////////////////////////////
+// The JS code for ideaList's main view
+////////////////////////////////////////////////////
+
+
+///////////// GENERAL HELPER FUNCTIONS /////////////
 
 function array_diff(a, b) {
   return a.filter(function(i) {return b.indexOf(i) < 0;});
@@ -8,14 +11,6 @@ function array_diff(a, b) {
 function array_intersect(a, b) {
   return a.filter(function(i) {return b.indexOf(i) >= 0;});
 };
-
-var editableUrl = '/ideaList/edittext/';
-var editableSettings = {
-    tooltip: "Click to edit",
-    style:   "inherit",
-    id:      "element_id",
-    name:    "text",
-  };
 
 function debug(str) {
   if(init_done) {
@@ -27,6 +22,31 @@ function debug(str) {
   }
 }
 
+///////////// GENERAL DOM MANIPULATION /////////////
+
+function mergeState(newstate) {
+  if (!newstate) {
+    debug('Tried to merge null/undefined state');
+    return false;
+  }
+  var oldstate = init_done ? state : {subscriptions: {}};
+  var old_sub_ids = $.map(oldstate.subscriptions, function(s){return s.id});
+  var new_sub_ids = $.map(newstate.subscriptions, function(s){return s.id});
+  var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
+  var subs_to_remove = array_diff(old_sub_ids, new_sub_ids);
+  var subs_to_update = array_intersect(old_sub_ids, new_sub_ids);
+  debug("Subs to add/remove/update: "
+    +"("+subs_to_add+")/("+subs_to_remove+")/("+subs_to_update+")");
+
+  for(var i in subs_to_add)
+    addSubscription(newstate.subscriptions[subs_to_add[i]]);
+  for(var i in subs_to_remove)
+    removeSubscription(subs_to_remove[i]);
+  for(var i in subs_to_update)
+    updateSubscription(newstate.subscriptions[subs_to_update[i]]);
+  state = newstate;
+}
+
 function parseErrorThrown(errorThrown) {
   try {
     var data = $.parseJSON(errorThrown);
@@ -36,6 +56,8 @@ function parseErrorThrown(errorThrown) {
   }
   return data;
 }
+
+///////////// ITEM RELATED DOM MANIPULATION /////////////
 
 function makeItem(itemdata) {
   function removeitemHandler(e) {
@@ -105,7 +127,6 @@ function makeItem(itemdata) {
     .append('&nbsp;').append(moveDownHtml);
   return itemHtml;
 }
-
 function addItem(itemdata, subscription_id) {
   debug('Adding item '+itemdata['id']);
   var list_id = itemdata['list_id'];
@@ -151,59 +172,12 @@ function removeItem(id,instant) {
   else
     $('#item_'+id).hide(1000, function(){$(this).remove()});
 }
-
-function mergeState(newstate) {
-  if (!newstate) {
-    debug('Tried to merge null/undefined state');
-    return false;
-  }
-  var oldstate = init_done ? state : {subscriptions: {}};
-  var old_sub_ids = $.map(oldstate.subscriptions, function(s){return s.id});
-  var new_sub_ids = $.map(newstate.subscriptions, function(s){return s.id});
-  var subs_to_delete = array_diff(old_sub_ids, new_sub_ids);
-  var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
-  var subs_to_update = array_intersect(old_sub_ids, new_sub_ids);
-  debug("Subs to delete/add/update: "
-    +"("+subs_to_delete+")/("+subs_to_add+")/("+subs_to_update+")");
-
-  for(var i in subs_to_delete)
-    removeSubscription(subs_to_delete[i]);
-  for(var i in subs_to_add)
-    addSubscription(newstate.subscriptions[subs_to_add[i]]);
-  for(var i in subs_to_update)
-    updateSubscription(newstate.subscriptions[subs_to_update[i]]);
-  state = newstate;
-}
-function updateSubscription(s) {
-  // TODO: make this more like mergeState
-  // Note: this should never be called before initialization is complete
-  var old_item_ids = $.map(state['subscriptions'][s.id]['list']['items'],
-      function(i){return i['id']});
-  var new_item_ids = $.map(s.list.items, function(i){return i['id']});
-  var items_to_delete = array_diff(old_item_ids, new_item_ids);
-  var items_to_add = array_diff(new_item_ids, old_item_ids);
-  var items_to_update = array_intersect(old_item_ids, new_item_ids);
-  debug("Items to delete/add/update: "
-    +"("+items_to_delete+")/("+items_to_add+")/("+items_to_update+")");
-  for(var i in items_to_delete)
-    removeItem(items_to_delete[i]);
-  for(var i in items_to_add)
-    addItem(s.list.items[items_to_add[i]], s.id);
-  for(var i in items_to_update)
-    updateItem(s.list.items[items_to_update[i]], s.id);
-
-  //TODO: update list name
-  //TODO: update minimized-state when minimization is implemented
-  //TODO: set subscriptiondata on object
-  //TODO: move subscription to correct_position
-
-  //removeSubscription(s['id'], true);
-  //addSubscription(s);
-}
 function updateItem(i, subscription_id) {
   removeItem(i.id, true);
   addItem(i, subscription_id);
 }
+
+///////////// SUBSCRIPTION RELATED DOM MANIPULATION /////////////
 
 function initAddItemField(field) {
   return field.blur(function() {
@@ -308,17 +282,36 @@ function removeSubscription(id, instant) {
   else
     $('#subscription_'+id).hide(1000, function(){$(this).remove()});
 }
+function updateSubscription(s) {
+  // TODO: make this more like mergeState
+  // Note: this should never be called before initialization is complete
+  var old_item_ids = $.map(state['subscriptions'][s.id]['list']['items'],
+      function(i){return i['id']});
+  var new_item_ids = $.map(s.list.items, function(i){return i['id']});
+  var items_to_remove = array_diff(old_item_ids, new_item_ids);
+  var items_to_add = array_diff(new_item_ids, old_item_ids);
+  var items_to_update = array_intersect(old_item_ids, new_item_ids);
+  debug("Items to add/remove/update: "
+    +"("+items_to_add+")/("+items_to_remove+")/("+items_to_update+")");
+  for(var i in items_to_add)
+    addItem(s.list.items[items_to_add[i]], s.id);
+  for(var i in items_to_remove)
+    removeItem(items_to_remove[i]);
+  for(var i in items_to_update)
+    updateItem(s.list.items[items_to_update[i]], s.id);
 
+  //TODO: update list name
+  //TODO: update minimized-state when minimization is implemented
+  //TODO: set subscriptiondata on object
+  //TODO: move subscription to correct_position
 
-$(document).ready(function() {
-  setStatusLight();
-  mergeState(state);
-  init_done = true;
-});
+  //removeSubscription(s['id'], true);
+  //addSubscription(s);
+}
 
-$.ajaxSetup({timeout:3000});
+///////////// STATUSLIGHT RELATED STUFF /////////////
 
-
+var pendingAjaxCalls = 0;
 function setStatusLight() {
   if (pendingAjaxCalls > 0)
     $('#status-light').attr('class', 'yellow');
@@ -340,8 +333,9 @@ $(document).ajaxError(function() {
   setTimeout('setStatusLight()', 2000);
 });
 
+///////////// INITIALIZATION /////////////
 
-// CSRF protection for AJAX calls
+// Django CSRF protection for AJAX calls
 $(document).ajaxSend(function(event, xhr, settings) {
   function getCookie(name) {
     var cookieValue = null;
@@ -365,4 +359,23 @@ $(document).ajaxSend(function(event, xhr, settings) {
   if (!safeMethod(settings.type) && !settings.crossDomain) {
     xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
   }
+});
+
+$.ajaxSetup({timeout:3000});
+
+var newitemText = "New item..."
+
+var editableUrl = '/ideaList/edittext/';
+var editableSettings = {
+    tooltip: "Click to edit",
+    style:   "inherit",
+    id:      "element_id",
+    name:    "text",
+  };
+
+var init_done = false;
+$(document).ready(function() {
+  setStatusLight();
+  mergeState(state);
+  init_done = true;
 });
