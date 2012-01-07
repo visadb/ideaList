@@ -103,16 +103,19 @@ def moveitem(req):
     # Calculate new position
     if where == 'up':
         oldpos = i.position
-        if oldpos > 0:
-            newpos = oldpos - 1
-        else:
+        followers = Item.nontrash.filter(
+                position__lt=oldpos).order_by('-position')
+        if oldpos == 0 or followers.count() == 0:
             return state_response(req, msg='Could not raise: was on top')
+        else:
+            newpos = followers[0].position
     elif where == 'down':
         oldpos = i.position
-        if oldpos < Item.objects.count()-1:
-            newpos = oldpos + 1
-        else:
+        followers = Item.nontrash.filter(position__gt=oldpos)
+        if oldpos == Item.objects.count()-1 or followers.count() == 0:
             return state_response(req, msg='Could not lower: was on bottom')
+        else:
+            newpos = followers[0].position
     else:
         newpos = where
 
