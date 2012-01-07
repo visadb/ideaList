@@ -75,30 +75,30 @@ def removeitem(req):
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware
-def moveitem(request):
+def moveitem(req):
     """ 
     Request must have POST keys 'item_id' and 'where'. 'where' is either up/down
     or item_id's new position as an integer.
     """
-    if request.method != 'POST':
-        return HttpResponseBadRequest('{"msg": "Only POST supported"}')
-    if 'where' not in request.POST:
-        return HttpResponseBadRequest('{"msg": "param where not provided"}')
-    where = request.POST['where']
+    if req.method != 'POST':
+        return state_response(req, code=400, msg='Only POST supported')
+    if 'where' not in req.POST:
+        return state_response(req, code=400, msg='param where not provided')
+    where = req.POST['where']
     if where not in ('up', 'down'):
         try:
             where = int(where)
         except ValueError:
-            return HttpResponseBadRequest('{"msg": "param where invalid"}')
+            return state_response(req, code=400, msg='param where invalid')
 
-    if 'item_id' not in request.POST:
-        return HttpResponseBadRequest('{"msg": "param item_id not provided"}')
+    if 'item_id' not in req.POST:
+        return state_response(req, code=400, msg='param item_id not provided')
     try:
-        i = Item.objects.get(pk=request.POST['item_id'])
+        i = Item.objects.get(pk=req.POST['item_id'])
     except ValueError:
-        return HttpResponseBadRequest('{"msg": "invalid item_id"}')
+        return state_response(req, code=400, msg='invalid item_id')
     except Item.DoesNotExist:
-        return HttpResponseNotFound('{"msg": "No such item"}')
+        return state_response(req, code=404, msg='No such item')
 
     # Calculate new position
     if where == 'up':
@@ -106,19 +106,20 @@ def moveitem(request):
         if oldpos > 0:
             newpos = oldpos - 1
         else:
-            return HttpResponse('{"msg": "Could not raise: was on top"}');
+            return state_response(req, msg='Could not raise: was on top')
     elif where == 'down':
         oldpos = i.position
         if oldpos < Item.objects.count()-1:
             newpos = oldpos + 1
         else:
-            return HttpResponse('{"msg": "Could not lower: was on bottom"}');
+            return state_response(req, msg='Could not lower: was on bottom')
     else:
         newpos = where
 
     i.position = newpos
     i.save()
-    return HttpResponse('{"msg": "Item moved to index '+str(i.position)+'"}');
+    return state_response(req, msg="Item "+str(i.id)
+            +" moved to index "+str(i.position))
 
 
 @login_required

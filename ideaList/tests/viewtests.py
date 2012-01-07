@@ -110,3 +110,49 @@ class RemoveitemViewTest(MyViewTest):
         self.assertEqual(r.status_code, 404)
         self.assertEqual(Item.objects.count(), 1)
         self.check_state_in_response(r)
+
+class MoveitemViewTest(MyViewTest):
+    def setUp(self):
+        super(MoveitemViewTest, self).setUp()
+        self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
+        self.i1 = Item.objects.create(list=self.l1, text='testitem1')
+        self.i2 = Item.objects.create(list=self.l1, text='testitem2')
+        self.i3 = Item.objects.create(list=self.l1, text='testitem3')
+        self.assertEqual(self.i1.position, 0)
+        self.assertEqual(self.i2.position, 1)
+        self.assertEqual(self.i3.position, 2)
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.moveitem')
+    def test_move_up(self):
+        r = self.c.post(reverse('ideaList.views.moveitem'),
+                {'item_id':self.i2.id, 'where':'up'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).position, 0)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).position, 1)
+        self.check_state_in_response(r)
+    def test_move_upmost_up(self):
+        r = self.c.post(reverse('ideaList.views.moveitem'),
+                {'item_id':self.i1.id, 'where':'up'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).position, 0)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).position, 1)
+        self.check_state_in_response(r)
+    def test_move_down(self):
+        r = self.c.post(reverse('ideaList.views.moveitem'),
+                {'item_id':self.i2.id, 'where':'down'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).position, 2)
+        self.assertEqual(Item.objects.get(pk=self.i3.id).position, 1)
+        self.check_state_in_response(r)
+    def test_move_abs(self):
+        r = self.c.post(reverse('ideaList.views.moveitem'),
+                {'item_id':self.i1.id, 'where':2},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).position, 2)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).position, 0)
+        self.assertEqual(Item.objects.get(pk=self.i3.id).position, 1)
+        self.check_state_in_response(r)

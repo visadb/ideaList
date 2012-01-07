@@ -71,8 +71,8 @@ function makeItem(itemdata) {
     if (direction == 'up')
       item_before = item_elem.prev();
     else
-      item_before = item_elem.next().next();
-    if (item_before.length != 1)
+      item_before = item_elem.next();
+    if (item_before.length != 1 || !item_before.hasClass('item'))
       return false;
     $.ajax('/ideaList/moveitem/', {
       dataType: "text",
@@ -82,15 +82,12 @@ function makeItem(itemdata) {
         where:direction,
       },
     }).done(function() {
-      item_before.before(item_elem.detach());
-    }).fail(function(jqXHR, textStatus) {
-      if (jqXHR.status == 404) {
-        // There was no such item: make it disappear
-        debug("Item "+item_id+" has disappeared.");
-        item_elem.remove();
-        return;
-      }
+      mergeState(data['state']);
+    }).fail(function(jqXHR, textStatus, errorThrown) {
       debug("Error in remove item: "+textStatus);
+      var data = parseErrorThrown(errorThrown);
+      if (data && data['state'])
+        mergeState(data['state']);
     });
   }
   var item_id = itemdata['id'];
