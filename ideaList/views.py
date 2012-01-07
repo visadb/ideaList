@@ -41,37 +41,37 @@ class ItemForm(ModelForm):
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware
-def additem(request):
+def additem(req):
     i = Item(priority='NO')
-    if request.method == 'POST':
-        form = ItemForm(request.POST, instance=i)
+    if req.method == 'POST':
+        form = ItemForm(req.POST, instance=i)
         if form.is_valid():
             # Success:
             form.save()
-            return state_response(request)
-        elif request.is_ajax():
-            return state_response(request, code=400, msg='invalid args')
+            return state_response(req, msg='item '+str(i.id)+' added')
+        elif req.is_ajax():
+            return state_response(req, code=400, msg='invalid args')
     else:
         form = ItemForm(instance=i)
 
     return render_to_response('ideaList/additem.html', {'form':form},
-            RequestContext(request))
+            RequestContext(req))
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware
-def removeitem(request):
-    if request.method != 'POST':
-        return HttpResponseBadRequest('{"msg": "Only POST supported"}')
-    if 'item_id' not in request.POST:
-        return HttpResponseBadRequest('{"msg": "item_id not provided"}')
+def removeitem(req):
+    if req.method != 'POST':
+        return state_response(req, code=400, msg='Only POST supported')
+    if 'item_id' not in req.POST:
+        return state_response(req, code=400, msg='item_id not provided')
     try:
-        i = Item.objects.get(pk=request.POST['item_id'])
+        i = Item.objects.get(pk=req.POST['item_id'])
     except ValueError:
-        return HttpResponseBadRequest('{"msg": "invalid item_id"}')
+        return state_response(req, code=400, msg='invalid item_id')
     except Item.DoesNotExist:
-        return HttpResponseNotFound('{"msg": "No such item"}')
+        return state_response(req, code=404, msg='No such item')
     i.delete()
-    return HttpResponse('{"msg": "Item deleted"}');
+    return state_response(req, msg='Item '+req.POST['item_id']+' removed')
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware

@@ -27,7 +27,72 @@ function debug(str) {
   }
 }
 
+function parseErrorThrown(errorThrown) {
+  try {
+    var data = $.parseJSON(errorThrown);
+  } catch(e) {
+    debug("Couldn't parse errorThrown: "+e);
+    return null;
+  }
+  return data;
+}
+
 function makeItem(itemdata) {
+  function removeitemHandler(e) {
+    e.preventDefault();
+    var item_elem = $(this).parent();
+    var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
+    if (res.length != 2)
+      return false;
+    var item_id = res[1];
+    $.ajax('/ideaList/removeitem/', {
+      dataType: "json",
+      type: "POST",
+      data: {item_id:item_id},
+    }).done(function(data) {
+      debug("Item "+item_id+" removed");
+      mergeState(data['state']);
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+      debug("Error in remove item: "+textStatus);
+      var data = parseErrorThrown(errorThrown);
+      if (data && data['state'])
+        mergeState(data['state']);
+    });
+  }
+  function moveitemHandler(e) {
+    e.preventDefault();
+    var item_elem = $(this).parent();
+    var res = /^move_item_(\d+)_(up|down)$/.exec($(this).attr('id'));
+    if (res.length != 3)
+      return false;
+    var item_id = res[1];
+    var direction = res[2];
+    var item_before = null; // Item before which to insert item_elem
+    if (direction == 'up')
+      item_before = item_elem.prev();
+    else
+      item_before = item_elem.next().next();
+    if (item_before.length != 1)
+      return false;
+    $.ajax('/ideaList/moveitem/', {
+      dataType: "text",
+      type: "POST",
+      data: {
+        item_id:item_id,
+        where:direction,
+      },
+    }).done(function() {
+      item_before.before(item_elem.detach());
+    }).fail(function(jqXHR, textStatus) {
+      if (jqXHR.status == 404) {
+        // There was no such item: make it disappear
+        debug("Item "+item_id+" has disappeared.");
+        item_elem.remove();
+        return;
+      }
+      debug("Error in remove item: "+textStatus);
+    });
+  }
   var item_id = itemdata['id'];
   var text = itemdata['text'];
   var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);;
@@ -82,6 +147,10 @@ function removeItem(id,instant) {
 }
 
 function mergeState(newstate) {
+  if (!newstate) {
+    debug('Tried to merge null/undefined state');
+    return false;
+  }
   function make_id_dict(subs) {
     var dict = {};
     for (var i in subs)
@@ -146,9 +215,12 @@ function initAddItemField(field) {
         mergeState(data['state']);
       }).fail(function(jqXHR, textStatus, errorThrown) {
         msg = textStatus;
-        if (textStatus == 'error' && errorThrown[0] == '{') {
-          msg = errorThrown['msg'];
-          mergeState(errorThrown['state']);
+        var data = parseErrorThrown(errorThrown);
+        if (data) {
+          if (data['msg'])
+            msg = data['msg'];
+          if (data['state'])
+            mergeState(data['state']);
         }
         debug("Error in adding item: "+msg);
       });
@@ -220,65 +292,6 @@ function removeSubscription(id, instant) {
     $('#subscription_'+id).remove();
   else
     $('#subscription_'+id).hide(1000, function(){$(this).remove()});
-}
-
-function removeitemHandler(e) {
-  e.preventDefault();
-  var item_elem = $(this).parent();
-  var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
-  if (res.length != 2)
-    return false;
-  var item_id = res[1];
-  //debug("Item "+item_id+" removed");
-  $.ajax('/ideaList/removeitem/', {
-    dataType: "text",
-    type: "POST",
-    data: {item_id:item_id},
-  }).done(function() {
-    item_elem.remove()
-  }).fail(function(jqXHR, textStatus) {
-    if (jqXHR.status == 404) {
-      debug("Item "+item_id+" has disappeared.");
-      item_elem.remove();
-      return;
-    }
-    debug("Error in remove item: "+textStatus);
-  });
-}
-
-function moveitemHandler(e) {
-  e.preventDefault();
-  var item_elem = $(this).parent();
-  var res = /^move_item_(\d+)_(up|down)$/.exec($(this).attr('id'));
-  if (res.length != 3)
-    return false;
-  var item_id = res[1];
-  var direction = res[2];
-  var item_before = null; // Item before which to insert item_elem
-  if (direction == 'up')
-    item_before = item_elem.prev();
-  else
-    item_before = item_elem.next().next();
-  if (item_before.length != 1)
-    return false;
-  $.ajax('/ideaList/moveitem/', {
-    dataType: "text",
-    type: "POST",
-    data: {
-      item_id:item_id,
-      where:direction,
-    },
-  }).done(function() {
-    item_before.before(item_elem.detach());
-  }).fail(function(jqXHR, textStatus) {
-    if (jqXHR.status == 404) {
-      // There was no such item: make it disappear
-      debug("Item "+item_id+" has disappeared.");
-      item_elem.remove();
-      return;
-    }
-    debug("Error in remove item: "+textStatus);
-  });
 }
 
 
