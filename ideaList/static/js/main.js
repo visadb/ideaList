@@ -106,22 +106,32 @@ function makeItem(itemdata) {
   return itemHtml;
 }
 
-function addItem(itemdata) {
+function addItem(itemdata, subscription_id) {
   debug('Adding item '+itemdata['id']);
   var list_id = itemdata['list_id'];
+  if (subscription_id === undefined) {
+    // Deduce subscription id from list_id
+    for (var s in state['subscriptions'])
+      if (s.list.id == list_id)
+        subscription_id = s.id;
+    if (subscription_id === undefined) {
+      debug('Tried to add an item to a nonexisting list');
+      return false;
+    }
+  }
   if ($('#item_'+itemdata['id']).length != 0) {
     debug('Tried to add item '+itemdata['id']+', but it already exists');
     return;
   }
-  if ($('#list_'+list_id).length == 0) {
-    debug('Tried to add item '+itemdata['id']+' to a nonexisting list');
+  if ($('#subscription_'+subscription_id).length == 0) {
+    debug('Tried to add item '+itemdata['id']+' to a nonexisting subscription');
     return;
   }
   var pos = itemdata['position'];
-  var curitems = $('#list_'+list_id+' > ul > li.item');
+  var curitems = $('#subscription_'+subscription_id+' > ul > li.item');
   var itemHtml = makeItem(itemdata)
   if (curitems.length == 0 || pos == 0) {
-    $('#list_'+list_id+' > ul').prepend(itemHtml);
+    $('#subscription_'+subscription_id+' > ul').prepend(itemHtml);
   } else {
     items_array = curitems.toArray();
     for (var i in items_array) {
@@ -134,7 +144,6 @@ function addItem(itemdata) {
     }
   }
 }
-
 function removeItem(id,instant) {
   debug('Removing item '+id);
   if (instant)
@@ -148,12 +157,9 @@ function mergeState(newstate) {
     debug('Tried to merge null/undefined state');
     return false;
   }
-  if (init_done)
-    var oldstate = state;
-  else
-    var oldstate = {subscriptions: {}};
-  var old_sub_ids= $.map(oldstate['subscriptions'],function(s){return s['id']});
-  var new_sub_ids= $.map(newstate['subscriptions'],function(s){return s['id']});
+  var oldstate = init_done ? state : {subscriptions: {}};
+  var old_sub_ids = $.map(oldstate.subscriptions, function(s){return s.id});
+  var new_sub_ids = $.map(newstate.subscriptions, function(s){return s.id});
   var subs_to_delete = array_diff(old_sub_ids, new_sub_ids);
   var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
   var subs_to_update = array_intersect(old_sub_ids, new_sub_ids);
@@ -163,15 +169,40 @@ function mergeState(newstate) {
   for(var i in subs_to_delete)
     removeSubscription(subs_to_delete[i]);
   for(var i in subs_to_add)
-    addSubscription(newstate['subscriptions'][subs_to_add[i]]);
+    addSubscription(newstate.subscriptions[subs_to_add[i]]);
   for(var i in subs_to_update)
-    updateSubscription(newstate['subscriptions'][subs_to_update[i]]);
+    updateSubscription(newstate.subscriptions[subs_to_update[i]]);
   state = newstate;
 }
 function updateSubscription(s) {
   // TODO: make this more like mergeState
-  removeSubscription(s['id'], true);
-  addSubscription(s);
+  // Note: this should never be called before initialization is complete
+  var old_item_ids = $.map(state['subscriptions'][s.id]['list']['items'],
+      function(i){return i['id']});
+  var new_item_ids = $.map(s.list.items, function(i){return i['id']});
+  var items_to_delete = array_diff(old_item_ids, new_item_ids);
+  var items_to_add = array_diff(new_item_ids, old_item_ids);
+  var items_to_update = array_intersect(old_item_ids, new_item_ids);
+  debug("Items to delete/add/update: "
+    +"("+items_to_delete+")/("+items_to_add+")/("+items_to_update+")");
+  for(var i in items_to_delete)
+    removeItem(items_to_delete[i]);
+  for(var i in items_to_add)
+    addItem(s.list.items[items_to_add[i]], s.id);
+  for(var i in items_to_update)
+    updateItem(s.list.items[items_to_update[i]], s.id);
+
+  //TODO: update list name
+  //TODO: update minimized-state when minimization is implemented
+  //TODO: set subscriptiondata on object
+  //TODO: move subscription to correct_position
+
+  //removeSubscription(s['id'], true);
+  //addSubscription(s);
+}
+function updateItem(i, subscription_id) {
+  removeItem(i.id, true);
+  addItem(i, subscription_id);
 }
 
 function initAddItemField(field) {
@@ -265,12 +296,6 @@ function addSubscription(subscriptiondata) {
       $('#listlist').append(listHtml);
     }
   }
-}
-function removeList(id,instant) {
-  if (instant)
-    $('#list_'+id).remove();
-  else
-    $('#list_'+id).hide(1000, function(){$(this).remove()});
 }
 function removeSubscription(id, instant) {
   debug('Removing subscription '+id);

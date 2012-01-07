@@ -35,7 +35,8 @@ class List(Trashable):
             return None
     def as_dict(self):
         return {'id':self.id, 'name':self.name, 'owner_id':self.owner_id,
-                'items': [i.as_dict() for i in self.nontrashed_items()]}
+                'items': dict([(i.id,i.as_dict()) for i in
+                    self.nontrashed_items()])}
     def __unicode__(self):
         val = self.name
         if self.trashed_at:
