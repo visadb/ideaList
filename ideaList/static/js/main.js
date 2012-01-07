@@ -148,19 +148,12 @@ function mergeState(newstate) {
     debug('Tried to merge null/undefined state');
     return false;
   }
-  function make_id_dict(subs) {
-    var dict = {};
-    for (var i in subs)
-      dict[subs[i]['id']] = subs[i];
-    return dict;
-  }
   if (init_done)
     var oldstate = state;
   else
-    var oldstate = {subscriptions: []};
+    var oldstate = {subscriptions: {}};
   var old_sub_ids= $.map(oldstate['subscriptions'],function(s){return s['id']});
   var new_sub_ids= $.map(newstate['subscriptions'],function(s){return s['id']});
-  var new_subs_by_id = make_id_dict(newstate['subscriptions']);
   var subs_to_delete = array_diff(old_sub_ids, new_sub_ids);
   var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
   var subs_to_update = array_intersect(old_sub_ids, new_sub_ids);
@@ -170,9 +163,9 @@ function mergeState(newstate) {
   for(var i in subs_to_delete)
     removeSubscription(subs_to_delete[i]);
   for(var i in subs_to_add)
-    addSubscription(new_subs_by_id[subs_to_add[i]]);
+    addSubscription(newstate['subscriptions'][subs_to_add[i]]);
   for(var i in subs_to_update)
-    updateSubscription(new_subs_by_id[subs_to_update[i]]);
+    updateSubscription(newstate['subscriptions'][subs_to_update[i]]);
   state = newstate;
 }
 function updateSubscription(s) {
