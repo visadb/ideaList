@@ -24,6 +24,7 @@ function debug(str) {
 
 ///////////// GENERAL DOM MANIPULATION /////////////
 
+// Make the main view correspond to newstate
 function mergeState(newstate) {
   if (!newstate) {
     debug('Tried to merge null/undefined state');
@@ -128,7 +129,7 @@ function makeItem(itemdata) {
   return itemHtml;
 }
 function addItem(item, subscription_id, animate) {
-  debug('Adding item '+item.id);
+  debug('Adding item '+item.id+' ('+item.text+')');
   var list_id = item.list_id;
   if (subscription_id === undefined) {
     // Deduce subscription id from list_id
@@ -175,6 +176,7 @@ function removeItem(id, animate) {
     $('#item_'+id).remove();
 }
 function updateItem(i, subscription_id) {
+  debug('Updating item '+i.id+' ('+i.text+')');
   removeItem(i.id);
   addItem(i, subscription_id);
 }
@@ -235,8 +237,10 @@ function makeAddItemField(subscr, pos) {
 }
 function makeSubscription(s) {
   var l = s.list;
-  var listHtml = $('<li id="subscription_'+s.id+'" class="list">'
-    +l.name+'</li>\n').data('subscriptiondata', s);
+  var listHtml = $('<li id="subscription_'+s.id+'" class="list"></li>\n')
+    .append($('<span id="subscription_'+s.id+'_listname" class="list-name">'
+          +l.name+'</span>'))
+    .data('subscriptiondata', s);
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
   var items = $.map(l.items, function(x) {return x;}).sort(function(a,b) {
     return a.position-b.position;
@@ -250,7 +254,7 @@ function makeSubscription(s) {
   return listHtml;
 }
 function addSubscription(s, animate) {
-  debug('Adding subscription '+s.id);
+  debug('Adding subscription '+s.id+' ('+s.list.name+')');
   var list_id = s.list.id;
   if ($('#list_'+list_id).length != 0) {
     debug('Tried to add list '+list_id+', but it already exists');
@@ -287,7 +291,8 @@ function removeSubscription(id, animate) {
     $('#subscription_'+id).remove();
 }
 function updateSubscription(s) {
-  // TODO: make this more like mergeState
+  debug('Updating subscription '+s.id+' ('+s.list.name+')');
+  // This should be called when state contains the old state
   // Note: this should never be called before initialization is complete
   var old_item_ids = $.map(state.subscriptions[s.id].list.items,
       function(i){return i.id});
@@ -304,7 +309,11 @@ function updateSubscription(s) {
   for(var i in items_to_update)
     updateItem(s.list.items[items_to_update[i]], s.id);
 
-  //TODO: update list name
+  // update list name
+  if(state.subscriptions[s.id].list.name != s.list.name) {
+    $('#subscription_'+s.id+'_listname').html(s.list.name)
+  }
+
   //TODO: update minimized-state when minimization is implemented
   //TODO: set subscriptiondata on object
   //TODO: move subscription to correct_position
