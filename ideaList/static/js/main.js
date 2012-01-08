@@ -30,8 +30,7 @@ function mergeState(newstate) {
     debug('Tried to merge null/undefined state');
     return false;
   }
-  var oldstate = init_done ? state : {subscriptions: {}};
-  var old_sub_ids = $.map(oldstate.subscriptions, function(s){return s.id});
+  var old_sub_ids = $.map(state.subscriptions, function(s){return s.id});
   var new_sub_ids = $.map(newstate.subscriptions, function(s){return s.id});
   var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
   var subs_to_remove = array_diff(old_sub_ids, new_sub_ids);
@@ -45,7 +44,6 @@ function mergeState(newstate) {
     removeSubscription(subs_to_remove[i], true);
   for(var i in subs_to_update)
     updateSubscription(newstate.subscriptions[subs_to_update[i]]);
-  state = newstate;
 }
 
 function parseErrorThrown(errorThrown) {
@@ -167,6 +165,7 @@ function addItem(item, subscription_id, animate) {
       curitems.last().after(itemHtml);
     }
   }
+  state.subscriptions[subscription_id].list.items[item.id] = item;
 }
 function removeItem(id, animate) {
   debug('Removing item '+id);
@@ -174,6 +173,7 @@ function removeItem(id, animate) {
     $('#item_'+id).hide(1000, function(){$(this).remove()});
   else
     $('#item_'+id).remove();
+  delete state.subscriptions[subscription_id].list.items[item.id];
 }
 function updateItem(i, subscription_id) {
   debug('Updating item '+i.id+' ('+i.text+')');
@@ -278,6 +278,7 @@ function addSubscription(s, animate) {
       $('#listlist').append(listHtml);
     }
   }
+  state.subscriptions[s.id] = s;
 }
 function removeSubscription(id, animate) {
   debug('Removing subscription '+id);
@@ -289,11 +290,10 @@ function removeSubscription(id, animate) {
     $('#subscription_'+id).hide(2000, function(){$(this).remove()});
   else
     $('#subscription_'+id).remove();
+  delete state.subscriptions[id];
 }
 function updateSubscription(s) {
   debug('Updating subscription '+s.id+' ('+s.list.name+')');
-  // This should be called when state contains the old state
-  // Note: this should never be called before initialization is complete
   var old_item_ids = $.map(state.subscriptions[s.id].list.items,
       function(i){return i.id});
   var new_item_ids = $.map(s.list.items, function(i){return i.id});
@@ -312,6 +312,7 @@ function updateSubscription(s) {
   // update list name
   if(state.subscriptions[s.id].list.name != s.list.name) {
     $('#subscription_'+s.id+'_listname').html(s.list.name)
+    state.subscriptions[s.id].list.name = s.list.name
   }
 
   //TODO: update minimized-state when minimization is implemented
@@ -385,7 +386,8 @@ var editableSettings = {
 
 var init_done = false;
 $(document).ready(function() {
+  state = {subscriptions: {}};
+  mergeState(init_state);
   setStatusLight();
-  mergeState(state);
   init_done = true;
 });
