@@ -56,130 +56,6 @@ function parseErrorThrown(errorThrown) {
   return data;
 }
 
-///////////// ITEM RELATED DOM MANIPULATION /////////////
-
-function makeItem(itemdata) {
-  function removeitemHandler(e) {
-    e.preventDefault();
-    var item_elem = $(this).parent();
-    var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
-    if (res.length != 2)
-      return false;
-    var item_id = res[1];
-    $.ajax('/ideaList/removeitem/', {
-      dataType: "json",
-      type: "POST",
-      data: {item_id:item_id},
-    }).done(function(data) {
-      debug("Item "+item_id+" removed");
-      mergeState(data.state);
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-      debug("Error in remove item: "+textStatus);
-      var data = parseErrorThrown(errorThrown);
-      if (data && data.state)
-        mergeState(data.state);
-    });
-  }
-  function moveitemHandler(e) {
-    e.preventDefault();
-    var item_elem = $(this).parent();
-    var res = /^move_item_(\d+)_(up|down)$/.exec($(this).attr('id'));
-    if (res.length != 3)
-      return false;
-    var item_id = res[1];
-    var direction = res[2];
-    var item_before = null; // Item before which to insert item_elem
-    if (direction == 'up')
-      item_before = item_elem.prev();
-    else
-      item_before = item_elem.next();
-    if (item_before.length != 1 || !item_before.hasClass('item'))
-      return false;
-    $.ajax('/ideaList/moveitem/', {
-      dataType: "json",
-      type: "POST",
-      data: {
-        item_id:item_id,
-        where:direction,
-      },
-    }).done(function(data) {
-      mergeState(data.state);
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-      debug("Error in remove item: "+textStatus);
-      var data = parseErrorThrown(errorThrown);
-      if (data && data.state)
-        mergeState(data.state);
-    });
-  }
-  var item_id = itemdata.id;
-  var text = itemdata.text;
-  var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);;
-  var removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
-  var moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
-  var moveDownHtml = $('<a id="move_item_'+item_id+'_down" class="itemaction moveitem" href="#">&darr;</a>').click(moveitemHandler);
-  var itemHtml = $('<li id="item_'+item_id+'" class="item"></li>')
-    .data('itemdata', itemdata);
-  itemHtml
-    .append(itemTextHtml)
-    .append('&nbsp;').append(removeHtml)
-    .append('&nbsp;').append(moveUpHtml)
-    .append('&nbsp;').append(moveDownHtml);
-  return itemHtml;
-}
-function addItem(item, subscription_id, animate) {
-  debug('Adding item '+item.id+' ('+item.text+')');
-  var list_id = item.list_id;
-  if (subscription_id === undefined) {
-    // Deduce subscription id from list_id
-    for (var s in state.subscriptions)
-      if (s.list.id == list_id)
-        subscription_id = s.id;
-    if (subscription_id === undefined) {
-      debug('Tried to add an item to a nonexisting list');
-      return false;
-    }
-  }
-  if ($('#item_'+item.id).length != 0) {
-    debug('Tried to add item '+item.id+', but it already exists');
-    return;
-  }
-  if ($('#subscription_'+subscription_id).length == 0) {
-    debug('Tried to add item '+item.id+' to a nonexisting subscription');
-    return;
-  }
-  var pos = item.position;
-  var curitems = $('#subscription_'+subscription_id+' > ul > li.item');
-  var itemHtml = makeItem(item)
-  if (animate)
-    itemHtml.hide().delay(50).show(2000);
-  if (curitems.length == 0 || pos == 0) {
-    $('#subscription_'+subscription_id+' > ul').prepend(itemHtml);
-  } else {
-    items_array = curitems.toArray();
-    for (var i in items_array) {
-      item = items_array[i];
-      if ($(item).data('itemdata').position > pos) {
-        $(item).before(itemHtml);
-        return;
-      }
-      curitems.last().after(itemHtml);
-    }
-  }
-  state.subscriptions[subscription_id].list.items[item.id] = item;
-}
-function removeItem(id, animate) {
-  debug('Removing item '+id);
-  if (animate)
-    $('#item_'+id).hide(1000, function(){$(this).remove()});
-  else
-    $('#item_'+id).remove();
-  delete state.subscriptions[subscription_id].list.items[item.id];
-}
-function updateItem(i, subscription_id) {
-  debug('Updating item '+i.id+' ('+i.text+')');
-  removeItem(i.id);
-  addItem(i, subscription_id);
-}
 
 ///////////// SUBSCRIPTION RELATED DOM MANIPULATION /////////////
 
@@ -318,6 +194,131 @@ function updateSubscription(s) {
   //TODO: update minimized-state when minimization is implemented
   //TODO: set subscriptiondata on object
   //TODO: move subscription to correct_position
+}
+
+///////////// ITEM RELATED DOM MANIPULATION /////////////
+
+function makeItem(itemdata) {
+  function removeitemHandler(e) {
+    e.preventDefault();
+    var item_elem = $(this).parent();
+    var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
+    if (res.length != 2)
+      return false;
+    var item_id = res[1];
+    $.ajax('/ideaList/removeitem/', {
+      dataType: "json",
+      type: "POST",
+      data: {item_id:item_id},
+    }).done(function(data) {
+      debug("Item "+item_id+" removed");
+      mergeState(data.state);
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+      debug("Error in remove item: "+textStatus);
+      var data = parseErrorThrown(errorThrown);
+      if (data && data.state)
+        mergeState(data.state);
+    });
+  }
+  function moveitemHandler(e) {
+    e.preventDefault();
+    var item_elem = $(this).parent();
+    var res = /^move_item_(\d+)_(up|down)$/.exec($(this).attr('id'));
+    if (res.length != 3)
+      return false;
+    var item_id = res[1];
+    var direction = res[2];
+    var item_before = null; // Item before which to insert item_elem
+    if (direction == 'up')
+      item_before = item_elem.prev();
+    else
+      item_before = item_elem.next();
+    if (item_before.length != 1 || !item_before.hasClass('item'))
+      return false;
+    $.ajax('/ideaList/moveitem/', {
+      dataType: "json",
+      type: "POST",
+      data: {
+        item_id:item_id,
+        where:direction,
+      },
+    }).done(function(data) {
+      mergeState(data.state);
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+      debug("Error in remove item: "+textStatus);
+      var data = parseErrorThrown(errorThrown);
+      if (data && data.state)
+        mergeState(data.state);
+    });
+  }
+  var item_id = itemdata.id;
+  var text = itemdata.text;
+  var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);;
+  var removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
+  var moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
+  var moveDownHtml = $('<a id="move_item_'+item_id+'_down" class="itemaction moveitem" href="#">&darr;</a>').click(moveitemHandler);
+  var itemHtml = $('<li id="item_'+item_id+'" class="item"></li>')
+    .data('itemdata', itemdata);
+  itemHtml
+    .append(itemTextHtml)
+    .append('&nbsp;').append(removeHtml)
+    .append('&nbsp;').append(moveUpHtml)
+    .append('&nbsp;').append(moveDownHtml);
+  return itemHtml;
+}
+function addItem(item, subscription_id, animate) {
+  debug('Adding item '+item.id+' ('+item.text+')');
+  var list_id = item.list_id;
+  if (subscription_id === undefined) {
+    // Deduce subscription id from list_id
+    for (var s in state.subscriptions)
+      if (s.list.id == list_id)
+        subscription_id = s.id;
+    if (subscription_id === undefined) {
+      debug('Tried to add an item to a nonexisting list');
+      return false;
+    }
+  }
+  if ($('#item_'+item.id).length != 0) {
+    debug('Tried to add item '+item.id+', but it already exists');
+    return;
+  }
+  if ($('#subscription_'+subscription_id).length == 0) {
+    debug('Tried to add item '+item.id+' to a nonexisting subscription');
+    return;
+  }
+  var pos = item.position;
+  var curitems = $('#subscription_'+subscription_id+' > ul > li.item');
+  var itemHtml = makeItem(item)
+  if (animate)
+    itemHtml.hide().delay(50).show(2000);
+  if (curitems.length == 0 || pos == 0) {
+    $('#subscription_'+subscription_id+' > ul').prepend(itemHtml);
+  } else {
+    items_array = curitems.toArray();
+    for (var i in items_array) {
+      item = items_array[i];
+      if ($(item).data('itemdata').position > pos) {
+        $(item).before(itemHtml);
+        return;
+      }
+      curitems.last().after(itemHtml);
+    }
+  }
+  state.subscriptions[subscription_id].list.items[item.id] = item;
+}
+function removeItem(id, animate) {
+  debug('Removing item '+id);
+  if (animate)
+    $('#item_'+id).hide(1000, function(){$(this).remove()});
+  else
+    $('#item_'+id).remove();
+  delete state.subscriptions[subscription_id].list.items[item.id];
+}
+function updateItem(i, subscription_id) {
+  debug('Updating item '+i.id+' ('+i.text+')');
+  removeItem(i.id);
+  addItem(i, subscription_id);
 }
 
 ///////////// STATUSLIGHT RELATED STUFF /////////////
