@@ -40,8 +40,8 @@ function mergeState(newstate) {
   var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
   var subs_to_remove = array_diff(old_sub_ids, new_sub_ids);
   var subs_to_update = array_intersect(old_sub_ids, new_sub_ids);
-  debug("Subs to add/remove/update: "
-    +"("+subs_to_add+")/("+subs_to_remove+")/("+subs_to_update+")");
+//  debug("Subs to add/remove/update: "
+//    +"("+subs_to_add+")/("+subs_to_remove+")/("+subs_to_update+")");
 
   for(var i in subs_to_add)
     addSubscription(newstate.subscriptions[subs_to_add[i]], init_done);
@@ -142,32 +142,41 @@ function makeSubscription(s) {
   subscriptionHtml.append(itemListHtml);
   return subscriptionHtml;
 }
+function insertSubscriptionToDOM(s, subscriptionHtml, animate) {
+  var cursubs = $.map(state.subscriptions, identity).sort(sortByPosition);
+  sub_of_list[s.list.id] = s.id;
+  if (cursubs.length == 0 || s.position == 0) {
+    //debug('Inserting sub '+s.id+' to beginning');
+    $('#listlist').prepend(subscriptionHtml);
+  } else {
+    var added = false;
+    for (var i in cursubs) {
+      if (cursubs[i].id == s.id)
+        continue;
+      if (cursubs[i].position >= s.position) {
+        //debug('Inserting sub '+s.id+' before sub '+cursubs[i].id);
+        $("#subscription_"+cursubs[i].id).before(subscriptionHtml);
+        added = true;
+        break;
+      }
+    }
+    if(!added) {
+      //debug('Inserting sub '+s.id+' to end');
+      $('#listlist').append(subscriptionHtml);
+    }
+  }
+  if (animate)
+    subscriptionHtml.hide().show(1000);
+}
 function addSubscription(s, animate) {
   debug('Adding subscription '+s.id+' ('+s.list.name+')');
   if ($('#subscription_'+s.id).length != 0) {
     debug('Tried to add subscription '+s.id+', but it already exists');
     return;
   }
-  var pos = s.position;
-  var cursubs = $.map(state.subscriptions, identity);
   var subscriptionHtml = makeSubscription(s);
-  if (animate)
-    subscriptionHtml.hide().delay(50).show(2000);
-  sub_of_list[s.list.id] = s.id;
-  if (cursubs.length == 0 || pos == 0) {
-    $('#listlist').prepend(subscriptionHtml);
-    state.subscriptions[s.id] = s;
-  } else {
-    for (var i in cursubs) {
-      if (cursubs[i].position > pos) {
-        $("#subscription_"+cursubs[i].position).before(subscriptionHtml);
-        state.subscriptions[s.id] = s;
-        return;
-      }
-    }
-    $('#listlist').append(subscriptionHtml);
-    state.subscriptions[s.id] = s;
-  }
+  insertSubscriptionToDOM(s, subscriptionHtml, animate)
+  state.subscriptions[s.id] = s;
 }
 function removeSubscription(s, animate) {
   debug('Removing subscription '+s.id+' ('+s.list.name+')');
@@ -190,8 +199,8 @@ function updateSubscription(s) {
   var items_to_remove = array_diff(old_item_ids, new_item_ids);
   var items_to_add = array_diff(new_item_ids, old_item_ids);
   var items_to_update = array_intersect(old_item_ids, new_item_ids);
-  debug("Items to add/remove/update: "
-    +"("+items_to_add+")/("+items_to_remove+")/("+items_to_update+")");
+//  debug("Items to add/remove/update: "
+//    +"("+items_to_add+")/("+items_to_remove+")/("+items_to_update+")");
   for(var i in items_to_add)
     addItem(s.list.items[items_to_add[i]], true);
   for(var i in items_to_remove)
@@ -199,14 +208,18 @@ function updateSubscription(s) {
   for(var i in items_to_update)
     updateItem(s.list.items[items_to_update[i]], true);
 
-  // update list name
-  if(old_sub.list.name != s.list.name) {
-    $('#subscription_'+s.id+'_listname').html(s.list.name)
-    state.subscriptions[s.id].list.name = s.list.name
+  if(s.list.name != old_sub.list.name) {
+    $('#subscription_'+s.id+'_listname').html(s.list.name);
+    state.subscriptions[s.id].list.name = s.list.name;
   }
-
-  //TODO: move subscription to correct_position
-  //TODO: update minimized-state when minimization is implemented
+  if (s.position != old_sub.position) {
+    insertSubscriptionToDOM(s, $('#subscription_'+s.id).detach(), true);
+    state.subscriptions[s.id].position = s.position;
+  }
+  if (s.minimized != old_sub.minimized) {
+    //TODO: update minimized-state when implemented
+    state.subscriptions[s.id].minimized = s.minimized;
+  }
 }
 
 ///////////// ITEM RELATED DOM MANIPULATION /////////////
@@ -289,6 +302,8 @@ function insertItemToDOM(item, itemHtml, animate) {
   } else {
     var added = false;
     for (var i in curitems) {
+      if (curitems[i].id == item.id)
+        continue;
       //debug('    Checking idx '+i+': '+curitems[i].text);
       if (curitems[i].position >= item.position) {
         //debug('      Adding before idx '+i);
@@ -353,7 +368,6 @@ function updateItem(newI) {
     wasUpdated = true;
   }
   if (newI.position != curI.position) {
-    delete state.subscriptions[sub_of_list[curI.list_id]].list.items[curI.id];
     insertItemToDOM(newI, $('#item_'+curI.id).detach(), true);
     wasUpdated = true;
   } else if (wasUpdated) {
