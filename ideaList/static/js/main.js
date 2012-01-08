@@ -190,14 +190,14 @@ function updateSubscription(s) {
   debug("Items to add/remove/update: "
     +"("+items_to_add+")/("+items_to_remove+")/("+items_to_update+")");
   for(var i in items_to_add)
-    addItem(s.list.items[items_to_add[i]]);
+    addItem(s.list.items[items_to_add[i]], true);
   for(var i in items_to_remove)
     removeItem(old_sub.list.items[items_to_remove[i]], true);
   // Ugly hack until updateItem handles position changes properly:
   var updateItems = $.map(items_to_update, function(i){return s.list.items[i];})
       .sort(function(a,b) {return a.position - b.position;});
   for(var i in updateItems)
-    updateItem(updateItems[i], s.id);
+    updateItem(updateItems[i]);
 
   // update list name
   if(old_sub.list.name != s.list.name) {
@@ -278,6 +278,31 @@ function makeItem(itemdata) {
     .append('&nbsp;').append(moveDownHtml);
   return itemHtml;
 }
+// Insert an already constructed itemHtml to DOM
+function insertItemToDOM(item, itemHtml, animate) {
+  sub_id = sub_of_list[item.list_id];
+  var curitems = state.subscriptions[sub_id].list.items;
+  if (Object.keys(curitems).length == 0 || item.position == 0) {
+    $('#subscription_'+sub_id+' > ul').prepend(itemHtml);
+  } else {
+    var added = false;
+    for (var i in curitems) {
+      //debug('    Checking idx '+i+': '+curitems[i].text);
+      if (curitems[i].position > item.position) {
+        //debug('      Adding before idx '+i);
+        $('#item_'+curitems[i].id).before(itemHtml);
+        added = true;
+        break;
+      }
+    }
+    if (!added) {
+      //debug('  Adding item to last position');
+      $('#subscription_'+sub_id+' > ul > li.item').last().after(itemHtml);
+    }
+  }
+  if (animate)
+    itemHtml.hide().show(1000);
+}
 function addItem(item, animate) {
   debug('Adding item '+item.id+' ('+item.text+')');
   var list_id = item.list_id;
@@ -294,28 +319,9 @@ function addItem(item, animate) {
     debug('Tried to add item '+item.id+' to a nonexisting subscription');
     return;
   }
-  var pos = item.position;
-  var curitems = state.subscriptions[sub_id].list.items;
-  var itemHtml = makeItem(item)
-  if (animate)
-    itemHtml.hide().delay(50).show(2000);
-  if (Object.keys(curitems).length == 0 || pos == 0) {
-    $('#subscription_'+sub_id+' > ul').prepend(itemHtml);
-    state.subscriptions[sub_id].list.items[item.id] = item;
-  } else {
-    for (var i in curitems) {
-      //debug('    Checking idx '+i+': '+curitems[i].text);
-      if (curitems[i].position > pos) {
-        //debug('      Adding before idx '+i);
-        $('#item_'+curitems[i].id).before(itemHtml);
-        state.subscriptions[sub_id].list.items[item.id] = item;
-        return;
-      }
-    }
-    //debug('  Adding item to last position');
-    $('#subscription_'+sub_id+' > ul > li.item').last().after(itemHtml);
-    state.subscriptions[sub_id].list.items[item.id] = item;
-  }
+  var itemHtml = makeItem(item);
+  insertItemToDOM(item, itemHtml, animate);
+  state.subscriptions[sub_id].list.items[item.id] = item;
 }
 function removeItem(item, animate) {
   debug('Removing item '+item.id+' ('+item.text+')');
@@ -325,11 +331,35 @@ function removeItem(item, animate) {
     $('#item_'+item.id).remove();
   delete state.subscriptions[sub_of_list[item.list_id]].list.items[item.id];
 }
-function updateItem(item, sub_id) {
-  // TODO: improve
-  debug('Updating item '+item.id+' ('+item.text+')');
-  removeItem(item);
-  addItem(item);
+function updateItem(newI) {
+  curI = state.subscriptions[sub_of_list[newI.list_id]].list.items[newI.id];
+  if (!curI) {
+    debug('Tried to update a nonexisting item: '+item.id);
+    return
+  }
+  var wasUpdated = false;
+  if (newI.text != curI.text) {
+    $('#item_'+curI.id+"_text").html(newI.text);
+    wasUpdated = true;
+  }
+  if (newI.priority != curI.priority) {
+    // TODO: update priority when it is implemented
+    wasUpdated = true;
+  }
+  if (newI.url != curI.url) {
+    // TODO: update url when it is implemented
+    wasUpdated = true;
+  }
+  if (newI.position != curI.position) {
+    delete state.subscriptions[sub_of_list[curI.list_id]].list.items[curI.id];
+    insertItemToDOM(newI, $('#item_'+curI.id).detach(), true);
+    wasUpdated = true;
+  } else if (wasUpdated) {
+    $('#item_'+curI.id).effect('highlight', {color:'lightgreen'}, 2000);
+  }
+  if (wasUpdated)
+    debug('Updated item '+curI.id+' ('+curI.text+')');
+  state.subscriptions[sub_of_list[curI.list_id]].list.items[curI.id] = newI;
 }
 
 ///////////// STATUSLIGHT RELATED STUFF /////////////
