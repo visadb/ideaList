@@ -17,14 +17,13 @@ function sortByPosition(a,b) {
   return a.position - b.position;
 }
 
-function debug(str) {
+function debug() {
   if(init_done) {
-    console.debug(str);
+    console.debug.apply(null, arguments);
   } else {
-    // console.debug doesn't work before init is complete
-//    var item = $('<div>'+str+'<br /></div>')
-//    $("#debug").append(item);
-//    item.delay(10000).hide(2000, function(){item.remove()});
+    // console.debug doesn't work before init is complete -> small delay
+    var origArguments = arguments;
+    setTimeout(function(){console.debug.apply(null, origArguments)}, 1);
   }
 }
 
