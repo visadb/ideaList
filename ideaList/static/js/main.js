@@ -46,6 +46,17 @@ function mergeState(newstate) {
     updateSubscription(newstate.subscriptions[subs_to_update[i]]);
 }
 
+function refresh() {
+  $.ajax('/ideaList/get_state/', {
+    dataType: "json",
+    type: "GET"
+  }).done(function(data) {
+    mergeState(data.state);
+  }).fail(function(jqXHR, textStatus, errorThrown) {
+    debug("Error in refresh: "+textStatus);
+  });
+}
+
 function parseErrorThrown(errorThrown) {
   try {
     var data = $.parseJSON(errorThrown);
@@ -391,5 +402,8 @@ $(document).ready(function() {
   sub_of_list = {};
   mergeState(init_state);
   setStatusLight();
+  $('#listlist').before(
+    $('<div/>').append(
+      $('<button id="refresh">Refresh</button>').click(refresh)));
   init_done = true;
 });
