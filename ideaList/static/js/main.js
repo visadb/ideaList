@@ -7,18 +7,24 @@
 
 function array_diff(a, b) {
   return a.filter(function(i) {return b.indexOf(i) < 0;});
-};
+}
 function array_intersect(a, b) {
   return a.filter(function(i) {return b.indexOf(i) >= 0;});
-};
+}
+function identity(x) { return x; }
+
+function sortByPosition(a,b) {
+  return a.position - b.position;
+}
 
 function debug(str) {
   if(init_done) {
     console.debug(str);
   } else {
-    var item = $('<div>'+str+'<br /></div>')
-    $("#debug").append(item);
-    item.delay(10000).hide(2000, function(){item.remove()});
+    // console.debug doesn't work before init is complete
+//    var item = $('<div>'+str+'<br /></div>')
+//    $("#debug").append(item);
+//    item.delay(10000).hide(2000, function(){item.remove()});
   }
 }
 
@@ -128,9 +134,7 @@ function makeSubscription(s) {
     .append($('<span id="subscription_'+s.id+'_listname" class="list-name">'
           +l.name+'</span>'));
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
-  var items = $.map(l.items, function(x) {return x;}).sort(function(a,b) {
-    return a.position-b.position;
-  });
+  var items = $.map(l.items, identity).sort(sortByPosition);
   for (var i in items) {
     var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
@@ -146,7 +150,7 @@ function addSubscription(s, animate) {
     return;
   }
   var pos = s.position;
-  var cursubs = $.map(state.subscriptions, function(x){return x;});
+  var cursubs = $.map(state.subscriptions, identity);
   var subscriptionHtml = makeSubscription(s);
   if (animate)
     subscriptionHtml.hide().delay(50).show(2000);
@@ -193,11 +197,8 @@ function updateSubscription(s) {
     addItem(s.list.items[items_to_add[i]], true);
   for(var i in items_to_remove)
     removeItem(old_sub.list.items[items_to_remove[i]], true);
-  // Ugly hack until updateItem handles position changes properly:
-  var updateItems = $.map(items_to_update, function(i){return s.list.items[i];})
-      .sort(function(a,b) {return a.position - b.position;});
-  for(var i in updateItems)
-    updateItem(updateItems[i]);
+  for(var i in items_to_update)
+    updateItem(s.list.items[items_to_update[i]], true);
 
   // update list name
   if(old_sub.list.name != s.list.name) {
@@ -281,14 +282,16 @@ function makeItem(itemdata) {
 // Insert an already constructed itemHtml to DOM
 function insertItemToDOM(item, itemHtml, animate) {
   sub_id = sub_of_list[item.list_id];
-  var curitems = state.subscriptions[sub_id].list.items;
+  var curitems = $.map(state.subscriptions[sub_id].list.items, identity)
+    .sort(sortByPosition);
   if (Object.keys(curitems).length == 0 || item.position == 0) {
+    //debug('  Adding item to first position');
     $('#subscription_'+sub_id+' > ul').prepend(itemHtml);
   } else {
     var added = false;
     for (var i in curitems) {
       //debug('    Checking idx '+i+': '+curitems[i].text);
-      if (curitems[i].position > item.position) {
+      if (curitems[i].position >= item.position) {
         //debug('      Adding before idx '+i);
         $('#item_'+curitems[i].id).before(itemHtml);
         added = true;
