@@ -435,8 +435,5 @@ $(document).ready(function() {
   sub_of_list = {};
   mergeState(init_state);
   setStatusLight();
-  $('#listlist').before(
-    $('<div/>').append(
-      $('<button id="refresh">Refresh</button>').click(refresh)));
   init_done = true;
 });
