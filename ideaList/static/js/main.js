@@ -58,9 +58,7 @@ function refresh() {
     type: "GET"
   }).done(function(data) {
     mergeState(data.state);
-  }).fail(function(jqXHR, textStatus, errorThrown) {
-    debug("Error in refresh ("+textStatus+"): "+errorThrown);
-  });
+  }).fail(get_ajax_fail_handler('refresh'));
 }
 function refresher() {
   if (autorefresh_freq < 3) {
@@ -77,6 +75,19 @@ function refresher() {
   }
 }
 
+///////////// COMMON HELPERS /////////////
+
+function get_ajax_fail_handler(action) {
+  if (!action)
+    action = "";
+  return function(jqXHR, textStatus, errorThrown) {
+    var data = parseErrorThrown(errorThrown);
+    debug(action+": error: "+(data && data.msg ? data.msg : textStatus));
+    if (data && data.state)
+      mergeState(data.state);
+  }
+}
+
 function parseErrorThrown(errorThrown) {
   try {
     var data = $.parseJSON(errorThrown);
@@ -86,7 +97,6 @@ function parseErrorThrown(errorThrown) {
   }
   return data;
 }
-
 
 ///////////// SUBSCRIPTION RELATED DOM MANIPULATION /////////////
 
@@ -119,17 +129,7 @@ function initAddItemField(field) {
       }).done(function(data) {
         addfield.val("").blur(); // Reset additem field
         mergeState(data.state);
-      }).fail(function(jqXHR, textStatus, errorThrown) {
-        msg = textStatus;
-        var data = parseErrorThrown(errorThrown);
-        if (data) {
-          if (data.msg)
-            msg = data.msg;
-          if (data.state)
-            mergeState(data.state);
-        }
-        debug("Error in adding item: "+msg);
-      });
+      }).fail(get_ajax_fail_handler('additem'));
     }
   }).addClass("newitem_blur");
 }
@@ -143,6 +143,7 @@ function makeAddItemField(subscr, pos) {
   return addItemHtml;
 }
 function makeSubscription(s) {
+  // TODO: add arrows buttons like in items
   var l = s.list;
   var subscriptionHtml = $('<li id="subscription_'+s.id+'" class="list"></li>')
     .append($('<span id="subscription_'+s.id+'_listname" class="list-name">'
@@ -153,7 +154,7 @@ function makeSubscription(s) {
     var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
   }
-  itemListHtml.append($('<li></li>').append(makeAddItemField(s, 'end')));
+  itemListHtml.append($('<li/>').append(makeAddItemField(s, 'end')));
   subscriptionHtml.append(itemListHtml);
   return subscriptionHtml;
 }
@@ -260,24 +261,17 @@ function makeItem(itemdata) {
       return false;
     var item_id = res[1];
     $.ajax('/ideaList/removeitem/', {
-      dataType: "json",
-      type: "POST",
-      data: {item_id:item_id},
+      dataType: "json", type: "POST", data: {item_id:item_id},
     }).done(function(data) {
       debug("Item "+item_id+" removed");
       mergeState(data.state);
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-      debug("Error in remove item: "+textStatus);
-      var data = parseErrorThrown(errorThrown);
-      if (data && data.state)
-        mergeState(data.state);
-    });
+    }).fail(get_ajax_fail_handler('removeitem'));
   }
   function moveitemHandler(e) {
     e.preventDefault();
     var item_elem = $(this).parent();
     var res = /^move_item_(\d+)_(up|down)$/.exec($(this).attr('id'));
-    if (res.length != 3)
+    if (!res || res.length != 3)
       return false;
     var item_id = res[1];
     var direction = res[2];
@@ -286,8 +280,10 @@ function makeItem(itemdata) {
       item_before = item_elem.prev();
     else
       item_before = item_elem.next();
-    if (item_before.length != 1 || !item_before.hasClass('item'))
+    if (item_before.length != 1 || !item_before.hasClass('item')) {
+      debug('Not moving; already topmost/bottommost.');
       return false;
+    }
     $.ajax('/ideaList/moveitem/', {
       dataType: "json",
       type: "POST",
@@ -297,21 +293,22 @@ function makeItem(itemdata) {
       },
     }).done(function(data) {
       mergeState(data.state);
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-      debug("Error in remove item: "+textStatus);
-      var data = parseErrorThrown(errorThrown);
-      if (data && data.state)
-        mergeState(data.state);
-    });
+    }).fail(get_ajax_fail_handler('moveitem'));
   }
   var editableUrl = '/ideaList/edittext/';
   var item_id = itemdata.id;
-  var text = itemdata.text;
-  var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);
-  var removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
-  var moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
-  var moveDownHtml = $('<a id="move_item_'+item_id+'_down" class="itemaction moveitem" href="#">&darr;</a>').click(moveitemHandler);
   var itemHtml = $('<li id="item_'+item_id+'" class="item"></li>');
+  var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'
+      +itemdata.text+'</span>').editable(editableUrl, editableSettings);
+  var removeHtml = $('<a id="remove_item_'+item_id
+      +'" class="itemaction removeitem" href="#">&#10005;</a>')
+      .click(removeitemHandler);
+  var moveUpHtml = $('<a id="move_item_'+item_id+'_up"'
+      +' class="itemaction moveitem" href="#">&uarr;</a>')
+      .click(moveitemHandler);
+  var moveDownHtml = $('<a id="move_item_'+item_id+'_down"'
+      +' class="itemaction moveitem" href="#">&darr;</a>')
+      .click(moveitemHandler);
   itemHtml
     .append(itemTextHtml)
     .append('&nbsp;').append(removeHtml)
