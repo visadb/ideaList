@@ -184,3 +184,38 @@ class MoveitemViewTest(MyViewTest):
         self.assertEqual(Item.objects.get(pk=self.i2.id).position, 0)
         self.assertEqual(Item.objects.get(pk=self.i3.id).position, 1)
         self.check_state_in_response(r)
+
+class EdittextViewTest(MyViewTest):
+    def setUp(self):
+        super(EdittextViewTest, self).setUp()
+        self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
+        self.i1 = Item.objects.create(list=self.l1, text='testitem1')
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.edittext')
+    def test_valid_request(self):
+        r = self.c.post(reverse('ideaList.views.edittext'),
+                {'element_id':'item_'+str(self.i1.id)+'_text', 'text':'lolo'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'lolo')
+        data = self.check_state_in_response(r)
+        self.assertIn('text', data)
+        self.assertEqual(data['text'], 'lolo')
+    def test_element_id_missing(self):
+        r = self.c.post(reverse('ideaList.views.edittext'),
+                {'text':'lolo'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
+    def test_element_id_invalid(self):
+        r = self.c.post(reverse('ideaList.views.edittext'),
+                {'element_id':'item_'+str(self.i1.id)+'_tex', 'text':'lolo'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
+    def test_item_id_invalid(self):
+        r = self.c.post(reverse('ideaList.views.edittext'),
+                {'element_id':'item_'+str(self.i1.id+1)+'_text', 'text':'lolo'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')

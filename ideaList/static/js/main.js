@@ -296,20 +296,15 @@ function makeItem(itemdata) {
       style:   "inherit",
       id:      "element_id",
       name:    "text",
-      callback: function(value, settings) {
-        var res = /^item_(\d+)_text$/.exec($(this).attr('id'));
-        if (res.length != 2) {
-          debug('Could not parse item id');
+      callback: function(value) {
+        try {
+          var data = $.parseJSON(value);
+        } catch(e) {
+          debug("Couldn't parse JSON: ", e);
+          return;
         }
-        var item_id = res[1];
-        var elem_id = $(this).parent().parent().parent().attr('id');
-        res = /^subscription_(\d+)$/.exec(elem_id);
-        if (res.length != 2) {
-          debug('Could not parse subscription id');
-        }
-        var subscription_id = res[1];
-        state.subscriptions[subscription_id].list.items[item_id].text = value;
-        return value;
+        mergeState(data.state);
+        return data.text;
       }};
   var item_id = itemdata.id;
   var text = itemdata.text;

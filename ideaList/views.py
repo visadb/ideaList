@@ -135,8 +135,8 @@ def moveitem(req):
 def edittext(request):
     """
     View to use with jeditable for editing the text of items. Request must have
-    POST entries 'element_id' of form 'item_<item_id>_text' and 'text'. Will set the
-    text of element item_id to the value of 'text'.
+    POST entries 'element_id' of form 'item_<item_id>_text' and 'text'. Will set
+    the text of element item_id to the value of 'text'.
     """
     if request.method != 'POST':
         return HttpResponseBadRequest('{"msg": "Only POST supported"}')
@@ -154,4 +154,8 @@ def edittext(request):
     if i.text != text:
         i.text = text
         i.save()
-    return HttpResponse(text);
+
+    content = json.dumps({'state':make_state(request.user),
+                          'msg':"Item "+str(i.id)+"'s text updated",
+                          'text':text})
+    return HttpResponse(content_type="application/json", content=content)
