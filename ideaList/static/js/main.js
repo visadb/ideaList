@@ -6,15 +6,14 @@
 ///////////// GENERAL HELPER FUNCTIONS /////////////
 
 function array_diff(a, b) {
-  return a.filter(function(i) {return b.indexOf(i) < 0;});
+  return a.filter(function(i) {return $.inArray(i, b) < 0;});
 }
 function array_intersect(a, b) {
-  return a.filter(function(i) {return b.indexOf(i) >= 0;});
+  return a.filter(function(i) {return $.inArray(i, b) >= 0;});
 }
-function identity(x) { return x; }
-
-function sortByPosition(a,b) {
-  return a.position - b.position;
+function valuesSortedByPosition(obj) {
+  return $.map(obj, function(x){return x;})
+    .sort(function(a,b) {return a.position - b.position;});
 }
 
 function debug() {
@@ -146,7 +145,7 @@ function makeSubscription(s) {
     .append($('<span id="subscription_'+s.id+'_listname" class="list-name">'
           +l.name+'</span>'));
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
-  var items = $.map(l.items, identity).sort(sortByPosition);
+  var items = valuesSortedByPosition(l.items);
   for (var i in items) {
     var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
@@ -156,8 +155,7 @@ function makeSubscription(s) {
   return subscriptionHtml;
 }
 function insertSubscriptionToDOM(s, subscriptionHtml, animate) {
-  var cursubs = $.map(state.subscriptions, identity).sort(sortByPosition);
-  sub_of_list[s.list.id] = s.id;
+  var cursubs = valuesSortedByPosition(state.subscriptions);
   if (cursubs.length == 0 || s.position == 0) {
     //debug('Inserting sub '+s.id+' to beginning');
     $('#listlist').prepend(subscriptionHtml);
@@ -190,6 +188,7 @@ function addSubscription(s, animate) {
   var subscriptionHtml = makeSubscription(s);
   insertSubscriptionToDOM(s, subscriptionHtml, animate)
   state.subscriptions[s.id] = s;
+  sub_of_list[s.list.id] = s.id;
 }
 function removeSubscription(s, animate) {
   debug('Removing subscription '+s.id+' ('+s.list.name+')');
@@ -323,8 +322,7 @@ function makeItem(itemdata) {
 // Insert an already constructed itemHtml to DOM
 function insertItemToDOM(item, itemHtml, animate) {
   sub_id = sub_of_list[item.list_id];
-  var curitems = $.map(state.subscriptions[sub_id].list.items, identity)
-    .sort(sortByPosition);
+  var curitems = valuesSortedByPosition(state.subscriptions[sub_id].list.items);
   if (Object.keys(curitems).length == 0 || item.position == 0) {
     //debug('  Adding item to first position');
     $('#subscription_'+sub_id+' > ul').prepend(itemHtml);
