@@ -19,11 +19,11 @@ function sortByPosition(a,b) {
 
 function debug() {
   if(init_done) {
-    console.debug.apply(null, arguments);
+    console.debug.apply(console, arguments);
   } else {
     // console.debug doesn't work before init is complete -> small delay
     var origArguments = arguments;
-    setTimeout(function(){console.debug.apply(null, origArguments)}, 1);
+    setTimeout(function(){console.debug.apply(console, origArguments)}, 1);
   }
 }
 
@@ -49,6 +49,7 @@ function mergeState(newstate) {
     removeSubscription(newstate.subscriptions[subs_to_remove[i]], true);
   for(var i in subs_to_update)
     updateSubscription(newstate.subscriptions[subs_to_update[i]]);
+  state_timestamp = new Date().getTime();
 }
 
 function refresh() {
@@ -58,8 +59,20 @@ function refresh() {
   }).done(function(data) {
     mergeState(data.state);
   }).fail(function(jqXHR, textStatus, errorThrown) {
-    debug("Error in refresh: "+textStatus);
+    debug("Error in refresh ("+textStatus+"): "+errorThrown);
   });
+}
+function refresher() {
+  if (autorefresh_freq < 0)
+    return;
+  var now = new Date().getTime();
+  if (now - state_timestamp > autorefresh_freq*1000) {
+    refresh();
+    setTimeout(refresher, autorefresh_freq*1000);
+  } else {
+    // state too fresh, new attempt when data is old enough
+    setTimeout(refresher, autorefresh_freq*1000 - (now-state_timestamp));
+  }
 }
 
 function parseErrorThrown(errorThrown) {
@@ -432,7 +445,12 @@ $(document).ajaxSend(function(event, xhr, settings) {
 
 $.ajaxSetup({timeout:3000});
 
+// The text that appears in the new item boxes
 var newitemText = "New item..."
+
+//refresh when state is this old (in seconds)
+//set negative to disable autorefresh
+var autorefresh_freq = 30;
 
 var editableUrl = '/ideaList/edittext/';
 var editableSettings = {
@@ -446,7 +464,8 @@ var init_done = false;
 $(document).ready(function() {
   state = {subscriptions: {}};
   sub_of_list = {};
-  mergeState(init_state);
   setStatusLight();
+  mergeState(init_state);
+  refresher();
   init_done = true;
 });
