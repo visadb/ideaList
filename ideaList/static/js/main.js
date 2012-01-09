@@ -290,6 +290,27 @@ function makeItem(itemdata) {
         mergeState(data.state);
     });
   }
+  var editableUrl = '/ideaList/edittext/';
+  var editableSettings = {
+      tooltip: "Click to edit",
+      style:   "inherit",
+      id:      "element_id",
+      name:    "text",
+      callback: function(value, settings) {
+        var res = /^item_(\d+)_text$/.exec($(this).attr('id'));
+        if (res.length != 2) {
+          debug('Could not parse item id');
+        }
+        var item_id = res[1];
+        var elem_id = $(this).parent().parent().parent().attr('id');
+        res = /^subscription_(\d+)$/.exec(elem_id);
+        if (res.length != 2) {
+          debug('Could not parse subscription id');
+        }
+        var subscription_id = res[1];
+        state.subscriptions[subscription_id].list.items[item_id].text = value;
+        return value;
+      }};
   var item_id = itemdata.id;
   var text = itemdata.text;
   var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);;
@@ -451,14 +472,6 @@ var newitemText = "New item..."
 //refresh when state is this old (in seconds)
 //set negative to disable autorefresh
 var autorefresh_freq = 30;
-
-var editableUrl = '/ideaList/edittext/';
-var editableSettings = {
-    tooltip: "Click to edit",
-    style:   "inherit",
-    id:      "element_id",
-    name:    "text",
-  };
 
 var init_done = false;
 $(document).ready(function() {
