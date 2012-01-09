@@ -3,7 +3,7 @@ from django import test
 from django.test.client import Client
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
-from ideaList.models import List, Item
+from ideaList.models import List, Item, Subscription
 
 class MyViewTest(test.TestCase):
     fixtures = ['auth.json']
@@ -188,11 +188,13 @@ class MoveitemViewTest(MyViewTest):
 class EdittextViewTest(MyViewTest):
     def setUp(self):
         super(EdittextViewTest, self).setUp()
-        self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
+        u = User.objects.all()[0]
+        self.l1 = List.objects.create(name='List1', owner=u)
         self.i1 = Item.objects.create(list=self.l1, text='testitem1')
+        self.s1 = Subscription.objects.create(user=u, list=self.l1)
     def test_login_required(self):
         self.check_login_required('ideaList.views.edittext')
-    def test_valid_request(self):
+    def test_valid_item_request(self):
         r = self.c.post(reverse('ideaList.views.edittext'),
                 {'element_id':'item_'+str(self.i1.id)+'_text', 'text':'lolo'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -201,6 +203,16 @@ class EdittextViewTest(MyViewTest):
         data = self.check_state_in_response(r)
         self.assertIn('text', data)
         self.assertEqual(data['text'], 'lolo')
+    def test_valid_list_request(self):
+        r = self.c.post(reverse('ideaList.views.edittext'),
+                {'element_id':'subscription_'+str(self.s1.id)+'_listname',
+                    'text':'wololo'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(List.objects.get(pk=self.l1.id).name, 'wololo')
+        data = self.check_state_in_response(r)
+        self.assertIn('text', data)
+        self.assertEqual(data['text'], 'wololo')
     def test_element_id_missing(self):
         r = self.c.post(reverse('ideaList.views.edittext'),
                 {'text':'lolo'},
@@ -218,4 +230,10 @@ class EdittextViewTest(MyViewTest):
                 {'element_id':'item_'+str(self.i1.id+1)+'_text', 'text':'lolo'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 404)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
+    def test_text_missing(self):
+        r = self.c.post(reverse('ideaList.views.edittext'),
+                {'element_id':'item_'+str(self.i1.id)+'_text'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')

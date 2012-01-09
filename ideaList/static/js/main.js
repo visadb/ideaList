@@ -11,6 +11,7 @@ function array_diff(a, b) {
 function array_intersect(a, b) {
   return a.filter(function(i) {return $.inArray(i, b) >= 0;});
 }
+// Convert an object to array and sort by position attribute of values
 function valuesSortedByPosition(obj) {
   return $.map(obj, function(x){return x;})
     .sort(function(a,b) {return a.position - b.position;});
@@ -62,8 +63,10 @@ function refresh() {
   });
 }
 function refresher() {
-  if (autorefresh_freq <= 5)
+  if (autorefresh_freq < 3) {
+    debug('Autorefresh switching off, frequency is too low: '+autorefresh_freq);
     return;
+  }
   var now = new Date().getTime();
   if (now - state_timestamp > autorefresh_freq*1000) {
     refresh();
@@ -143,7 +146,7 @@ function makeSubscription(s) {
   var l = s.list;
   var subscriptionHtml = $('<li id="subscription_'+s.id+'" class="list"></li>')
     .append($('<span id="subscription_'+s.id+'_listname" class="list-name">'
-          +l.name+'</span>'));
+          +l.name+'</span>').editable(editableUrl, editableSettings));
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
   var items = valuesSortedByPosition(l.items);
   for (var i in items) {
@@ -204,15 +207,15 @@ function removeSubscription(s, animate) {
   delete sub_of_list[s.list.id]
 }
 function updateSubscription(s) {
-  debug('Updating subscription '+s.id+' ('+s.list.name+')');
+  //debug('Updating subscription '+s.id+' ('+s.list.name+')');
   var old_sub = state.subscriptions[s.id];
   var old_item_ids = Object.keys(old_sub.list.items);
   var new_item_ids = Object.keys(s.list.items);
   var items_to_remove = array_diff(old_item_ids, new_item_ids);
   var items_to_add = array_diff(new_item_ids, old_item_ids);
   var items_to_update = array_intersect(old_item_ids, new_item_ids);
-//  debug("Items to add/remove/update: "
-//    +"("+items_to_add+")/("+items_to_remove+")/("+items_to_update+")");
+  //debug("Items to add/remove/update: "
+  //  +"("+items_to_add+")/("+items_to_remove+")/("+items_to_update+")");
   for(var i in items_to_add)
     addItem(s.list.items[items_to_add[i]], true);
   for(var i in items_to_remove)
@@ -220,17 +223,29 @@ function updateSubscription(s) {
   for(var i in items_to_update)
     updateItem(s.list.items[items_to_update[i]], true);
 
+  var updated = [];
   if(s.list.name != old_sub.list.name) {
     $('#subscription_'+s.id+'_listname').html(s.list.name);
     state.subscriptions[s.id].list.name = s.list.name;
+    updated.push('listname');
   }
   if (s.position != old_sub.position) {
     insertSubscriptionToDOM(s, $('#subscription_'+s.id).detach(), true);
     state.subscriptions[s.id].position = s.position;
+    updated.push('position');
   }
   if (s.minimized != old_sub.minimized) {
     //TODO: update minimized-state when implemented
     state.subscriptions[s.id].minimized = s.minimized;
+    updated.push('minimized');
+  }
+  if (updated.length > 0) {
+    if ($.inArray('listname',updated)>=0 && $.inArray('position',updated)<0) {
+      $('#subscription_'+s.id+'_listname')
+        .effect('highlight', {color:'lightgreen'}, 2000);
+    }
+    debug('Updated '+updated.join(', ').replace(/, ([^,]+)$/, ' and $1')
+      +' of subscription '+s.id+' ('+s.list.name+')');
   }
 }
 
@@ -290,24 +305,9 @@ function makeItem(itemdata) {
     });
   }
   var editableUrl = '/ideaList/edittext/';
-  var editableSettings = {
-      tooltip: "Click to edit",
-      style:   "inherit",
-      id:      "element_id",
-      name:    "text",
-      callback: function(value) {
-        try {
-          var data = $.parseJSON(value);
-        } catch(e) {
-          debug("Couldn't parse JSON: ", e);
-          return;
-        }
-        mergeState(data.state);
-        return data.text;
-      }};
   var item_id = itemdata.id;
   var text = itemdata.text;
-  var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);;
+  var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'+text+'</span>').editable(editableUrl, editableSettings);
   var removeHtml = $('<a id="remove_item_'+item_id+'" class="itemaction removeitem" href="#">&#10005;</a>').click(removeitemHandler);
   var moveUpHtml = $('<a id="move_item_'+item_id+'_up" class="itemaction moveitem" href="#">&uarr;</a>').click(moveitemHandler);
   var moveDownHtml = $('<a id="move_item_'+item_id+'_down" class="itemaction moveitem" href="#">&darr;</a>').click(moveitemHandler);
@@ -381,28 +381,31 @@ function updateItem(newI) {
     debug('Tried to update a nonexisting item: '+item.id);
     return
   }
-  var wasUpdated = false;
+  var updated = [];
   if (newI.text != curI.text) {
     $('#item_'+curI.id+"_text").html(newI.text);
-    wasUpdated = true;
+    updated.push('text');
   }
   if (newI.priority != curI.priority) {
     // TODO: update priority when it is implemented
-    wasUpdated = true;
+    updated.push('priority');
   }
   if (newI.url != curI.url) {
     // TODO: update url when it is implemented
-    wasUpdated = true;
+    updated.push('url');
   }
   if (newI.position != curI.position) {
     insertItemToDOM(newI, $('#item_'+curI.id).detach(), true);
-    wasUpdated = true;
-  } else if (wasUpdated) {
-    $('#item_'+curI.id).effect('highlight', {color:'lightgreen'}, 2000);
+    updated.push('position');
   }
-  if (wasUpdated)
-    debug('Updated item '+curI.id+' ('+curI.text+')');
   state.subscriptions[sub_of_list[curI.list_id]].list.items[curI.id] = newI;
+  if (updated.length > 0) {
+    // Flash the item if it wasn't moved (to avoid double animation)
+    if ($.inArray('position', updated) == -1)
+      $('#item_'+curI.id).effect('highlight', {color:'lightgreen'}, 2000);
+    debug('Updated '+updated.join(', ').replace(/, ([^,]+)$/, ' and $1')
+      +' of item '+curI.id+' ('+curI.text+')');
+  }
 }
 
 ///////////// STATUSLIGHT RELATED STUFF /////////////
@@ -462,9 +465,26 @@ $.ajaxSetup({timeout:3000});
 // The text that appears in the new item boxes
 var newitemText = "New item..."
 
-// Refresh when state is this old (in seconds). Must be at least 5 seconds.
+// Refresh when state is this old (in seconds). Must be at least 3 seconds.
 // Set to -1 to disable autorefresh.
 var autorefresh_freq = 30;
+
+var editableUrl = '/ideaList/edittext/';
+var editableSettings = {
+    tooltip: "Click to edit",
+    style:   "inherit",
+    id:      "element_id",
+    name:    "text",
+    callback: function(value) {
+      try {
+        var data = $.parseJSON(value);
+      } catch(e) {
+        debug("Couldn't parse JSON: ", e);
+        return;
+      }
+      mergeState(data.state);
+      return data.text;
+    }};
 
 var init_done = false;
 $(document).ready(function() {

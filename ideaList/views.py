@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFou
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_protect
-from ideaList.models import Item
+from ideaList.models import Item, Subscription
 from django.forms import ModelForm
 
 # Decorator that adds RequestContext
@@ -134,28 +134,46 @@ def moveitem(req):
 @csrf_protect # Unnecessary, handled by the csrf middleware
 def edittext(request):
     """
-    View to use with jeditable for editing the text of items. Request must have
-    POST entries 'element_id' of form 'item_<item_id>_text' and 'text'. Will set
-    the text of element item_id to the value of 'text'.
+    View to use with jeditable for editing the text of items and name of lists.
+    Request must have POST entries 'element_id' of form 'item_<item_id>_text' or
+    'subscription_<subscription_id>_listname' and 'text'. Will return a JSON
+    object with the input text in key 'text' and the usual state info in key
+    'status'. Won't send the state on error since jeditable won't handle it.
     """
     if request.method != 'POST':
         return HttpResponseBadRequest('{"msg": "Only POST supported"}')
-    if 'element_id' not in request.POST:
-        return HttpResponseBadRequest('{"msg": "param element_id not provided"}')
+    if 'element_id' not in request.POST or 'text' not in request.POST:
+        return HttpResponseBadRequest(
+                '{"msg":"param element_id or text not provided"}')
     match = re.match('^item_(\d+)_text$', request.POST['element_id'])
-    if not match:
-        return HttpResponseBadRequest('{"msg": "param element_id invalid"}')
-    try:
-        i = Item.objects.get(pk=match.group(1))
-    except Item.DoesNotExist:
-        return HttpResponseNotFound('{"msg": "No such item"}')
+    if match:
+        try:
+            i = Item.objects.get(pk=match.group(1))
+        except Item.DoesNotExist:
+            return HttpResponseNotFound('{"msg": "No such item"}')
+        text = request.POST['text']
+        if i.text != text:
+            i.text = text
+            i.save()
+        content = json.dumps({'state':make_state(request.user),
+                              'msg':"Item "+str(i.id)+"'s text updated",
+                              'text':text})
+        return HttpResponse(content_type="application/json", content=content)
+    match = re.match('^subscription_(\d+)_listname$',request.POST['element_id'])
+    if match:
+        try:
+            s = Subscription.objects.get(pk=match.group(1))
+        except Subscription.DoesNotExist:
+            return HttpResponseNotFound('{"msg": "No such subscription"}')
+        text = request.POST['text']
+        l = s.list
+        if l.name != text:
+            l.name = text
+            l.save()
+        msg = "List "+str(l.id)+"'s name updated (sub "+str(s.id)+")"
+        content = json.dumps({'state':make_state(request.user),
+                              'msg':msg, 'text':text})
+        return HttpResponse(content_type="application/json", content=content)
 
-    text = request.POST['text']
-    if i.text != text:
-        i.text = text
-        i.save()
-
-    content = json.dumps({'state':make_state(request.user),
-                          'msg':"Item "+str(i.id)+"'s text updated",
-                          'text':text})
-    return HttpResponse(content_type="application/json", content=content)
+    # Neither regex matched to element_id
+    return HttpResponseBadRequest('{"msg": "param element_id invalid"}')
