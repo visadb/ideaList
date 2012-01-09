@@ -63,7 +63,7 @@ function refresh() {
   });
 }
 function refresher() {
-  if (autorefresh_freq < 0)
+  if (autorefresh_freq <= 5)
     return;
   var now = new Date().getTime();
   if (now - state_timestamp > autorefresh_freq*1000) {
@@ -464,8 +464,8 @@ $.ajaxSetup({timeout:3000});
 // The text that appears in the new item boxes
 var newitemText = "New item..."
 
-//refresh when state is this old (in seconds)
-//set negative to disable autorefresh
+// Refresh when state is this old (in seconds). Must be at least 5 seconds.
+// Set to -1 to disable autorefresh.
 var autorefresh_freq = 30;
 
 var init_done = false;
