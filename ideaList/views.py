@@ -1,7 +1,7 @@
 import re
 import json
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_protect
@@ -20,71 +20,34 @@ def render_to(template_name):
         return wrapper
     return renderer
 
+@login_required
+@render_to('ideaList/main.html')
+def main(request):
+    return {'init_state': json.dumps(make_state(request.user))}
+
+@login_required
+def get_state(req):
+    return state_response(req)
+
+########## COMMON STUFF: ##########
+
+def state_response(request, code=200, msg=''):
+    return HttpResponse(status=code, content_type="application/json",
+            content=json.dumps({'state': make_state(request.user), 'msg':msg}))
+
 # Return all state that is used in client's main view
 def make_state(user):
     subscriptions = dict([(s.id,s.as_dict()) for s in
         user.nontrash_subscriptions().order_by()])
     return {'subscriptions':subscriptions}
 
-@login_required
-@render_to('ideaList/main.html')
-def main(request):
-    return {'init_state': json.dumps(make_state(request.user))}
+# A generic view-template for moving objects with positions
+def move(req, cls):
+    if 'position' not in dir(cls):
+        raise ValueError("Provided class doesn't have a position field")
+    cls_name = cls.__name__.lower()
+    obj_id_name = cls_name+'_id'
 
-def state_response(request, code=200, msg=''):
-    return HttpResponse(status=code, content_type="application/json",
-            content=json.dumps({'state': make_state(request.user), 'msg':msg}))
-
-@login_required
-def get_state(req):
-    return state_response(req)
-
-class ItemForm(ModelForm):
-    class Meta:
-        model = Item
-        fields = ('list', 'text', 'position')
-
-@login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
-def additem(req):
-    i = Item(priority='NO')
-    if req.method == 'POST':
-        form = ItemForm(req.POST, instance=i)
-        if form.is_valid():
-            # Success:
-            form.save()
-            return state_response(req, msg='item '+str(i.id)+' added')
-        elif req.is_ajax():
-            return state_response(req, code=400, msg='invalid args')
-    else:
-        form = ItemForm(instance=i)
-
-    return render_to_response('ideaList/additem.html', {'form':form},
-            RequestContext(req))
-
-@login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
-def removeitem(req):
-    if req.method != 'POST':
-        return state_response(req, code=400, msg='Only POST supported')
-    if 'item_id' not in req.POST:
-        return state_response(req, code=400, msg='item_id not provided')
-    try:
-        i = Item.objects.get(pk=req.POST['item_id'])
-    except ValueError:
-        return state_response(req, code=400, msg='invalid item_id')
-    except Item.DoesNotExist:
-        return state_response(req, code=404, msg='No such item')
-    i.delete()
-    return state_response(req, msg='Item '+req.POST['item_id']+' removed')
-
-@login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
-def moveitem(req):
-    """ 
-    Request must have POST keys 'item_id' and 'where'. 'where' is either up/down
-    or item_id's new position as an integer.
-    """
     if req.method != 'POST':
         return state_response(req, code=400, msg='Only POST supported')
     if 'where' not in req.POST:
@@ -96,43 +59,42 @@ def moveitem(req):
         except ValueError:
             return state_response(req, code=400, msg='param where invalid')
 
-    if 'item_id' not in req.POST:
-        return state_response(req, code=400, msg='param item_id not provided')
+    if obj_id_name not in req.POST:
+        return state_response(req, code=400, msg=obj_id_name+' not provided')
     try:
-        i = Item.objects.get(pk=req.POST['item_id'])
+        obj = cls.objects.get(pk=req.POST[obj_id_name])
     except ValueError:
-        return state_response(req, code=400, msg='invalid item_id')
-    except Item.DoesNotExist:
-        return state_response(req, code=404, msg='No such item')
+        return state_response(req, code=400, msg='invalid '+obj_id_name)
+    except cls.DoesNotExist:
+        return state_response(req, code=404, msg='No such '+cls_name)
 
     # Calculate new position
     if where == 'up':
-        oldpos = i.position
-        followers = Item.nontrash.filter(
+        oldpos = obj.position
+        followers = cls.nontrash.filter(
                 position__lt=oldpos).order_by('-position')
         if oldpos == 0 or followers.count() == 0:
             return state_response(req, msg='Could not raise: was on top')
         else:
             newpos = followers[0].position
     elif where == 'down':
-        oldpos = i.position
-        followers = Item.nontrash.filter(position__gt=oldpos)
-        if oldpos == Item.objects.count()-1 or followers.count() == 0:
+        oldpos = obj.position
+        followers = cls.nontrash.filter(position__gt=oldpos)
+        if oldpos == cls.objects.count()-1 or followers.count() == 0:
             return state_response(req, msg='Could not lower: was on bottom')
         else:
             newpos = followers[0].position
     else:
         newpos = where
 
-    i.position = newpos
-    i.save()
-    return state_response(req, msg="Item "+str(i.id)
-            +" moved to index "+str(i.position))
-
+    obj.position = newpos
+    obj.save()
+    return state_response(req, msg=cls_name+" "+str(obj.id)
+            +" moved to index "+str(obj.position))
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware
-def edittext(request):
+def edit_text(request):
     """
     View to use with jeditable for editing the text of items and name of lists.
     Request must have POST entries 'element_id' of form 'item_<item_id>_text' or
@@ -159,6 +121,7 @@ def edittext(request):
                               'msg':"Item "+str(i.id)+"'s text updated",
                               'text':text})
         return HttpResponse(content_type="application/json", content=content)
+
     match = re.match('^subscription_(\d+)_listname$',request.POST['element_id'])
     if match:
         try:
@@ -177,3 +140,65 @@ def edittext(request):
 
     # Neither regex matched to element_id
     return HttpResponseBadRequest('{"msg": "param element_id invalid"}')
+
+########## SUBSCRIPTION MANIPULATION VIEWS: ##########
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def move_subscription(req):
+    """
+    Request must have POST keys 'subscription_id' and 'where'. 'where' is either
+    up/down or subscription's new position as an integer.
+    """
+    return move(req, Subscription);
+
+
+########## ITEM MANIPULATION VIEWS: ##########
+
+class ItemForm(ModelForm):
+    class Meta:
+        model = Item
+        fields = ('list', 'text', 'position')
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def add_item(req):
+    i = Item(priority='NO')
+    if req.method == 'POST':
+        form = ItemForm(req.POST, instance=i)
+        if form.is_valid():
+            # Success:
+            form.save()
+            return state_response(req, msg='item '+str(i.id)+' added')
+        elif req.is_ajax():
+            return state_response(req, code=400, msg='invalid args')
+    else:
+        form = ItemForm(instance=i)
+
+    return render_to_response('ideaList/additem.html', {'form':form},
+            RequestContext(req))
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def remove_item(req):
+    if req.method != 'POST':
+        return state_response(req, code=400, msg='Only POST supported')
+    if 'item_id' not in req.POST:
+        return state_response(req, code=400, msg='item_id not provided')
+    try:
+        i = Item.objects.get(pk=req.POST['item_id'])
+    except ValueError:
+        return state_response(req, code=400, msg='invalid item_id')
+    except Item.DoesNotExist:
+        return state_response(req, code=404, msg='No such item')
+    i.delete()
+    return state_response(req, msg='Item '+req.POST['item_id']+' removed')
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def move_item(req):
+    """
+    Request must have POST keys 'item_id' and 'where'. 'where' is either up/down
+    or item_id's new position as an integer.
+    """
+    return move(req, Item)

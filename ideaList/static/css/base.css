@@ -22,7 +22,7 @@
   list-style-type: none;
   padding-left: 1em;
 }
-.list {
+.subscription {
   margin-top: 1em;
   font-weight: bold;
   font-size: medium;
@@ -39,6 +39,17 @@
   color: blue;
 }
 .itemaction:hover
+{
+  color: red;
+}
+
+.subscriptionaction {
+  font-size: small;
+  vertical-align: middle;
+  text-decoration: none;
+  color: blue;
+}
+.subscriptionaction:hover
 {
   color: red;
 }

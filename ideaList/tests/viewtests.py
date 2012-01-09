@@ -43,15 +43,84 @@ class GetStateViewTest(MyViewTest):
         self.assertEqual(r.status_code, 200)
         self.check_state_in_response(r)
 
-class AdditemViewTest(MyViewTest):
+class MoveSubscriptionViewTest(MyViewTest):
     def setUp(self):
-        super(AdditemViewTest, self).setUp()
+        super(MoveSubscriptionViewTest, self).setUp()
+        self.u = User.objects.all()[0];
+        self.l1 = List.objects.create(name='List1', owner=self.u)
+        self.l2 = List.objects.create(name='List2', owner=self.u)
+        self.l3 = List.objects.create(name='List3', owner=self.u)
+        self.s1 = Subscription.objects.create(list=self.l1, user=self.u)
+        self.s2 = Subscription.objects.create(list=self.l2, user=self.u)
+        self.s3 = Subscription.objects.create(list=self.l3, user=self.u)
+        self.assertEqual(self.s1.position, 0)
+        self.assertEqual(self.s2.position, 1)
+        self.assertEqual(self.s3.position, 2)
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.move_subscription')
+    def test_move_up(self):
+        r = self.c.post(reverse('ideaList.views.move_subscription'),
+                {'subscription_id':self.s2.id, 'where':'up'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Subscription.objects.get(pk=self.s2.id).position, 0)
+        self.assertEqual(Subscription.objects.get(pk=self.s1.id).position, 1)
+        self.check_state_in_response(r)
+    def test_move_upmost_up(self):
+        r = self.c.post(reverse('ideaList.views.move_subscription'),
+                {'subscription_id':self.s1.id, 'where':'up'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Subscription.objects.get(pk=self.s1.id).position, 0)
+        self.assertEqual(Subscription.objects.get(pk=self.s2.id).position, 1)
+        self.check_state_in_response(r)
+    def test_move_down(self):
+        r = self.c.post(reverse('ideaList.views.move_subscription'),
+                {'subscription_id':self.s2.id, 'where':'down'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Subscription.objects.get(pk=self.s2.id).position, 2)
+        self.assertEqual(Subscription.objects.get(pk=self.s3.id).position, 1)
+        self.check_state_in_response(r)
+    def test_move_down_across_trashed_subscription(self):
+        self.s2.delete()
+        r = self.c.post(reverse('ideaList.views.move_subscription'),
+                {'subscription_id':self.s1.id, 'where':'down'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Subscription.objects.get(pk=self.s1.id).position, 2)
+        self.assertEqual(Subscription.objects.get(pk=self.s2.id).position, 0)
+        self.assertEqual(Subscription.objects.get(pk=self.s3.id).position, 1)
+        self.check_state_in_response(r)
+    def test_move_up_across_trashed_subscription(self):
+        self.s2.delete()
+        r = self.c.post(reverse('ideaList.views.move_subscription'),
+                {'subscription_id':self.s3.id, 'where':'up'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Subscription.objects.get(pk=self.s1.id).position, 1)
+        self.assertEqual(Subscription.objects.get(pk=self.s2.id).position, 2)
+        self.assertEqual(Subscription.objects.get(pk=self.s3.id).position, 0)
+        self.check_state_in_response(r)
+    def test_move_abs(self):
+        r = self.c.post(reverse('ideaList.views.move_subscription'),
+                {'subscription_id':self.s1.id, 'where':2},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Subscription.objects.get(pk=self.s1.id).position, 2)
+        self.assertEqual(Subscription.objects.get(pk=self.s2.id).position, 0)
+        self.assertEqual(Subscription.objects.get(pk=self.s3.id).position, 1)
+        self.check_state_in_response(r)
+
+class AddItemViewTest(MyViewTest):
+    def setUp(self):
+        super(AddItemViewTest, self).setUp()
         self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
     def test_login_required(self):
-        self.check_login_required('ideaList.views.additem')
+        self.check_login_required('ideaList.views.add_item')
     def test_valid_item(self):
         self.assertEqual(Item.objects.count(), 0)
-        r = self.c.post(reverse('ideaList.views.additem'),
+        r = self.c.post(reverse('ideaList.views.add_item'),
                 {'list':self.l1.id, 'text':'Cheese', 'position':0},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -63,7 +132,7 @@ class AdditemViewTest(MyViewTest):
         self.assertEqual(i.position, 0)
     def test_invalid_list_id(self):
         self.assertEqual(Item.objects.count(), 0)
-        r = self.c.post(reverse('ideaList.views.additem'),
+        r = self.c.post(reverse('ideaList.views.add_item'),
                 {'list':self.l1.id+5, 'text':'Cheese', 'position':0},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
@@ -71,22 +140,22 @@ class AdditemViewTest(MyViewTest):
         self.check_state_in_response(r)
     def test_invalid_missing_position(self):
         self.assertEqual(Item.objects.count(), 0)
-        r = self.c.post(reverse('ideaList.views.additem'),
+        r = self.c.post(reverse('ideaList.views.add_item'),
                 {'list':self.l1.id, 'text':'Cheese'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
         self.assertEqual(Item.objects.count(), 0)
 
-class RemoveitemViewTest(MyViewTest):
+class RemoveItemViewTest(MyViewTest):
     def setUp(self):
-        super(RemoveitemViewTest, self).setUp()
+        super(RemoveItemViewTest, self).setUp()
         self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
         self.i1 = Item.objects.create(list=self.l1, text='testitem')
     def test_login_required(self):
-        self.check_login_required('ideaList.views.removeitem')
+        self.check_login_required('ideaList.views.remove_item')
     def test_valid_item_id(self):
         self.assertEqual(Item.objects.count(), 1)
-        r = self.c.post(reverse('ideaList.views.removeitem'),
+        r = self.c.post(reverse('ideaList.views.remove_item'),
                 {'item_id':self.i1.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -96,7 +165,7 @@ class RemoveitemViewTest(MyViewTest):
         self.check_state_in_response(r)
     def test_item_id_missing(self):
         self.assertEqual(Item.objects.count(), 1)
-        r = self.c.post(reverse('ideaList.views.removeitem'),
+        r = self.c.post(reverse('ideaList.views.remove_item'),
                 {'item_id_mispelled':self.i1.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
@@ -104,7 +173,7 @@ class RemoveitemViewTest(MyViewTest):
         self.check_state_in_response(r)
     def test_invalid_item_id(self):
         self.assertEqual(Item.objects.count(), 1)
-        r = self.c.post(reverse('ideaList.views.removeitem'),
+        r = self.c.post(reverse('ideaList.views.remove_item'),
                 {'item_id':'invalid'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
@@ -112,16 +181,16 @@ class RemoveitemViewTest(MyViewTest):
         self.check_state_in_response(r)
     def test_nonexisting_item_id(self):
         self.assertEqual(Item.objects.count(), 1)
-        r = self.c.post(reverse('ideaList.views.removeitem'),
+        r = self.c.post(reverse('ideaList.views.remove_item'),
                 {'item_id':self.i1.id+1},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 404)
         self.assertEqual(Item.objects.count(), 1)
         self.check_state_in_response(r)
 
-class MoveitemViewTest(MyViewTest):
+class MoveItemViewTest(MyViewTest):
     def setUp(self):
-        super(MoveitemViewTest, self).setUp()
+        super(MoveItemViewTest, self).setUp()
         self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
         self.i1 = Item.objects.create(list=self.l1, text='testitem1')
         self.i2 = Item.objects.create(list=self.l1, text='testitem2')
@@ -130,9 +199,9 @@ class MoveitemViewTest(MyViewTest):
         self.assertEqual(self.i2.position, 1)
         self.assertEqual(self.i3.position, 2)
     def test_login_required(self):
-        self.check_login_required('ideaList.views.moveitem')
+        self.check_login_required('ideaList.views.move_item')
     def test_move_up(self):
-        r = self.c.post(reverse('ideaList.views.moveitem'),
+        r = self.c.post(reverse('ideaList.views.move_item'),
                 {'item_id':self.i2.id, 'where':'up'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -140,7 +209,7 @@ class MoveitemViewTest(MyViewTest):
         self.assertEqual(Item.objects.get(pk=self.i1.id).position, 1)
         self.check_state_in_response(r)
     def test_move_upmost_up(self):
-        r = self.c.post(reverse('ideaList.views.moveitem'),
+        r = self.c.post(reverse('ideaList.views.move_item'),
                 {'item_id':self.i1.id, 'where':'up'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -148,7 +217,7 @@ class MoveitemViewTest(MyViewTest):
         self.assertEqual(Item.objects.get(pk=self.i2.id).position, 1)
         self.check_state_in_response(r)
     def test_move_down(self):
-        r = self.c.post(reverse('ideaList.views.moveitem'),
+        r = self.c.post(reverse('ideaList.views.move_item'),
                 {'item_id':self.i2.id, 'where':'down'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -157,7 +226,7 @@ class MoveitemViewTest(MyViewTest):
         self.check_state_in_response(r)
     def test_move_down_across_trashed_item(self):
         self.i2.delete()
-        r = self.c.post(reverse('ideaList.views.moveitem'),
+        r = self.c.post(reverse('ideaList.views.move_item'),
                 {'item_id':self.i1.id, 'where':'down'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -167,7 +236,7 @@ class MoveitemViewTest(MyViewTest):
         self.check_state_in_response(r)
     def test_move_up_across_trashed_item(self):
         self.i2.delete()
-        r = self.c.post(reverse('ideaList.views.moveitem'),
+        r = self.c.post(reverse('ideaList.views.move_item'),
                 {'item_id':self.i3.id, 'where':'up'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -176,7 +245,7 @@ class MoveitemViewTest(MyViewTest):
         self.assertEqual(Item.objects.get(pk=self.i3.id).position, 0)
         self.check_state_in_response(r)
     def test_move_abs(self):
-        r = self.c.post(reverse('ideaList.views.moveitem'),
+        r = self.c.post(reverse('ideaList.views.move_item'),
                 {'item_id':self.i1.id, 'where':2},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -185,17 +254,17 @@ class MoveitemViewTest(MyViewTest):
         self.assertEqual(Item.objects.get(pk=self.i3.id).position, 1)
         self.check_state_in_response(r)
 
-class EdittextViewTest(MyViewTest):
+class EditTextViewTest(MyViewTest):
     def setUp(self):
-        super(EdittextViewTest, self).setUp()
+        super(EditTextViewTest, self).setUp()
         u = User.objects.all()[0]
         self.l1 = List.objects.create(name='List1', owner=u)
         self.i1 = Item.objects.create(list=self.l1, text='testitem1')
         self.s1 = Subscription.objects.create(user=u, list=self.l1)
     def test_login_required(self):
-        self.check_login_required('ideaList.views.edittext')
+        self.check_login_required('ideaList.views.edit_text')
     def test_valid_item_request(self):
-        r = self.c.post(reverse('ideaList.views.edittext'),
+        r = self.c.post(reverse('ideaList.views.edit_text'),
                 {'element_id':'item_'+str(self.i1.id)+'_text', 'text':'lolo'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
@@ -204,7 +273,7 @@ class EdittextViewTest(MyViewTest):
         self.assertIn('text', data)
         self.assertEqual(data['text'], 'lolo')
     def test_valid_list_request(self):
-        r = self.c.post(reverse('ideaList.views.edittext'),
+        r = self.c.post(reverse('ideaList.views.edit_text'),
                 {'element_id':'subscription_'+str(self.s1.id)+'_listname',
                     'text':'wololo'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -214,25 +283,25 @@ class EdittextViewTest(MyViewTest):
         self.assertIn('text', data)
         self.assertEqual(data['text'], 'wololo')
     def test_element_id_missing(self):
-        r = self.c.post(reverse('ideaList.views.edittext'),
+        r = self.c.post(reverse('ideaList.views.edit_text'),
                 {'text':'lolo'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
         self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
     def test_element_id_invalid(self):
-        r = self.c.post(reverse('ideaList.views.edittext'),
+        r = self.c.post(reverse('ideaList.views.edit_text'),
                 {'element_id':'item_'+str(self.i1.id)+'_tex', 'text':'lolo'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
         self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
     def test_item_id_invalid(self):
-        r = self.c.post(reverse('ideaList.views.edittext'),
+        r = self.c.post(reverse('ideaList.views.edit_text'),
                 {'element_id':'item_'+str(self.i1.id+1)+'_text', 'text':'lolo'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 404)
         self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
     def test_text_missing(self):
-        r = self.c.post(reverse('ideaList.views.edittext'),
+        r = self.c.post(reverse('ideaList.views.edit_text'),
                 {'element_id':'item_'+str(self.i1.id)+'_text'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)

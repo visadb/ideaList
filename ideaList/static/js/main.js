@@ -98,6 +98,34 @@ function parseErrorThrown(errorThrown) {
   return data;
 }
 
+function moveHandler(e) {
+  e.preventDefault();
+  var obj_elem = $(this).parent();
+  var res = /^move_(item|subscription)_(\d+)_(up|down)$/
+    .exec($(this).attr('id'));
+  if (!res || res.length != 4)
+    return false;
+  var obj_type = res[1];
+  var obj_id = res[2];
+  var direction = res[3];
+  var obj_before = null; // Item before which to insert obj_elem
+  if (direction == 'up')
+    obj_before = obj_elem.prev();
+  else
+    obj_before = obj_elem.next();
+  if (obj_before.length != 1 || !obj_before.hasClass(obj_type)) {
+    debug('Not moving; already topmost/bottommost.');
+    return false;
+  }
+  data = {where:direction};
+  data[obj_type+'_id'] = obj_id;
+  $.ajax('/ideaList/move_'+obj_type+'/', {
+    dataType:"json", type:"POST", data:data
+  }).done(function(data) {
+    mergeState(data.state);
+  }).fail(get_ajax_fail_handler('move_'+obj_type));
+}
+
 ///////////// SUBSCRIPTION RELATED DOM MANIPULATION /////////////
 
 function initAddItemField(field) {
@@ -122,14 +150,14 @@ function initAddItemField(field) {
       var pos = res[1];
       var list_id = res[2];
       var position = (pos == 'begin' ? 0 : -1);
-      $.ajax('/ideaList/additem/', {
+      $.ajax('/ideaList/add_item/', {
         dataType: "json",
         type: "POST",
         data: {list:list_id, text:val, position:position},
       }).done(function(data) {
-        addfield.val("").blur(); // Reset additem field
+        addfield.val("").blur(); // Reset add item field
         mergeState(data.state);
-      }).fail(get_ajax_fail_handler('additem'));
+      }).fail(get_ajax_fail_handler('add_item'));
     }
   }).addClass("newitem_blur");
 }
@@ -143,12 +171,23 @@ function makeAddItemField(subscr, pos) {
   return addItemHtml;
 }
 function makeSubscription(s) {
-  // TODO: add arrows buttons like in items
+  // TODO: add remove and add item buttons
   var l = s.list;
-  var subscriptionHtml = $('<li id="subscription_'+s.id+'" class="list"></li>')
-    .append($('<span id="subscription_'+s.id+'_listname" class="list-name">'
-          +l.name+'</span>').editable(editableUrl, editableSettings));
+  var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
+      +' class="subscription"></li>')
+  var listNameHtml = $('<span id="subscription_'+s.id+'_listname"'
+      +' class="list-name">'+l.name+'</span>')
+      .editable(editableUrl, editableSettings);
+  var moveUpHtml = $('<a id="move_subscription_'+s.id+'_up"'
+      +' class="subscriptionaction move_subscription" href="#">&uarr;</a>')
+      .click(moveHandler);
+  var moveDownHtml = $('<a id="move_subscription_'+s.id+'_down"'
+      +' class="subscriptionaction move_subscription" href="#">&darr;</a>')
+      .click(moveHandler);
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
+  subscriptionHtml.append(listNameHtml)
+    .append('&nbsp;').append(moveUpHtml)
+    .append('&nbsp;').append(moveDownHtml);
   var items = valuesSortedByPosition(l.items);
   for (var i in items) {
     var itemHtml = makeItem(items[i]);
@@ -181,7 +220,7 @@ function insertSubscriptionToDOM(s, subscriptionHtml, animate) {
     }
   }
   if (animate)
-    subscriptionHtml.hide().show(1000);
+    subscriptionHtml.hide().show('blind', {direction:'vertical'}, 1000);
 }
 function addSubscription(s, animate) {
   debug('Adding subscription '+s.id+' ('+s.list.name+')');
@@ -253,62 +292,33 @@ function updateSubscription(s) {
 ///////////// ITEM RELATED DOM MANIPULATION /////////////
 
 function makeItem(itemdata) {
-  function removeitemHandler(e) {
+  function removeItemHandler(e) {
     e.preventDefault();
     var item_elem = $(this).parent();
     var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
     if (res.length != 2)
       return false;
     var item_id = res[1];
-    $.ajax('/ideaList/removeitem/', {
+    $.ajax('/ideaList/remove_item/', {
       dataType: "json", type: "POST", data: {item_id:item_id},
     }).done(function(data) {
       debug("Item "+item_id+" removed");
       mergeState(data.state);
-    }).fail(get_ajax_fail_handler('removeitem'));
+    }).fail(get_ajax_fail_handler('remove_item'));
   }
-  function moveitemHandler(e) {
-    e.preventDefault();
-    var item_elem = $(this).parent();
-    var res = /^move_item_(\d+)_(up|down)$/.exec($(this).attr('id'));
-    if (!res || res.length != 3)
-      return false;
-    var item_id = res[1];
-    var direction = res[2];
-    var item_before = null; // Item before which to insert item_elem
-    if (direction == 'up')
-      item_before = item_elem.prev();
-    else
-      item_before = item_elem.next();
-    if (item_before.length != 1 || !item_before.hasClass('item')) {
-      debug('Not moving; already topmost/bottommost.');
-      return false;
-    }
-    $.ajax('/ideaList/moveitem/', {
-      dataType: "json",
-      type: "POST",
-      data: {
-        item_id:item_id,
-        where:direction,
-      },
-    }).done(function(data) {
-      mergeState(data.state);
-    }).fail(get_ajax_fail_handler('moveitem'));
-  }
-  var editableUrl = '/ideaList/edittext/';
   var item_id = itemdata.id;
   var itemHtml = $('<li id="item_'+item_id+'" class="item"></li>');
   var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'
       +itemdata.text+'</span>').editable(editableUrl, editableSettings);
   var removeHtml = $('<a id="remove_item_'+item_id
-      +'" class="itemaction removeitem" href="#">&#10005;</a>')
-      .click(removeitemHandler);
+      +'" class="itemaction remove_item" href="#">&#10005;</a>')
+      .click(removeItemHandler);
   var moveUpHtml = $('<a id="move_item_'+item_id+'_up"'
-      +' class="itemaction moveitem" href="#">&uarr;</a>')
-      .click(moveitemHandler);
+      +' class="itemaction move_item" href="#">&uarr;</a>')
+      .click(moveHandler);
   var moveDownHtml = $('<a id="move_item_'+item_id+'_down"'
-      +' class="itemaction moveitem" href="#">&darr;</a>')
-      .click(moveitemHandler);
+      +' class="itemaction move_item" href="#">&darr;</a>')
+      .click(moveHandler);
   itemHtml
     .append(itemTextHtml)
     .append('&nbsp;').append(removeHtml)
@@ -466,7 +476,7 @@ var newitemText = "New item..."
 // Set to -1 to disable autorefresh.
 var autorefresh_freq = 30;
 
-var editableUrl = '/ideaList/edittext/';
+var editableUrl = '/ideaList/edit_text/';
 var editableSettings = {
     tooltip: "Click to edit",
     style:   "inherit",
