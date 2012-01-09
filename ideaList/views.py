@@ -23,7 +23,7 @@ def render_to(template_name):
 # Return all state that is used in client's main view
 def make_state(user):
     subscriptions = dict([(s.id,s.as_dict()) for s in
-        user.nontrash_subscriptions()])
+        user.nontrash_subscriptions().order_by()])
     return {'subscriptions':subscriptions}
 
 @login_required
