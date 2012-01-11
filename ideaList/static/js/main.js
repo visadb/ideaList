@@ -104,7 +104,7 @@ function updateListMenu(newState) {
     var symbol = subOfList[l.id] == undefined ? '+' : '&#x2212;';
     listMenu.append($('<li>'+symbol+' '+l.name+'</li>'))
   }
-  $("#lists-dropdown").html(listMenu);
+  $("#lists_dropdown").html(listMenu);
   oldSubOfList = cloneObject(subOfList);
   state.lists = newState.lists;
 }
@@ -551,7 +551,8 @@ var editableSettings = {
 var init_done = false;
 $(document).ready(function() {
   state = {subscriptions: {}};
-  $("#list-nav > div").click(function() {$('.dropcontent',this).slideToggle()});
+  $("#lists_button").click(function(e) {$('.dropcontent',this).slideToggle()});
+  $(".dropcontent").click(function(e) { e.stopPropagation(); });
   $("#refresh_button").click(function() {refresh();});
   $("#arrows_button").click(function() {
     if ($('.move_item').css('display') == 'none') {

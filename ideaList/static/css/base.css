@@ -18,9 +18,10 @@
 .green { color: #0f0; }
 .yellow { color: #d5d500; }
 .listlist {
-  display: table-cell;
+  clear: both;
   list-style-type: none;
   padding-left: 1em;
+  padding-top: 0.5em;
 }
 .subscription {
   margin-top: 1em;
@@ -64,12 +65,13 @@
 }
 
 /* The nav bar */
-#list-nav {
+ul#list-nav {
+  list-style: none;
   margin:10px 0 0 0;
   padding:0;
 }
-#list-nav > div {
-  display: table-cell;
+ul#list-nav > li {
+  float: left;
   cursor: pointer;
   padding:5px 0;
   width:110px;
@@ -77,26 +79,26 @@
   text-align:center;
   border-left:1px solid #fff;
 }
-#list-nav > div:hover {
+ul#list-nav > li:hover {
   background:#a2b3a1;
   color:#000;
 }
-#list-nav > div > span {
+ul#list-nav > li > span {
   color:#eee;
 }
-#list-nav > div > div.dropcontent {
+ul#list-nav > li > div.dropcontent {
   position: absolute;
   /* display: none; */
   cursor: auto;
   margin-top: 4px;
+  padding: 5px 5px 5px 5px;
   background:#485e49;
   color:#eee;
 }
 
-.listmenu {
+ul.listmenu {
   list-style: none;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding: 0 5px 0 5px;
   text-align: left;
 }
 
