@@ -100,7 +100,9 @@ function updateListMenu(newState) {
     return an < bn ? -1 : (an > bn ? 1 : 0);
   });
   for (var i in newLists) {
-    listMenu.append($('<li>'+newLists[i].name+'</li>'))
+    var l = newLists[i];
+    var symbol = subOfList[l.id] == undefined ? '+' : '&#x2212;';
+    listMenu.append($('<li>'+symbol+' '+l.name+'</li>'))
   }
   $("#lists-dropdown").html(listMenu);
   oldSubOfList = cloneObject(subOfList);
