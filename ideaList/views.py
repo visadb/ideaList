@@ -5,7 +5,7 @@ from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_protect
-from ideaList.models import Item, Subscription
+from ideaList.models import List, Item, Subscription
 from django.forms import ModelForm
 
 # Decorator that adds RequestContext
@@ -37,9 +37,11 @@ def state_response(request, code=200, msg=''):
 
 # Return all state that is used in client's main view
 def make_state(user):
-    subscriptions = dict([(s.id,s.as_dict()) for s in
-        user.nontrash_subscriptions().order_by()])
-    return {'subscriptions':subscriptions}
+    subscriptions = dict([(s.id,s.as_dict())
+        for s in user.nontrash_subscriptions().order_by()])
+    lists = dict([(l.id, l.as_dict(include_items=False))
+        for l in List.nontrash.all()])
+    return {'subscriptions':subscriptions, 'lists':lists}
 
 # A generic view-template for moving objects with positions
 def move(req, cls):

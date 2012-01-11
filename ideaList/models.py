@@ -33,10 +33,12 @@ class List(Trashable):
             return self.subscriptions.filter(user=user)[0]
         except IndexError:
             return None
-    def as_dict(self):
-        return {'id':self.id, 'name':self.name, 'owner_id':self.owner_id,
-                'items': dict([(i.id,i.as_dict()) for i in
-                    self.nontrashed_items().order_by()])}
+    def as_dict(self, include_items=True):
+        rep = {'id':self.id, 'name':self.name, 'owner_id':self.owner_id }
+        if include_items:
+            rep['items'] = dict([(i.id,i.as_dict())
+                for i in self.nontrashed_items().order_by()])
+        return rep
     def __unicode__(self):
         val = self.name
         if self.trashed_at:
