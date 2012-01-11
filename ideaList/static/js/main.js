@@ -47,6 +47,12 @@ function mergeState(newState) {
     debug('Tried to merge null/undefined state');
     return false;
   }
+  updateSubscriptions(newState);
+  updateListMenu(newState);
+  state_timestamp = new Date().getTime();
+}
+
+function updateSubscriptions(newState) {
   var old_sub_ids = Object.keys(state.subscriptions);
   var new_sub_ids = Object.keys(newState.subscriptions);
   var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
@@ -61,8 +67,6 @@ function mergeState(newState) {
     removeSubscription(newState.subscriptions[subs_to_remove[i]], true);
   for(var i in subs_to_update)
     updateSubscription(newState.subscriptions[subs_to_update[i]]);
-  updateListMenu(newState);
-  state_timestamp = new Date().getTime();
 }
 
 // To be called as part of mergeState: after subscriptions have been updated
