@@ -11,10 +11,22 @@ function array_diff(a, b) {
 function array_intersect(a, b) {
   return a.filter(function(i) {return $.inArray(i, b) >= 0;});
 }
+// Make a level-1 clone (shallowish)
+function cloneObject(obj) {
+  var newObj = {};
+  for (var i in obj)
+    newObj[i] = obj[i];
+  return newObj; 
+}
 // Convert an object to array and sort by position attribute of values
 function valuesSortedByPosition(obj) {
   return $.map(obj, function(x){return x;})
     .sort(function(a,b) {return a.position - b.position;});
+}
+// Convert an object to array and sort by id attribute of values
+function valuesSortedById(obj) {
+  return $.map(obj, function(x){return x;})
+    .sort(function(a,b) {return a.id - b.id;});
 }
 
 function debug() {
@@ -29,14 +41,14 @@ function debug() {
 
 ///////////// GENERAL DOM MANIPULATION /////////////
 
-// Make the main view correspond to newstate
-function mergeState(newstate) {
-  if (!newstate) {
+// Make the main view correspond to newState
+function mergeState(newState) {
+  if (!newState) {
     debug('Tried to merge null/undefined state');
     return false;
   }
   var old_sub_ids = Object.keys(state.subscriptions);
-  var new_sub_ids = Object.keys(newstate.subscriptions);
+  var new_sub_ids = Object.keys(newState.subscriptions);
   var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
   var subs_to_remove = array_diff(old_sub_ids, new_sub_ids);
   var subs_to_update = array_intersect(old_sub_ids, new_sub_ids);
@@ -44,12 +56,51 @@ function mergeState(newstate) {
 //    +"("+subs_to_add+")/("+subs_to_remove+")/("+subs_to_update+")");
 
   for(var i in subs_to_add)
-    addSubscription(newstate.subscriptions[subs_to_add[i]], init_done);
+    addSubscription(newState.subscriptions[subs_to_add[i]], init_done);
   for(var i in subs_to_remove)
-    removeSubscription(newstate.subscriptions[subs_to_remove[i]], true);
+    removeSubscription(newState.subscriptions[subs_to_remove[i]], true);
   for(var i in subs_to_update)
-    updateSubscription(newstate.subscriptions[subs_to_update[i]]);
+    updateSubscription(newState.subscriptions[subs_to_update[i]]);
+  updateListMenu(newState);
   state_timestamp = new Date().getTime();
+}
+
+// To be called as part of mergeState: after subscriptions have been updated
+function updateListMenu(newState) {
+  var newLists = valuesSortedById(newState.lists);
+  if (state && state.lists) {
+    // Check if update is necessary (if lists or subscriptions have changed)
+    var oldLists = valuesSortedById(state.lists);
+    var listsChanged = false;
+    if (newLists.length != oldLists.length) {
+      listsChanged = true;
+    } else {
+      for (var i in newLists) {
+        var n = newLists[i]; var o = oldLists[i];
+        if (n.id != o.id || n.name != o.name
+            || subOfList[n.id] != oldSubOfList[n.id]) {
+          listsChanged = true;
+          break;
+        }
+      }
+    }
+    if (!listsChanged) {
+      debug('Not updating list menu: nothing relevant changed');
+      return;
+    }
+  }
+  // Generate content for #listmenu
+  var listMenu = $('<ul id="listmenu" class="listmenu" />');
+  newLists.sort(function(a, b) {
+    var an = a.name.toLowerCase(); var bn = b.name.toLowerCase();
+    return an < bn ? -1 : (an > bn ? 1 : 0);
+  });
+  for (var i in newLists) {
+    listMenu.append($('<li>'+newLists[i].name+'</li>'))
+  }
+  $("#lists-dropdown").html(listMenu);
+  oldSubOfList = cloneObject(subOfList);
+  state.lists = newState.lists;
 }
 
 function refresh() {
@@ -130,10 +181,8 @@ function moveHandler(e) {
 
 function initAddItemField(field) {
   return field.blur(function() {
-    if($(this).val() == "") {
-      $(this).val(newitemText)
-        .addClass("newitem_blur");
-    }
+    if($(this).val() == "")
+      $(this).val(newitemText).addClass("newitem_blur");
   }).focus(function() {
     $(this).removeClass("newitem_blur");
     if($(this).val() == newitemText)
@@ -231,7 +280,7 @@ function addSubscription(s, animate) {
   var subscriptionHtml = makeSubscription(s);
   insertSubscriptionToDOM(s, subscriptionHtml, animate)
   state.subscriptions[s.id] = s;
-  sub_of_list[s.list.id] = s.id;
+  subOfList[s.list.id] = s.id;
 }
 function removeSubscription(s, animate) {
   debug('Removing subscription '+s.id+' ('+s.list.name+')');
@@ -244,7 +293,7 @@ function removeSubscription(s, animate) {
   else
     $('#subscription_'+s.id).remove();
   delete state.subscriptions[s.id];
-  delete sub_of_list[s.list.id]
+  delete subOfList[s.list.id]
 }
 function updateSubscription(s) {
   //debug('Updating subscription '+s.id+' ('+s.list.name+')');
@@ -328,7 +377,7 @@ function makeItem(itemdata) {
 }
 // Insert an already constructed itemHtml to DOM
 function insertItemToDOM(item, itemHtml, animate) {
-  sub_id = sub_of_list[item.list_id];
+  sub_id = subOfList[item.list_id];
   var curitems = valuesSortedByPosition(state.subscriptions[sub_id].list.items);
   if (Object.keys(curitems).length == 0 || item.position == 0) {
     //debug('  Adding item to first position');
@@ -357,7 +406,7 @@ function insertItemToDOM(item, itemHtml, animate) {
 function addItem(item, animate) {
   debug('Adding item '+item.id+' ('+item.text+')');
   var list_id = item.list_id;
-  sub_id = sub_of_list[item.list_id];
+  sub_id = subOfList[item.list_id];
   if (sub_id === undefined) {
     debug('Tried to add an item to a nonexisting list');
     return false;
@@ -380,10 +429,10 @@ function removeItem(item, animate) {
     $('#item_'+item.id).hide(1000, function(){$(this).remove()});
   else
     $('#item_'+item.id).remove();
-  delete state.subscriptions[sub_of_list[item.list_id]].list.items[item.id];
+  delete state.subscriptions[subOfList[item.list_id]].list.items[item.id];
 }
 function updateItem(newI) {
-  curI = state.subscriptions[sub_of_list[newI.list_id]].list.items[newI.id];
+  curI = state.subscriptions[subOfList[newI.list_id]].list.items[newI.id];
   if (!curI) {
     debug('Tried to update a nonexisting item: '+item.id);
     return
@@ -405,7 +454,7 @@ function updateItem(newI) {
     insertItemToDOM(newI, $('#item_'+curI.id).detach(), true);
     updated.push('position');
   }
-  state.subscriptions[sub_of_list[curI.list_id]].list.items[curI.id] = newI;
+  state.subscriptions[subOfList[curI.list_id]].list.items[curI.id] = newI;
   if (updated.length > 0) {
     // Flash the item if it wasn't moved (to avoid double animation)
     if ($.inArray('position', updated) == -1)
@@ -507,7 +556,7 @@ $(document).ready(function() {
       $('> span', this).html('Arrows on');
     }
   });
-  sub_of_list = {};
+  subOfList = {};
   setStatusLight();
   mergeState(init_state);
   refresher();
