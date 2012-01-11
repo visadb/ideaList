@@ -59,6 +59,37 @@
 .newitem_blur {
   color: #aaa;
 }
-.removeitem {
+.move_item, .move_subscription {
+  display: none;
 }
+
+/* The nav bar */
+#list-nav {
+  margin:10px 0 0 0;
+  padding:0;
+}
+#list-nav > div {
+  display: table-cell;
+  cursor: pointer;
+  padding:5px 0;
+  width:110px;
+  background:#485e49;
+  text-align:center;
+  border-left:1px solid #fff;
+}
+#list-nav > div:hover {
+  background:#a2b3a1;
+  color:#000;
+}
+#list-nav > div > span {
+  color:#eee;
+}
+#list-nav > div > div.dropcontent {
+  position: absolute;
+  display: none;
+  margin-top: 4px;
+  background:#485e49;
+  color:#eee;
+}
+
 /* END MAIN PAGE STYLE */

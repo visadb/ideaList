@@ -17,9 +17,19 @@
 {% endblock %}
 
 {% block content %}
-<div>
-  <button id="refresh" onClick="refresh()">Refresh</button>
+<div id="list-nav">
+  <div id="refresh_button"><span>Refresh</span></div>
+  <div id="arrows_button"><span>Arrows on</span></div>
+  <div id="lists_button">
+    <span>Lists &#x25bf;</span>
+    <div class="dropcontent">
+      Huoh<br />
+      Lol<br />
+      Plaah
+    </div>
+  </div>
 </div>
+
 <ul id="listlist" class="listlist">
 </ul>
 

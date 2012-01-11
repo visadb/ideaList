@@ -496,6 +496,17 @@ var editableSettings = {
 var init_done = false;
 $(document).ready(function() {
   state = {subscriptions: {}};
+  $("#list-nav > div").click(function() {$('.dropcontent',this).slideToggle()});
+  $("#refresh_button").click(function() {refresh();});
+  $("#arrows_button").click(function() {
+    if ($('.move_item').css('display') == 'none') {
+      $('.move_item').add('.move_subscription').fadeIn();
+      $('> span', this).html('Arrows off');
+    } else {
+      $('.move_item').add('.move_subscription').fadeOut();
+      $('> span', this).html('Arrows on');
+    }
+  });
   sub_of_list = {};
   setStatusLight();
   mergeState(init_state);
