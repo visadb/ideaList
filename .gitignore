@@ -1,0 +1,6 @@
+ipythonrc
+puhveli.sqlite3
+*.pyc
+*.sw?
+*.vim
+*.bak
