@@ -9,5 +9,7 @@ urlpatterns = patterns('ideaList.views',
     url(r'^add_subscription/$', 'add_subscription'),
     url(r'^remove_subscription/$', 'remove_subscription'),
     url(r'^move_subscription/$', 'move_subscription'),
+    url(r'^add_list/$', 'add_list'),
+    url(r'^remove_list/$', 'remove_list'),
     url(r'^edit_text/$', 'edit_text'),
 )

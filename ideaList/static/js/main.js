@@ -30,7 +30,7 @@ function valuesSortedById(obj) {
 }
 
 function debug() {
-  if(init_done) {
+  if(initDone) {
     console.debug.apply(console, arguments);
   } else {
     // console.debug doesn't work before init is complete -> small delay
@@ -62,7 +62,7 @@ function updateSubscriptions(newState) {
 //    +"("+subs_to_add+")/("+subs_to_remove+")/("+subs_to_update+")");
 
   for(var i in subs_to_add)
-    addSubscription(newState.subscriptions[subs_to_add[i]], init_done);
+    addSubscription(newState.subscriptions[subs_to_add[i]], initDone);
   for(var i in subs_to_remove)
     removeSubscription(state.subscriptions[subs_to_remove[i]], true);
   for(var i in subs_to_update)
@@ -566,11 +566,7 @@ var editableSettings = {
       return data.text;
     }};
 
-var init_done = false;
-$(document).ready(function() {
-  state = {subscriptions: {}};
-  $("#lists_button").click(function(e) {$('.dropcontent',this).slideToggle()});
-  $(".dropcontent").click(function(e) { e.stopPropagation(); });
+function initTopBar() {
   $("#refresh_button").click(function() {refresh();});
   $("#arrows_button").click(function() {
     if ($('.move_item').css('display') == 'none') {
@@ -581,9 +577,42 @@ $(document).ready(function() {
       $('> span', this).html('Arrows on');
     }
   });
+  $("#lists_button").click(function(e) {$('.dropcontent',this).slideToggle()});
+  $(".dropcontent").click(function(e) { e.stopPropagation(); });
+}
+
+function initCreateList() {
+  $('#create_list_nameinput').hide().blur(function(e) {
+    $(this).hide();
+    $('#create_list_link').show();
+  }).keydown(function(e) {
+    if(e.keyCode == 13) {
+      var val = $(this).val();
+      if (val.length == 0)
+        return false;
+      $.ajax('/ideaList/add_list/',
+        { dataType: "json", type: "POST", data: {name:val, subscribe:'true'} }
+      ).done(function(data) {
+        $('#create_list_nameinput').blur(); //Does hide+show
+        mergeState(data.state);
+      }).fail(get_ajax_fail_handler('add_list'));
+    }
+  });
+  $('#create_list_link').click(function(e) {
+    $(this).hide();
+    $('#create_list_nameinput').show().focus();
+  });
+
+}
+
+var initDone = false;
+$(document).ready(function() {
+  initTopBar();
+  initCreateList();
+  state = {subscriptions: {}};
   subOfList = {};
   setStatusLight();
   mergeState(init_state);
   refresher();
-  init_done = true;
+  initDone = true;
 });

@@ -29,6 +29,7 @@ def main(request):
 def get_state(req):
     return state_response(req)
 
+
 ########## COMMON STUFF: ##########
 
 def state_response(request, code=200, msg=''):
@@ -143,6 +144,7 @@ def edit_text(request):
     # Neither regex matched to element_id
     return HttpResponseBadRequest('{"msg": "param element_id invalid"}')
 
+
 ########## SUBSCRIPTION MANIPULATION VIEWS: ##########
 
 @login_required
@@ -204,6 +206,7 @@ def move_subscription(req):
     """
     return move(req, Subscription);
 
+
 ########## ITEM MANIPULATION VIEWS: ##########
 
 class ItemForm(ModelForm):
@@ -253,3 +256,42 @@ def move_item(req):
     or item_id's new position as an integer.
     """
     return move(req, Item)
+
+
+########## LIST MANIPULATION VIEWS: ##########
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def add_list(req):
+    """
+    Request must have POST key 'name'. Request may also have POST key
+    'subscribe'. If POST['subscribe'] == 'true', req.user is subscribed to the
+    created list.
+    """
+    if req.method != 'POST':
+        return state_response(req, code=400, msg='Only POST supported')
+    if 'name' not in req.POST:
+        return state_response(req, code=400, msg='name not provided')
+    elif len(req.POST['name']) == 0:
+        return state_response(req, code=400, msg='empty name')
+    l = List.objects.create(name=req.POST['name'], owner=req.user)
+    if 'subscribe' in req.POST and req.POST['subscribe'] == 'true':
+        Subscription.objects.create(user=req.user, list=l);
+        return state_response(req, msg='List created and subscribed')
+    return state_response(req, msg='List created')
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def remove_list(req):
+    if req.method != 'POST':
+        return state_response(req, code=400, msg='Only POST supported')
+    if 'list_id' not in req.POST:
+        return state_response(req, code=400, msg='list_id not provided')
+    try:
+        l = List.objects.get(pk=req.POST['list_id'])
+    except ValueError:
+        return state_response(req, code=400, msg='invalid list_id')
+    except List.DoesNotExist:
+        return state_response(req, code=404, msg='No such list')
+    l.delete()
+    return state_response(req, msg='List '+req.POST['list_id']+' removed')

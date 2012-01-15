@@ -65,6 +65,16 @@
   color: red;
 }
 
+.create_list {
+  vertical-align: middle;
+  text-decoration: none;
+  color: blue;
+}
+.create_list:hover
+{
+  color: red;
+}
+
 .newitem {
 }
 .newitem_blur {

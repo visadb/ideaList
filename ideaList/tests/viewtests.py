@@ -9,6 +9,7 @@ class MyViewTest(test.TestCase):
     fixtures = ['auth.json']
     def setUp(self):
         self.c = Client()
+        self.u1 = User.objects.get(username='visa')
         self.assertTrue(self.c.login(username='visa', password='salakala'))
     def check_login_required(self, viewname):
         self.c.logout()
@@ -46,7 +47,6 @@ class GetStateViewTest(MyViewTest):
 class AddSubscriptionViewTest(MyViewTest):
     def setUp(self):
         super(AddSubscriptionViewTest, self).setUp()
-        self.u1 = User.objects.all()[0];
         self.l1 = List.objects.create(name='List1', owner=self.u1)
     def test_login_required(self):
         self.check_login_required('ideaList.views.add_subscription')
@@ -111,7 +111,6 @@ class AddSubscriptionViewTest(MyViewTest):
 class RemoveSubscriptionViewTest(MyViewTest):
     def setUp(self):
         super(RemoveSubscriptionViewTest, self).setUp()
-        self.u1 = User.objects.all()[0];
         self.l1 = List.objects.create(name='List1', owner=self.u1)
         self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
     def test_login_required(self):
@@ -411,3 +410,79 @@ class EditTextViewTest(MyViewTest):
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
         self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
+
+
+class AddListViewTest(MyViewTest):
+    def setUp(self):
+        super(AddListViewTest, self).setUp()
+        self.assertEqual(List.objects.count(), 0)
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.add_list')
+    def test_add_list(self):
+        r = self.c.post(reverse('ideaList.views.add_list'),
+                {'name':'List1'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.check_state_in_response(r)
+        self.assertEqual(List.objects.count(), 1)
+    def test_add_list_and_subscribe(self):
+        self.assertEqual(Subscription.objects.count(), 0)
+        r = self.c.post(reverse('ideaList.views.add_list'),
+                {'name':'List1', 'subscribe':'true'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.check_state_in_response(r)
+        self.assertEqual(List.objects.count(), 1)
+        l = List.objects.all()[0]
+        self.assertEqual(l.name, 'List1')
+        self.assertEqual(Subscription.objects.count(), 1)
+        s = Subscription.objects.all()[0]
+        self.assertEqual(s.list, l)
+        self.assertEqual(s.user, self.u1)
+    def test_add_list_with_misspelled_name(self):
+        r = self.c.post(reverse('ideaList.views.add_list'),
+                {'naem':'List1'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        self.check_state_in_response(r)
+        self.assertEqual(List.objects.count(), 0)
+    def test_add_list_with_empty_name(self):
+        r = self.c.post(reverse('ideaList.views.add_list'),
+                {'name':''},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        data = self.check_state_in_response(r)
+        self.assertIn('msg', data)
+        self.assertIn('empty', data['msg'])
+        self.assertEqual(List.objects.count(), 0)
+
+class RemoveListViewTest(MyViewTest):
+    def setUp(self):
+        super(RemoveListViewTest, self).setUp()
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.assertEqual(List.objects.count(), 1)
+        self.assertEqual(List.nontrash.count(), 1)
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.remove_list')
+    def test_remove_list(self):
+        r = self.c.post(reverse('ideaList.views.remove_list'),
+                {'list_id':self.l1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.check_state_in_response(r)
+        self.assertEqual(List.objects.count(), 1)
+        self.assertEqual(List.nontrash.count(), 0)
+    def test_remove_list_with_missing_id(self):
+        r = self.c.post(reverse('ideaList.views.remove_list'),
+                {'list_idd':self.l1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        self.check_state_in_response(r)
+    def test_remove_list_with_invalid_id(self):
+        r = self.c.post(reverse('ideaList.views.remove_list'),
+                {'list_id':self.l1.id+1},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 404)
+        self.check_state_in_response(r)
+        self.assertEqual(List.objects.count(), 1)
+        self.assertEqual(List.nontrash.count(), 1)
