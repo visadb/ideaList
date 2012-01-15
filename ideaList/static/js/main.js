@@ -64,7 +64,7 @@ function updateSubscriptions(newState) {
   for(var i in subs_to_add)
     addSubscription(newState.subscriptions[subs_to_add[i]], init_done);
   for(var i in subs_to_remove)
-    removeSubscription(newState.subscriptions[subs_to_remove[i]], true);
+    removeSubscription(state.subscriptions[subs_to_remove[i]], true);
   for(var i in subs_to_update)
     updateSubscription(newState.subscriptions[subs_to_update[i]]);
 }
@@ -99,10 +99,28 @@ function updateListMenu(newState) {
     var an = a.name.toLowerCase(); var bn = b.name.toLowerCase();
     return an < bn ? -1 : (an > bn ? 1 : 0);
   });
+  function addRemoveHandler(e) {
+    var res = /^(subscribe|unsubscribe)_list_(\d+)$/.exec($(this).attr('id'));
+    if (!res || res.length != 3) {
+      debug('Called for invalid id');
+      return false;
+    }
+    var url = res[1]=='subscribe' ? '/ideaList/add_subscription/'
+      : '/ideaList/remove_subscription/';
+    $.ajax(url, {dataType: "json", type: "POST", data: {list_id:res[2]}})
+      .done(function(data) { mergeState(data.state); })
+      .fail(get_ajax_fail_handler('add_subscription'));
+  }
   for (var i in newLists) {
     var l = newLists[i];
-    var symbol = subOfList[l.id] == undefined ? '+' : '&#x2212;';
-    listMenu.append($('<li>'+symbol+' '+l.name+'</li>'))
+    var addRemoveButton = $('<a class="listaction" href="#" />');
+    if (subOfList[l.id] == undefined)
+      addRemoveButton.html('+').attr('id', 'subscribe_list_'+l.id);
+    else
+      addRemoveButton.html('&#x2212;').attr('id', 'unsubscribe_list_'+l.id);
+    addRemoveButton.click(addRemoveHandler);
+    var row = $('<li />').append(addRemoveButton).append('&nbsp;'+l.name);
+    listMenu.append(row);
   }
   $("#lists_dropdown").html(listMenu);
   oldSubOfList = cloneObject(subOfList);
@@ -529,7 +547,7 @@ var newitemText = "New item..."
 
 // Refresh when state is this old (in seconds). Must be at least 3 seconds.
 // Set to -1 to disable autorefresh.
-var autorefresh_freq = 30;
+var autorefresh_freq = -30;
 
 var editableUrl = '/ideaList/edit_text/';
 var editableSettings = {

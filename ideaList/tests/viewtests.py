@@ -43,6 +43,111 @@ class GetStateViewTest(MyViewTest):
         self.assertEqual(r.status_code, 200)
         self.check_state_in_response(r)
 
+class AddSubscriptionViewTest(MyViewTest):
+    def setUp(self):
+        super(AddSubscriptionViewTest, self).setUp()
+        self.u1 = User.objects.all()[0];
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.add_subscription')
+    def test_subscribe_to_nonexistent_list(self):
+        self.assertEqual(Subscription.objects.count(), 0)
+        r = self.c.post(reverse('ideaList.views.add_subscription'),
+                {'list_id':self.l1.id+1},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 404)
+        self.check_state_in_response(r)
+    def test_add_new_subscription(self):
+        self.assertEqual(Subscription.objects.count(), 0)
+        r = self.c.post(reverse('ideaList.views.add_subscription'),
+                {'list_id':self.l1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        data = self.check_state_in_response(r)
+        self.assertIn('msg', data)
+        self.assertIn('created', data['msg'])
+        self.assertEqual(Subscription.objects.count(), 1)
+        s = Subscription.objects.all()[0]
+        self.assertEqual(s.list, self.l1)
+        self.assertEqual(s.user, self.u1)
+    def test_add_duplicate_subscription(self):
+        self.assertEqual(Subscription.objects.count(), 0)
+        s = Subscription.objects.create(list=self.l1, user=self.u1)
+        self.assertEqual(Subscription.objects.count(), 1)
+        r = self.c.post(reverse('ideaList.views.add_subscription'),
+                {'list_id':self.l1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        data = self.check_state_in_response(r)
+        self.assertIn('msg', data)
+        self.assertIn('Already subscribed', data['msg'])
+        self.assertEqual(Subscription.objects.count(), 1)
+        s = Subscription.objects.all()[0]
+        self.assertEqual(s.list, self.l1)
+        self.assertEqual(s.user, self.u1)
+    def test_add_restore_subscription(self):
+        self.assertEqual(Subscription.objects.count(), 0)
+        s = Subscription.objects.create(list=self.l1, user=self.u1,
+                minimized=False)
+        self.assertEqual(Subscription.objects.count(), 1)
+        s.minimized = True
+        s.save()
+        s.delete()
+        self.assertEqual(Subscription.trash.count(), 1)
+        r = self.c.post(reverse('ideaList.views.add_subscription'),
+                {'list_id':self.l1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        data = self.check_state_in_response(r)
+        self.assertIn('msg', data)
+        self.assertIn('restored', data['msg'])
+        self.assertEqual(Subscription.trash.count(), 0)
+        self.assertEqual(Subscription.objects.count(), 1)
+        s = Subscription.objects.all()[0]
+        self.assertEqual(s.list, self.l1)
+        self.assertEqual(s.user, self.u1)
+        self.assertTrue(s.minimized)
+
+class RemoveSubscriptionViewTest(MyViewTest):
+    def setUp(self):
+        super(RemoveSubscriptionViewTest, self).setUp()
+        self.u1 = User.objects.all()[0];
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.remove_subscription')
+    def test_remove_subscription(self):
+        self.assertEqual(Subscription.trash.count(), 0)
+        self.assertEqual(Subscription.objects.count(), 1)
+        r = self.c.post(reverse('ideaList.views.remove_subscription'),
+                {'list_id':self.l1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.check_state_in_response(r)
+        self.assertEqual(Subscription.trash.count(), 1)
+        self.assertEqual(Subscription.objects.count(), 1)
+    def test_remove_subscription_from_nonexistent_list(self):
+        self.assertEqual(Subscription.trash.count(), 0)
+        self.assertEqual(Subscription.objects.count(), 1)
+        r = self.c.post(reverse('ideaList.views.remove_subscription'),
+                {'list_id':self.l1.id+1},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 404)
+        self.check_state_in_response(r)
+        self.assertEqual(Subscription.trash.count(), 0)
+        self.assertEqual(Subscription.objects.count(), 1)
+    def test_remove_nonexistent_subscription(self):
+        self.s1.delete()
+        self.assertEqual(Subscription.trash.count(), 1)
+        self.assertEqual(Subscription.objects.count(), 1)
+        r = self.c.post(reverse('ideaList.views.remove_subscription'),
+                {'list_id':self.l1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 404)
+        self.check_state_in_response(r)
+        self.assertEqual(Subscription.trash.count(), 1)
+        self.assertEqual(Subscription.objects.count(), 1)
+
 class MoveSubscriptionViewTest(MyViewTest):
     def setUp(self):
         super(MoveSubscriptionViewTest, self).setUp()

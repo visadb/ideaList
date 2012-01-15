@@ -44,6 +44,16 @@
   color: red;
 }
 
+.listaction {
+  vertical-align: middle;
+  text-decoration: none;
+  color: yellow;
+}
+.listaction:hover
+{
+  color: red;
+}
+
 .subscriptionaction {
   font-size: small;
   vertical-align: middle;
@@ -88,7 +98,7 @@ ul#list-nav > li > span {
 }
 ul#list-nav > li > div.dropcontent {
   position: absolute;
-  /* display: none; */
+  display: none;
   cursor: auto;
   margin-top: 4px;
   padding: 5px 5px 5px 5px;

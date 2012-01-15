@@ -6,6 +6,8 @@ urlpatterns = patterns('ideaList.views',
     url(r'^add_item/$', 'add_item'),
     url(r'^remove_item/$', 'remove_item'),
     url(r'^move_item/$', 'move_item'),
+    url(r'^add_subscription/$', 'add_subscription'),
+    url(r'^remove_subscription/$', 'remove_subscription'),
     url(r'^move_subscription/$', 'move_subscription'),
     url(r'^edit_text/$', 'edit_text'),
 )

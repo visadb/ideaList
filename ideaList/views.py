@@ -147,13 +147,62 @@ def edit_text(request):
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware
+def add_subscription(req):
+    if req.method != 'POST':
+        return state_response(req, code=400, msg='Only POST supported')
+    if 'list_id' not in req.POST:
+        return state_response(req, code=400, msg='list_id not provided')
+    # Get list
+    try:
+        l = List.objects.get(pk=req.POST['list_id'])
+    except ValueError:
+        return state_response(req, code=400, msg='invalid list_id')
+    except List.DoesNotExist:
+        return state_response(req, code=404, msg='No such list')
+    # See if non-trashed subscription already exists
+    try:
+        s = Subscription.nontrash.get(list=l, user=req.user)
+        return state_response(req, code=200, msg='Already subscribed')
+    except Subscription.DoesNotExist:
+        # See if a trashed subscription already exists
+        try:
+            s = Subscription.trash.get(list=l, user=req.user)
+            s.restore()
+            return state_response(req, code=200, msg='Subscription restored')
+        except Subscription.DoesNotExist:
+            s = Subscription.objects.create(list=l, user=req.user)
+            return state_response(req, code=200, msg='Subscription created')
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
+def remove_subscription(req):
+    if req.method != 'POST':
+        return state_response(req, code=400, msg='Only POST supported')
+    if 'list_id' not in req.POST:
+        return state_response(req, code=400, msg='list_id not provided')
+    # Get list
+    try:
+        l = List.objects.get(pk=req.POST['list_id'])
+    except ValueError:
+        return state_response(req, code=400, msg='invalid list_id')
+    except List.DoesNotExist:
+        return state_response(req, code=404, msg='No such list')
+    # See if non-trashed subscription exists
+    try:
+        s = Subscription.nontrash.get(list=l, user=req.user)
+        s.delete()
+        return state_response(req, code=200, msg='Subscription removed')
+    except Subscription.DoesNotExist:
+        return state_response(req, code=404, msg='No such subscription')
+
+@login_required
+@csrf_protect # Unnecessary, handled by the csrf middleware
 def move_subscription(req):
     """
     Request must have POST keys 'subscription_id' and 'where'. 'where' is either
     up/down or subscription's new position as an integer.
     """
     return move(req, Subscription);
-
 
 ########## ITEM MANIPULATION VIEWS: ##########
 
