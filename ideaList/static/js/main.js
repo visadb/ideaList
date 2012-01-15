@@ -105,8 +105,8 @@ function updateListMenu(newState) {
       debug('Called for invalid id');
       return false;
     }
-    var url = res[1]=='subscribe' ? '/ideaList/add_subscription/'
-      : '/ideaList/remove_subscription/';
+    var url = res[1]=='subscribe' ? 'add_subscription/'
+      : 'remove_subscription/';
     $.ajax(url, {dataType: "json", type: "POST", data: {list_id:res[2]}})
       .done(function(data) { mergeState(data.state); })
       .fail(get_ajax_fail_handler('add_subscription'));
@@ -117,7 +117,7 @@ function updateListMenu(newState) {
       debug('Called for invalid element id');
       return false;
     }
-    $.ajax('/ideaList/remove_list/',
+    $.ajax('remove_list/',
         {dataType: "json", type: "POST", data: {list_id:res[1]}})
       .done(function(data) { mergeState(data.state); })
       .fail(get_ajax_fail_handler('add_subscription'));
@@ -145,7 +145,7 @@ function updateListMenu(newState) {
 }
 
 function refresh() {
-  $.ajax('/ideaList/get_state/', {
+  $.ajax('get_state/', {
     dataType: "json",
     type: "GET"
   }).done(function(data) {
@@ -211,7 +211,7 @@ function moveHandler(e) {
   }
   data = {where:direction};
   data[obj_type+'_id'] = obj_id;
-  $.ajax('/ideaList/move_'+obj_type+'/', {
+  $.ajax('move_'+obj_type+'/', {
     dataType:"json", type:"POST", data:data
   }).done(function(data) {
     mergeState(data.state);
@@ -240,7 +240,7 @@ function initAddItemField(field) {
       var pos = res[1];
       var list_id = res[2];
       var position = (pos == 'begin' ? 0 : -1);
-      $.ajax('/ideaList/add_item/', {
+      $.ajax('add_item/', {
         dataType: "json",
         type: "POST",
         data: {list:list_id, text:val, position:position},
@@ -389,7 +389,7 @@ function makeItem(itemdata) {
     if (res.length != 2)
       return false;
     var item_id = res[1];
-    $.ajax('/ideaList/remove_item/', {
+    $.ajax('remove_item/', {
       dataType: "json", type: "POST", data: {item_id:item_id},
     }).done(function(data) {
       debug("Item "+item_id+" removed");
@@ -566,7 +566,7 @@ var newitemText = "New item..."
 // Set to -1 to disable autorefresh.
 var autorefresh_freq = -30;
 
-var editableUrl = '/ideaList/edit_text/';
+var editableUrl = 'edit_text/';
 var editableSettings = {
     tooltip: "Click to edit",
     style:   "inherit",
@@ -608,7 +608,7 @@ function initCreateList() {
       var val = $(this).val();
       if (val.length == 0)
         return false;
-      $.ajax('/ideaList/add_list/',
+      $.ajax('add_list/',
         { dataType: "json", type: "POST", data: {name:val, subscribe:'true'} }
       ).done(function(data) {
         $('#create_list_nameinput').blur(); //Does hide+show
