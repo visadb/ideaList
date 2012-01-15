@@ -99,7 +99,7 @@ function updateListMenu(newState) {
     var an = a.name.toLowerCase(); var bn = b.name.toLowerCase();
     return an < bn ? -1 : (an > bn ? 1 : 0);
   });
-  function addRemoveHandler(e) {
+  function toggleSubHandler(e) {
     var res = /^(subscribe|unsubscribe)_list_(\d+)$/.exec($(this).attr('id'));
     if (!res || res.length != 3) {
       debug('Called for invalid id');
@@ -111,15 +111,32 @@ function updateListMenu(newState) {
       .done(function(data) { mergeState(data.state); })
       .fail(get_ajax_fail_handler('add_subscription'));
   }
+  function removeListHandler(e) {
+    var res = /^remove_list_(\d+)$/.exec($(this).attr('id'));
+    if (!res || res.length != 2) {
+      debug('Called for invalid element id');
+      return false;
+    }
+    $.ajax('/ideaList/remove_list/',
+        {dataType: "json", type: "POST", data: {list_id:res[1]}})
+      .done(function(data) { mergeState(data.state); })
+      .fail(get_ajax_fail_handler('add_subscription'));
+  }
   for (var i in newLists) {
     var l = newLists[i];
-    var addRemoveButton = $('<a class="listaction" href="#" />');
+    var toggleSubButton = $('<a class="listaction" href="#" />');
     if (subOfList[l.id] == undefined)
-      addRemoveButton.html('+').attr('id', 'subscribe_list_'+l.id);
+      toggleSubButton.html('+').attr('id', 'subscribe_list_'+l.id);
     else
-      addRemoveButton.html('&#x2212;').attr('id', 'unsubscribe_list_'+l.id);
-    addRemoveButton.click(addRemoveHandler);
-    var row = $('<li />').append(addRemoveButton).append('&nbsp;'+l.name);
+      toggleSubButton.html('&#x2212;').attr('id', 'unsubscribe_list_'+l.id);
+    toggleSubButton.click(toggleSubHandler);
+    var row = $('<li />').append(toggleSubButton).append('&nbsp;'+l.name);
+    if (l.owner_id = user_id) {
+      var removeButton = $('<a id="remove_list_'+l.id+'"'
+            +' class="listaction" href="#">&nbsp;&#10005;</a>')
+            .click(removeListHandler);
+      row.append(removeButton);
+    }
     listMenu.append(row);
   }
   $("#lists_dropdown").html(listMenu);
@@ -582,8 +599,9 @@ function initTopBar() {
 }
 
 function initCreateList() {
-  $('#create_list_nameinput').hide().blur(function(e) {
-    $(this).hide();
+  $('#create_list_name').hide();
+  $('#create_list_nameinput').blur(function(e) {
+    $('#create_list_name').hide();
     $('#create_list_link').show();
   }).keydown(function(e) {
     if(e.keyCode == 13) {
@@ -600,7 +618,8 @@ function initCreateList() {
   });
   $('#create_list_link').click(function(e) {
     $(this).hide();
-    $('#create_list_nameinput').show().focus();
+    $('#create_list_name').show()
+    $('#create_list_nameinput').focus();
   });
 
 }
