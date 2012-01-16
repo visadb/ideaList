@@ -2,7 +2,6 @@
 // The JS code for ideaList's main view
 ////////////////////////////////////////////////////
 
-
 ///////////// GENERAL HELPER FUNCTIONS /////////////
 
 function array_diff(a, b) {
@@ -18,6 +17,9 @@ function cloneObject(obj) {
     newObj[i] = obj[i];
   return newObj; 
 }
+function objectKeys(obj) {
+  return $.map(obj, function(x,y) { return y; });
+}
 // Convert an object to array and sort by position attribute of values
 function valuesSortedByPosition(obj) {
   return $.map(obj, function(x){return x;})
@@ -30,6 +32,7 @@ function valuesSortedById(obj) {
 }
 
 function debug() {
+  //$('#debug').append('<div>'+arguments[0]+'</div>');
   if(initDone) {
     console.debug.apply(console, arguments);
   } else {
@@ -53,8 +56,8 @@ function mergeState(newState) {
 }
 
 function updateSubscriptions(newState) {
-  var old_sub_ids = Object.keys(state.subscriptions);
-  var new_sub_ids = Object.keys(newState.subscriptions);
+  var old_sub_ids = objectKeys(state.subscriptions);
+  var new_sub_ids = objectKeys(newState.subscriptions);
   var subs_to_add = array_diff(new_sub_ids, old_sub_ids);
   var subs_to_remove = array_diff(old_sub_ids, new_sub_ids);
   var subs_to_update = array_intersect(old_sub_ids, new_sub_ids);
@@ -339,8 +342,8 @@ function removeSubscription(s, animate) {
 function updateSubscription(s) {
   //debug('Updating subscription '+s.id+' ('+s.list.name+')');
   var old_sub = state.subscriptions[s.id];
-  var old_item_ids = Object.keys(old_sub.list.items);
-  var new_item_ids = Object.keys(s.list.items);
+  var old_item_ids = objectKeys(old_sub.list.items);
+  var new_item_ids = objectKeys(s.list.items);
   var items_to_remove = array_diff(old_item_ids, new_item_ids);
   var items_to_add = array_diff(new_item_ids, old_item_ids);
   var items_to_update = array_intersect(old_item_ids, new_item_ids);
@@ -420,7 +423,7 @@ function makeItem(itemdata) {
 function insertItemToDOM(item, itemHtml, animate) {
   sub_id = subOfList[item.list_id];
   var curitems = valuesSortedByPosition(state.subscriptions[sub_id].list.items);
-  if (Object.keys(curitems).length == 0 || item.position == 0) {
+  if (objectKeys(curitems).length == 0 || item.position == 0) {
     //debug('  Adding item to first position');
     $('#subscription_'+sub_id+' > ul').prepend(itemHtml);
   } else {
@@ -624,13 +627,14 @@ function initCreateList() {
 
 }
 
+
 var initDone = false;
 $(document).ready(function() {
   initTopBar();
   initCreateList();
+  setStatusLight();
   state = {subscriptions: {}};
   subOfList = {};
-  setStatusLight();
   mergeState(init_state);
   refresher();
   initDone = true;
