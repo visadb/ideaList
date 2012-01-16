@@ -33,13 +33,9 @@ function valuesSortedById(obj) {
 
 function debug() {
   //$('#debug').append('<div>'+arguments[0]+'</div>');
-  if(initDone) {
-    console.debug.apply(console, arguments);
-  } else {
-    // console.debug doesn't work before init is complete -> small delay
-    var origArguments = arguments;
-    setTimeout(function(){console.debug.apply(console, origArguments)}, 1);
-  }
+  // Set a timeout to work around bugs:
+  var origArguments = arguments;
+  setTimeout(function(){console.debug.apply(console, origArguments)}, 1);
 }
 
 ///////////// GENERAL DOM MANIPULATION /////////////
@@ -91,10 +87,8 @@ function updateListMenu(newState) {
         }
       }
     }
-    if (!listsChanged) {
-      debug('Not updating list menu: nothing relevant changed');
+    if (!listsChanged)
       return;
-    }
   }
   // Generate content for #listmenu
   var listMenu = $('<ul id="listmenu" class="listmenu" />');
