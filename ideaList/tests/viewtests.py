@@ -10,13 +10,14 @@ class MyViewTest(test.TestCase):
     def setUp(self):
         self.c = Client()
         self.u1 = User.objects.get(username='visa')
+        self.u2 = User.objects.get(username='nanda')
         self.assertTrue(self.c.login(username='visa', password='salakala'))
     def check_login_required(self, viewname):
         self.c.logout()
         r = self.c.get(reverse(viewname))
         self.assertEqual(r.status_code, 302)
         self.assertTrue(r.has_header('Location'))
-        self.assertTrue(reverse('django.contrib.auth.views.login') in
+        self.assertIn(reverse('django.contrib.auth.views.login'),
                 r.get('Location', None))
     # Returns the parsed JSON response data
     def check_state_in_response(self, r):
@@ -150,13 +151,12 @@ class RemoveSubscriptionViewTest(MyViewTest):
 class MoveSubscriptionViewTest(MyViewTest):
     def setUp(self):
         super(MoveSubscriptionViewTest, self).setUp()
-        self.u = User.objects.all()[0];
-        self.l1 = List.objects.create(name='List1', owner=self.u)
-        self.l2 = List.objects.create(name='List2', owner=self.u)
-        self.l3 = List.objects.create(name='List3', owner=self.u)
-        self.s1 = Subscription.objects.create(list=self.l1, user=self.u)
-        self.s2 = Subscription.objects.create(list=self.l2, user=self.u)
-        self.s3 = Subscription.objects.create(list=self.l3, user=self.u)
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.l2 = List.objects.create(name='List2', owner=self.u1)
+        self.l3 = List.objects.create(name='List3', owner=self.u1)
+        self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
+        self.s2 = Subscription.objects.create(list=self.l2, user=self.u1)
+        self.s3 = Subscription.objects.create(list=self.l3, user=self.u1)
         self.assertEqual(self.s1.position, 0)
         self.assertEqual(self.s2.position, 1)
         self.assertEqual(self.s3.position, 2)
@@ -216,39 +216,62 @@ class MoveSubscriptionViewTest(MyViewTest):
         self.assertEqual(Subscription.objects.get(pk=self.s3.id).position, 1)
         self.check_state_in_response(r)
 
-class AddItemViewTest(MyViewTest):
+class SubscriptionMinimizationViewsTest(MyViewTest):
     def setUp(self):
-        super(AddItemViewTest, self).setUp()
-        self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
+        super(SubscriptionMinimizationViewsTest, self).setUp()
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
+        self.assertFalse(self.s1.minimized)
     def test_login_required(self):
-        self.check_login_required('ideaList.views.add_item')
-    def test_valid_item(self):
-        self.assertEqual(Item.objects.count(), 0)
-        r = self.c.post(reverse('ideaList.views.add_item'),
-                {'list':self.l1.id, 'text':'Cheese', 'position':0},
+        self.check_login_required('ideaList.views.minimize_subscription')
+        self.check_login_required('ideaList.views.maximize_subscription')
+    def test_minimize(self):
+        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
+                {'subscription_id':self.s1.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(Item.objects.count(), 1)
+        self.assertTrue(Subscription.objects.get(pk=self.s1.id).minimized)
         self.check_state_in_response(r)
-        i = Item.objects.all()[0]
-        self.assertEqual(i.list.id, self.l1.id)
-        self.assertEqual(i.text, 'Cheese')
-        self.assertEqual(i.position, 0)
-    def test_invalid_list_id(self):
-        self.assertEqual(Item.objects.count(), 0)
-        r = self.c.post(reverse('ideaList.views.add_item'),
-                {'list':self.l1.id+5, 'text':'Cheese', 'position':0},
+    def test_maximize(self):
+        self.s1.minimized = True
+        self.s1.save()
+        self.assertTrue(Subscription.objects.get(pk=self.s1.id).minimized)
+        r = self.c.post(reverse('ideaList.views.maximize_subscription'),
+                {'subscription_id':self.s1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
+        self.check_state_in_response(r)
+    def test_minimize_other_users_subscription(self):
+        s2 = Subscription.objects.create(list=self.l1, user=self.u2)
+        self.assertFalse(Subscription.objects.get(pk=s2.id).minimized)
+        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
+                {'subscription_id':s2.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
-        self.assertEqual(Item.objects.count(), 0)
+        self.assertFalse(Subscription.objects.get(pk=s2.id).minimized)
         self.check_state_in_response(r)
-    def test_invalid_missing_position(self):
-        self.assertEqual(Item.objects.count(), 0)
-        r = self.c.post(reverse('ideaList.views.add_item'),
-                {'list':self.l1.id, 'text':'Cheese'},
+    def test_minimize_with_missing_sub_id(self):
+        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
+                {'subscription_id_MISSPELLED':self.s1.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
-        self.assertEqual(Item.objects.count(), 0)
+        self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
+        self.check_state_in_response(r)
+    def test_minimize_with_nonexisting_id(self):
+        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
+                {'subscription_id':self.s1.id+123},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 404)
+        self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
+        self.check_state_in_response(r)
+    def test_minimize_with_invalid_id(self):
+        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
+                {'subscription_id':'INVALID'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
+        self.check_state_in_response(r)
 
 class RemoveItemViewTest(MyViewTest):
     def setUp(self):

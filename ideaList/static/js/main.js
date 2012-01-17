@@ -125,12 +125,12 @@ function updateListMenu(newState) {
     if (subOfList[l.id] == undefined)
       toggleSubButton.html('+').attr('id', 'subscribe_list_'+l.id);
     else
-      toggleSubButton.html('&#x2212;').attr('id', 'unsubscribe_list_'+l.id);
+      toggleSubButton.html('&minus;').attr('id', 'unsubscribe_list_'+l.id);
     toggleSubButton.click(toggleSubHandler);
     var row = $('<li />').append(toggleSubButton).append('&nbsp;'+l.name);
     if (l.owner_id = user_id) {
       var removeButton = $('<a id="remove_list_'+l.id+'"'
-            +' class="listaction" href="#">&nbsp;&#10005;</a>')
+            +' class="listaction" title="Delete" href="#">&nbsp;&times;</a>')
             .click(removeListHandler);
       row.append(removeButton);
     }
@@ -142,12 +142,9 @@ function updateListMenu(newState) {
 }
 
 function refresh() {
-  $.ajax('get_state/', {
-    dataType: "json",
-    type: "GET"
-  }).done(function(data) {
-    mergeState(data.state);
-  }).fail(get_ajax_fail_handler('refresh'));
+  $.ajax('get_state/', { dataType: "json", type: "GET" })
+    .done(function(data) { mergeState(data.state); })
+    .fail(get_ajax_fail_handler('refresh'));
 }
 function refresher() {
   if (autorefresh_freq < 3) {
@@ -232,7 +229,7 @@ function initAddItemField(field) {
       if (val.length == 0)
         return false;
       var res = /^add_to_(end|begin)_of_list_(\d+)$/.exec($(this).attr('id'));
-      if (res.length != 3)
+      if (!res || res.length != 3)
         return false;
       var pos = res[1];
       var list_id = res[2];
@@ -258,10 +255,27 @@ function makeAddItemField(subscr, pos) {
   return addItemHtml;
 }
 function makeSubscription(s) {
-  // TODO: add remove and add item buttons
+  // TODO: add add item button
   var l = s.list;
   var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
-      +' class="subscription"></li>')
+      +' class="subscription"></li>');
+
+  function minimizationHandler(e) {
+    var res = /^minmax_subscription_(\d+)$/
+      .exec($(this).attr('id'));
+    if (!res || res.length != 2)
+      return false;
+    var s_id = res[1];
+    var action = state.subscriptions[s_id].minimized ? 'maximize' : 'minimize';
+    $.ajax(action+'_subscription/', {
+      dataType: "json", type: "POST", data: {subscription_id:s_id} })
+    .done(function(data) { mergeState(data.state); })
+    .fail(get_ajax_fail_handler(action+'_subscription'));
+  }
+  var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
+      +' title="minimize/maximize" class="subscriptionaction" href="#">'
+      +(s.minimized?'+':'&minus;')+'</a>').click(minimizationHandler);
+
   var listNameHtml = $('<span id="subscription_'+s.id+'_listname"'
       +' class="list-name">'+l.name+'</span>')
       .editable(editableUrl, editableSettings);
@@ -272,7 +286,9 @@ function makeSubscription(s) {
       +' class="subscriptionaction move_subscription" href="#">&darr;</a>')
       .click(moveHandler);
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
-  subscriptionHtml.append(listNameHtml)
+  subscriptionHtml
+    .append(minimizationButtonHtml)
+    .append('&nbsp;').append(listNameHtml)
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
   var items = valuesSortedByPosition(l.items);
@@ -281,6 +297,8 @@ function makeSubscription(s) {
     itemListHtml.append(itemHtml);
   }
   itemListHtml.append($('<li/>').append(makeAddItemField(s, 'end')));
+  if (s.minimized)
+    itemListHtml.hide();
   subscriptionHtml.append(itemListHtml);
   return subscriptionHtml;
 }
@@ -362,7 +380,13 @@ function updateSubscription(s) {
     updated.push('position');
   }
   if (s.minimized != old_sub.minimized) {
-    //TODO: update minimized-state when implemented
+    if (s.minimized) {
+      $('#minmax_subscription_'+s.id).html('+');
+      $('#subscription_'+s.id+' > .itemlist').slideUp();
+    } else {
+      $('#minmax_subscription_'+s.id).html('&minus;');
+      $('#subscription_'+s.id+' > .itemlist').slideDown();
+    }
     state.subscriptions[s.id].minimized = s.minimized;
     updated.push('minimized');
   }
@@ -383,22 +407,19 @@ function makeItem(itemdata) {
     e.preventDefault();
     var item_elem = $(this).parent();
     var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
-    if (res.length != 2)
+    if (!res || res.length != 2)
       return false;
     var item_id = res[1];
-    $.ajax('remove_item/', {
-      dataType: "json", type: "POST", data: {item_id:item_id},
-    }).done(function(data) {
-      debug("Item "+item_id+" removed");
-      mergeState(data.state);
-    }).fail(get_ajax_fail_handler('remove_item'));
+    $.ajax('remove_item/',{dataType:"json",type:"POST",data:{item_id:item_id}})
+      .done(function(data) { mergeState(data.state); })
+      .fail(get_ajax_fail_handler('remove_item'));
   }
   var item_id = itemdata.id;
   var itemHtml = $('<li id="item_'+item_id+'" class="item"></li>');
   var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'
       +itemdata.text+'</span>').editable(editableUrl, editableSettings);
   var removeHtml = $('<a id="remove_item_'+item_id
-      +'" class="itemaction remove_item" href="#">&#10005;</a>')
+      +'" class="itemaction remove_item" href="#">&times;</a>')
       .click(removeItemHandler);
   var moveUpHtml = $('<a id="move_item_'+item_id+'_up"'
       +' class="itemaction move_item" href="#">&uarr;</a>')
@@ -606,7 +627,7 @@ function initCreateList() {
       if (val.length == 0)
         return false;
       $.ajax('add_list/',
-        { dataType: "json", type: "POST", data: {name:val, subscribe:'true'} }
+        { dataType: "json", type: "POST", data: {name:val, subscribe:true} }
       ).done(function(data) {
         $('#create_list_nameinput').blur(); //Does hide+show
         mergeState(data.state);
