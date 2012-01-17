@@ -259,6 +259,7 @@ function makeSubscription(s) {
   var l = s.list;
   var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
       +' class="subscription"></li>');
+  var subscriptionTitleHtml = $('<span class="subscription-title"></span>');
 
   function minimizationHandler(e) {
     var res = /^minmax_subscription_(\d+)$/
@@ -273,8 +274,8 @@ function makeSubscription(s) {
     .fail(get_ajax_fail_handler(action+'_subscription'));
   }
   var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
-      +' title="minimize/maximize" class="subscriptionaction" href="#">'
-      +(s.minimized?'+':'&minus;')+'</a>').click(minimizationHandler);
+      +' title="minimize/maximize" class="subscriptionaction minmax" href="#">'
+      +(s.minimized?'&#x229e;':'&#x229f;')+'</a>').click(minimizationHandler);
 
   var listNameHtml = $('<span id="subscription_'+s.id+'_listname"'
       +' class="list-name">'+l.name+'</span>')
@@ -285,12 +286,13 @@ function makeSubscription(s) {
   var moveDownHtml = $('<a id="move_subscription_'+s.id+'_down"'
       +' class="subscriptionaction move_subscription" href="#">&darr;</a>')
       .click(moveHandler);
-  var itemListHtml = $('<ul class="itemlist"></ul>\n');
-  subscriptionHtml
+  subscriptionTitleHtml
     .append(minimizationButtonHtml)
     .append('&nbsp;').append(listNameHtml)
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
+
+  var itemListHtml = $('<ul class="itemlist"></ul>\n');
   var items = valuesSortedByPosition(l.items);
   for (var i in items) {
     var itemHtml = makeItem(items[i]);
@@ -299,7 +301,8 @@ function makeSubscription(s) {
   itemListHtml.append($('<li/>').append(makeAddItemField(s, 'end')));
   if (s.minimized)
     itemListHtml.hide();
-  subscriptionHtml.append(itemListHtml);
+
+  subscriptionHtml.append(subscriptionTitleHtml).append(itemListHtml);
   return subscriptionHtml;
 }
 function insertSubscriptionToDOM(s, subscriptionHtml, animate) {
@@ -381,10 +384,10 @@ function updateSubscription(s) {
   }
   if (s.minimized != old_sub.minimized) {
     if (s.minimized) {
-      $('#minmax_subscription_'+s.id).html('+');
+      $('#minmax_subscription_'+s.id).html('&#x229e;');
       $('#subscription_'+s.id+' > .itemlist').slideUp();
     } else {
-      $('#minmax_subscription_'+s.id).html('&minus;');
+      $('#minmax_subscription_'+s.id).html('&#x229f;');
       $('#subscription_'+s.id+' > .itemlist').slideDown();
     }
     state.subscriptions[s.id].minimized = s.minimized;

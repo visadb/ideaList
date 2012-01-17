@@ -23,26 +23,6 @@
   padding-left: 1em;
   padding-top: 0.5em;
 }
-.subscription {
-  margin-top: 1em;
-  font-weight: bold;
-  font-size: medium;
-}
-.itemlist {
-  font-weight: normal;
-  list-style-type: circle;
-}
-
-.itemaction {
-  font-size: x-small;
-  vertical-align: middle;
-  text-decoration: none;
-  color: blue;
-}
-.itemaction:hover
-{
-  color: red;
-}
 
 .listaction {
   vertical-align: middle;
@@ -54,15 +34,28 @@
   color: red;
 }
 
+.subscription {
+  margin-top: 0.5em;
+}
+.subscription-title {
+  font-size: large;
+}
 .subscriptionaction {
-  font-size: small;
-  vertical-align: middle;
   text-decoration: none;
   color: blue;
 }
-.subscriptionaction:hover
-{
+.subscriptionaction:hover {
   color: red;
+}
+.minmax {
+/*  border: 1px dotted black; */
+}
+.list-name {
+  font-weight: bold;
+}
+.itemlist {
+  font-weight: normal;
+  list-style-type: circle;
 }
 
 .create_list {
@@ -75,10 +68,20 @@
   color: red;
 }
 
-.newitem {
+.item {
 }
 .newitem_blur {
   color: #aaa;
+}
+.itemaction {
+  vertical-align: middle;
+  text-decoration: none;
+  font-size: small;
+  color: blue;
+}
+.itemaction:hover
+{
+  color: red;
 }
 .move_item, .move_subscription {
   display: none;
