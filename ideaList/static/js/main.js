@@ -47,7 +47,7 @@ function mergeState(newState) {
     return false;
   }
   updateSubscriptions(newState);
-  updateListMenu(newState);
+  updateListMenu(newState); // must come after updateSubscriptions
   state_timestamp = new Date().getTime();
 }
 
@@ -136,7 +136,7 @@ function updateListMenu(newState) {
     }
     listMenu.append(row);
   }
-  $("#lists_dropdown").html(listMenu);
+  $("#listmenu_listlist").html(listMenu);
   oldSubOfList = cloneObject(subOfList);
   state.lists = newState.lists;
 }
@@ -298,7 +298,7 @@ function makeSubscription(s) {
     var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
   }
-  itemListHtml.append($('<li/>').append(makeAddItemField(s, 'end')));
+  itemListHtml.append($('<li/>').html(makeAddItemField(s, 'end')));
   if (s.minimized)
     itemListHtml.hide();
 
@@ -615,16 +615,14 @@ function initTopBar() {
       $('> span', this).html('Arrows on');
     }
   });
-  $("#lists_button").click(function(e) {$('.dropcontent',this).slideToggle()});
+  $("#lists_button").click(function(e) {
+    $('.dropcontent',this).slideToggle();
+    e.stopPropagation();
+  });
   $(".dropcontent").click(function(e) { e.stopPropagation(); });
-}
-
-function initCreateList() {
-  $('#create_list_name').hide();
-  $('#create_list_nameinput').blur(function(e) {
-    $('#create_list_name').hide();
-    $('#create_list_link').show();
-  }).keydown(function(e) {
+  $('#background-underlay').add('body')
+    .click(function(e) {$('.dropcontent').slideUp();});
+  $('#create_list_nameinput').keydown(function(e) {
     if(e.keyCode == 13) {
       var val = $(this).val();
       if (val.length == 0)
@@ -632,24 +630,16 @@ function initCreateList() {
       $.ajax('add_list/',
         { dataType: "json", type: "POST", data: {name:val, subscribe:true} }
       ).done(function(data) {
-        $('#create_list_nameinput').blur(); //Does hide+show
+        $('#create_list_nameinput').val('');
         mergeState(data.state);
       }).fail(get_ajax_fail_handler('add_list'));
     }
   });
-  $('#create_list_link').click(function(e) {
-    $(this).hide();
-    $('#create_list_name').show()
-    $('#create_list_nameinput').focus();
-  });
-
 }
-
 
 var initDone = false;
 $(document).ready(function() {
   initTopBar();
-  initCreateList();
   setStatusLight();
   state = {subscriptions: {}};
   subOfList = {};

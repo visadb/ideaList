@@ -18,27 +18,20 @@
 {% endblock %}
 
 {% block content %}
+<div id="background-underlay"></div>
 <ul id="list-nav">
   <li id="refresh_button"><span>Refresh</span></li>
   <li id="arrows_button"><span>Arrows on</span></li>
   <li id="lists_button">
     <span>Lists &#x25bf;</span>
-    <div id="lists_dropdown" class="dropcontent">
-      Loading...
+    <div class="dropcontent">
+      <div id="listmenu_listlist">Loading...</div>
+      <div>New:&nbsp;<input id="create_list_nameinput" size="15"></input></div>
     </div>
   </li>
 </ul>
 
 <ul id="listlist" class="listlist">
-</ul>
-
-<ul class="listlist">
-  <li>
-    <a id="create_list_link" class="create_list" href="#">Create list...</a>
-    <div id="create_list_name">Name:
-      <input id="create_list_nameinput"></input>
-    </div>
-  </li>
 </ul>
 
 <div id="debug"></div>
