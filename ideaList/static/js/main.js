@@ -634,7 +634,7 @@ var newitemText = "New item..."
 
 // Refresh when state is this old (in seconds). Must be at least 3 seconds.
 // Set to -1 to disable autorefresh.
-var autorefresh_freq = -30;
+var autorefresh_freq = 30;
 
 var editableUrl = 'edit_text/';
 var editableSettings = {
