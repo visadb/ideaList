@@ -21,10 +21,14 @@ def render_to(template_name):
         return wrapper
     return renderer
 
+def csrf_failure(req, reason=""):
+    return HttpResponse('Security error: '+reason)
+
 @login_required
 def main(req):
     m = req.META
-    if 'HTTP_USER_AGENT' in m and "SymbianOS/9.1" in m['HTTP_USER_AGENT']:
+    agent = 'HTTP_USER_AGENT' in m and m['HTTP_USER_AGENT'] or None
+    if 'dumb' in req.REQUEST or agent and ("SymbianOS/9.1" in agent or "NokiaN73" in agent):
         msg = 'msg' in req.REQUEST and req.REQUEST['msg'] or ''
         return render_to_response('ideaList/main_nojs.html',
                 {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg},
@@ -115,7 +119,6 @@ def move(req, cls):
             +" moved to index "+str(obj.position))
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def edit_text(request):
     """
     View to use with jeditable for editing the text of items and name of lists.
@@ -167,7 +170,6 @@ def edit_text(request):
 ########## SUBSCRIPTION MANIPULATION VIEWS: ##########
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def add_subscription(req):
     if req.method != 'POST':
         return state_response(req, code=400, msg='Only POST supported')
@@ -195,7 +197,6 @@ def add_subscription(req):
             return state_response(req, code=200, msg='Subscription created')
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def remove_subscription(req):
     if req.method != 'POST':
         return state_response(req, code=400, msg='Only POST supported')
@@ -217,7 +218,6 @@ def remove_subscription(req):
         return state_response(req, code=404, msg='No such subscription')
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def move_subscription(req):
     """
     Request must have POST keys 'subscription_id' and 'where'. 'where' is either
@@ -226,12 +226,10 @@ def move_subscription(req):
     return move(req, Subscription)
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def minimize_subscription(req):
     return set_subscription_minimization(req, minimized=True)
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def maximize_subscription(req):
     return set_subscription_minimization(req, minimized=False)
 
@@ -265,7 +263,6 @@ class ItemForm(ModelForm):
         fields = ('list', 'text', 'position')
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def add_item(req):
     i = Item(priority='NO')
     if req.method == 'POST':
@@ -283,7 +280,6 @@ def add_item(req):
             RequestContext(req))
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def remove_items(req):
     def my_response(code=200, msg=''):
         if req.is_ajax():
@@ -292,27 +288,26 @@ def remove_items(req):
             return HttpResponseRedirect(
                     reverse('ideaList.views.main')+'?msg='+msg)
     if req.method != 'POST':
-        return my_response(req, code=400, msg='Only POST supported')
+        return my_response(code=400, msg='Only POST supported')
     if 'item_ids' not in req.POST:
-        return my_response(req, code=400, msg='item_ids not provided')
+        return my_response(code=200, msg='Nothing removed')
     item_ids = req.POST.getlist('item_ids')
     items = []
     for item_id in item_ids:
         try:
             i = Item.objects.get(pk=item_id)
         except ValueError:
-            return my_response(req, code=400, msg='invalid item_id '+item_id)
+            return my_response(code=400, msg='invalid item_id '+item_id)
         except Item.DoesNotExist:
-            return my_response(req, code=404, msg='No such item: '+item_id)
+            return my_response(code=404, msg='No such item: '+item_id)
         if i.list.subscription_for(req.user) is None:
-            return my_response(req, code=403, msg='not your item: '+item_id)
+            return my_response(code=403, msg='not your item: '+item_id)
         items.append(i)
     for i in items:
         i.delete()
-    return my_response(req,msg='Items '+(','.join(item_ids))+' removed')
+    return my_response(code=200, msg='Items '+(','.join(item_ids))+' removed')
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def move_item(req):
     """
     Request must have POST keys 'item_id' and 'where'. 'where' is either up/down
@@ -324,7 +319,6 @@ def move_item(req):
 ########## LIST MANIPULATION VIEWS: ##########
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def add_list(req):
     """
     Request must have POST key 'name'. Request may also have POST key
@@ -344,7 +338,6 @@ def add_list(req):
     return state_response(req, msg='List created')
 
 @login_required
-@csrf_protect # Unnecessary, handled by the csrf middleware
 def remove_list(req):
     if req.method != 'POST':
         return state_response(req, code=400, msg='Only POST supported')

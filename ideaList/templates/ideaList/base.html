@@ -13,6 +13,7 @@
 </head>
 <body>
 <div id="container">
+  {% block header %}
   <div id="header">
     {% if user.is_active %}
     <div id="user-tools">
@@ -28,6 +29,7 @@
     </div>
     {% endif %}
   </div>
+  {% endblock %}
 
   {% if messages %}
   <ul class="messagelist">
