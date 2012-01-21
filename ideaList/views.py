@@ -1,7 +1,8 @@
 import re
 import json
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_protect
@@ -21,9 +22,17 @@ def render_to(template_name):
     return renderer
 
 @login_required
-@render_to('ideaList/main.html')
-def main(request):
-    return {'init_state': json.dumps(make_state(request.user))}
+def main(req):
+    m = req.META
+    if 'HTTP_USER_AGENT' in m and "SymbianOS/9.1" in m['HTTP_USER_AGENT']:
+        msg = 'msg' in req.REQUEST and req.REQUEST['msg'] or ''
+        return render_to_response('ideaList/main_nojs.html',
+                {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg},
+                RequestContext(req));
+    else:
+        return render_to_response('ideaList/main.html',
+                {'init_state': json.dumps(make_state(req.user))},
+                RequestContext(req));
 
 @login_required
 def get_state(req):
@@ -276,24 +285,31 @@ def add_item(req):
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware
 def remove_items(req):
+    def my_response(code=200, msg=''):
+        if req.is_ajax():
+            return state_response(req, code=code, msg=msg)
+        else:
+            return HttpResponseRedirect(
+                    reverse('ideaList.views.main')+'?msg='+msg)
     if req.method != 'POST':
-        return state_response(req, code=400, msg='Only POST supported')
+        return my_response(req, code=400, msg='Only POST supported')
     if 'item_ids' not in req.POST:
-        return state_response(req, code=400, msg='item_ids not provided')
+        return my_response(req, code=400, msg='item_ids not provided')
+    item_ids = req.POST.getlist('item_ids')
     items = []
-    for item_id in req.POST.getlist('item_ids'):
+    for item_id in item_ids:
         try:
             i = Item.objects.get(pk=item_id)
         except ValueError:
-            return state_response(req, code=400, msg='invalid item_id '+item_id)
+            return my_response(req, code=400, msg='invalid item_id '+item_id)
         except Item.DoesNotExist:
-            return state_response(req, code=404, msg='No such item: '+item_id)
+            return my_response(req, code=404, msg='No such item: '+item_id)
         if i.list.subscription_for(req.user) is None:
-            return state_response(req, code=403, msg='not your item: '+item_id)
+            return my_response(req, code=403, msg='not your item: '+item_id)
         items.append(i)
     for i in items:
         i.delete()
-    return state_response(req,msg='Items '+str(req.POST['item_ids'])+' removed')
+    return my_response(req,msg='Items '+(','.join(item_ids))+' removed')
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware

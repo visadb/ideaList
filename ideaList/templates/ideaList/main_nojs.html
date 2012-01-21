@@ -1,0 +1,27 @@
+{% extends "ideaList/base.html" %}
+
+{% block content %}
+
+{% if msg %}
+<p>{{ msg }}</p>
+{% endif %}
+
+<form action="remove_items/" method="post">
+  {% csrf_token %}
+  <ul class="listlist">
+  {% for s in subscriptions %}
+    <li><span class="subscription-title">{{ s.list.name }}</span>
+      <ul class="itemlist">
+        {% for i in s.list.nontrashed_items %}
+          <li>
+            <input type="checkbox" name="item_ids" value="{{i.id}}" />
+            {{i.text}}
+          </li>
+        {% endfor %}
+      </ul>
+    </li>
+  {% endfor %}
+  </ul>
+  <div><input type="submit" name="remove_lines" value="Poista valitut rivit" /></div>
+</form>
+{% endblock %}
