@@ -60,7 +60,7 @@
 }
 .itemlist {
   font-weight: normal;
-  list-style-type: circle;
+  list-style: none;
 }
 
 .create_list {
@@ -74,9 +74,6 @@
 }
 
 .item {
-}
-.newitem_blur {
-  color: #aaa;
 }
 .itemaction {
   vertical-align: middle;

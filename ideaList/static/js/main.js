@@ -215,51 +215,70 @@ function moveHandler(e) {
 ///////////// SUBSCRIPTION RELATED DOM MANIPULATION /////////////
 
 function initAddItemField(field) {
-  return field.blur(function() {
-    if($(this).val() == "")
-      $(this).val(newitemText).addClass("newitem_blur");
-  }).focus(function() {
-    $(this).removeClass("newitem_blur");
-    if($(this).val() == newitemText)
-      $(this).val("");
-  }).keydown(function(e) {
+  return field.keydown(function(e) {
     if(e.keyCode == 13) {
-      var val = $(this).val();
       var addfield = $(this); //For resetting later...
-      if (val.length == 0)
+      if (addfield.val().length == 0)
         return false;
-      var res = /^add_to_(end|begin)_of_list_(\d+)$/.exec($(this).attr('id'));
-      if (!res || res.length != 3)
+      var res = /^add_to_(end|begin|\d+)_of_list_(\d+)$/
+        .exec($(this).attr('id'));
+      if (!res || res.length != 3) {
+        debug('addItemHandler called with for invalid element id');
         return false;
+      }
       var pos = res[1];
       var list_id = res[2];
-      var position = (pos == 'begin' ? 0 : -1);
+      var position = pos=='begin' ? 0 : (pos=='end' ? -1 : pos);
       $.ajax('add_item/', {
         dataType: "json",
         type: "POST",
-        data: {list:list_id, text:val, position:position},
+        data: {list:list_id, text:addfield.val(), position:position},
       }).done(function(data) {
         addfield.val("").blur(); // Reset add item field
         mergeState(data.state);
       }).fail(get_ajax_fail_handler('add_item'));
     }
-  }).addClass("newitem_blur");
+  });
 }
-function makeAddItemField(subscr, pos) {
+function makeAddItemField(list_id, pos) {
   if (pos == null)
     pos = 'end';
-  var addItemHtml =
-    $('<input id="add_to_'+pos+'_of_list_'+subscr.list.id+'"'
-    +' class="newitem" type="text" value="'+newitemText+'"></input>');
-  initAddItemField(addItemHtml);
-  return addItemHtml;
+  var addItemHtml = $('<li />');
+  var addItemField = $('<input id="add_to_'+pos+'_of_list_'+list_id+'"'
+    +' class="additem" type="text"></input>').keydown(function(e) {
+      if(e.keyCode == 13) {
+        var addField = $(this); //For resetting later...
+        if (addField.val().length == 0)
+          return false;
+        var res = /^add_to_(end|begin|\d+)_of_list_(\d+)$/.exec(addField.attr('id'));
+        if (!res || res.length != 3) {
+          debug('addItemHandler called with for invalid element id');
+          return false;
+        }
+        var pos = res[1];
+        var list_id = res[2];
+        var position = pos=='begin' ? 0 : (pos=='end' ? -1 : pos);
+        $.ajax('add_item/', {
+          dataType: "json",
+          type: "POST",
+          data: {list:list_id, text:addField.val(), position:position},
+        }).done(function(data) {
+          addItemHtml.hide(1000, function(){$(this).remove()});
+          mergeState(data.state);
+        }).fail(get_ajax_fail_handler('add_item'));
+      }
+    });
+  var cancelHtml = $('<a href="#">cancel</a>').click(function(e) {
+    addItemHtml.remove();
+  });
+  return addItemHtml.append(addItemField).append(cancelHtml);
 }
 function makeSubscription(s) {
-  // TODO: add add item button
   var l = s.list;
   var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
-      +' class="subscription"></li>');
+      +' class="subscription"></li>').data('id', s.id);
   var subscriptionTitleHtml = $('<span class="subscription-title"></span>');
+  var itemListHtml = $('<ul class="itemlist"></ul>\n');
 
   function minimizationHandler(e) {
     var res = /^minmax_subscription_(\d+)$/
@@ -273,6 +292,15 @@ function makeSubscription(s) {
     .done(function(data) { mergeState(data.state); })
     .fail(get_ajax_fail_handler(action+'_subscription'));
   }
+  function subscriptionAddItemHandler(e) {
+    if (itemListHtml.children().length != 0
+        && !$('li:first', itemListHtml).hasClass('item'))
+      return;
+
+    var addItemField = makeAddItemField(l.id, 'begin');
+    itemListHtml.prepend(addItemField);
+    $('.additem', addItemField).focus();
+  }
   var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
       +' title="minimize/maximize" class="subscriptionaction minmax" href="#">'
       +(s.minimized?'&#x229e;':'&#x229f;')+'</a>').click(minimizationHandler);
@@ -280,25 +308,29 @@ function makeSubscription(s) {
   var listNameHtml = $('<span id="subscription_'+s.id+'_listname"'
       +' class="list-name">'+l.name+'</span>')
       .editable(editableUrl, editableSettings);
-  var moveUpHtml = $('<a id="move_subscription_'+s.id+'_up"'
+  var addItemHtml = $('<a id="additem_list_'+l.id+'" title="Add item"'
+      +' class="subscriptionaction" href="#">&#x23ce;</a>')
+      .click(subscriptionAddItemHandler);
+  var moveUpHtml = $('<a id="move_subscription_'+s.id+'_up" title="Move up"'
       +' class="subscriptionaction move_subscription" href="#">&uarr;</a>')
       .click(moveHandler);
-  var moveDownHtml = $('<a id="move_subscription_'+s.id+'_down"'
+  var moveDownHtml=$('<a id="move_subscription_'+s.id+'_down" title="Move down"'
       +' class="subscriptionaction move_subscription" href="#">&darr;</a>')
       .click(moveHandler);
   subscriptionTitleHtml
     .append(minimizationButtonHtml)
     .append('&nbsp;').append(listNameHtml)
+    .append('&nbsp;').append(addItemHtml)
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
 
-  var itemListHtml = $('<ul class="itemlist"></ul>\n');
   var items = valuesSortedByPosition(l.items);
   for (var i in items) {
     var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
   }
-  itemListHtml.append($('<li/>').html(makeAddItemField(s, 'end')));
+  if (items.length == 0)
+    addItemHtml.click(); // Show add item field if no items on list
   if (s.minimized)
     itemListHtml.hide();
 
@@ -405,34 +437,50 @@ function updateSubscription(s) {
 
 ///////////// ITEM RELATED DOM MANIPULATION /////////////
 
-function makeItem(itemdata) {
+
+function makeItem(item) {
   function removeItemHandler(e) {
     e.preventDefault();
     var item_elem = $(this).parent();
     var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
     if (!res || res.length != 2)
       return false;
-    var item_id = res[1];
-    $.ajax('remove_item/',{dataType:"json",type:"POST",data:{item_id:item_id}})
+    $.ajax('remove_item/',{dataType:"json",type:"POST",data:{item_id:res[1]}})
       .done(function(data) { mergeState(data.state); })
       .fail(get_ajax_fail_handler('remove_item'));
   }
-  var item_id = itemdata.id;
-  var itemHtml = $('<li id="item_'+item_id+'" class="item"></li>');
-  var itemTextHtml = $('<span id="item_'+item_id+'_text" class="item-text">'
-      +itemdata.text+'</span>').editable(editableUrl, editableSettings);
-  var removeHtml = $('<a id="remove_item_'+item_id
-      +'" class="itemaction remove_item" href="#">&times;</a>')
+  function itemAddItemHandler(e) {
+    var itemElem = $(this).parents('.item');
+    var subscriptionElem = $(this).parents('.subscription');
+    if (itemElem.length != 1 || subscriptionElem.length != 1)
+      return;
+    if (itemElem.next().length == 1 && !itemElem.next().hasClass('item'))
+      return;
+    var subscription = state.subscriptions[subscriptionElem.data('id')];
+    var addItemField = makeAddItemField(subscription.list.id,
+      subscription.list.items[itemElem.data('id')].position+1);
+    itemElem.after(addItemField);
+    $('.additem', addItemField).focus();
+  }
+  var itemHtml = $('<li id="item_'+item.id+'" class="item"></li>')
+    .data('id', item.id);
+  var itemTextHtml = $('<span id="item_'+item.id+'_text" class="item-text">'
+      +item.text+'</span>').editable(editableUrl, editableSettings);
+  var removeHtml = $('<a id="remove_item_'+item.id+'" title="Remove"'
+      +' class="itemaction remove_item" href="#">&times;</a>')
       .click(removeItemHandler);
-  var moveUpHtml = $('<a id="move_item_'+item_id+'_up"'
+  var addItemHtml = $('<a class="itemaction" title="Add item"'
+      +' href="#">&#x23ce;</a>').click(itemAddItemHandler);
+  var moveUpHtml = $('<a id="move_item_'+item.id+'_up" title="Move up"'
       +' class="itemaction move_item" href="#">&uarr;</a>')
       .click(moveHandler);
-  var moveDownHtml = $('<a id="move_item_'+item_id+'_down"'
+  var moveDownHtml = $('<a id="move_item_'+item.id+'_down" title="Move down"'
       +' class="itemaction move_item" href="#">&darr;</a>')
       .click(moveHandler);
   itemHtml
-    .append(itemTextHtml)
-    .append('&nbsp;').append(removeHtml)
+    .append(removeHtml)
+    .append('&nbsp;').append(itemTextHtml)
+    .append('&nbsp;').append(addItemHtml)
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
   return itemHtml;
@@ -513,7 +561,7 @@ function updateItem(newI) {
     updated.push('url');
   }
   if (newI.position != curI.position) {
-    insertItemToDOM(newI, $('#item_'+curI.id).detach(), true);
+    insertItemToDOM(newI, $('#item_'+curI.id).detach(), false);
     updated.push('position');
   }
   state.subscriptions[subOfList[curI.list_id]].list.items[curI.id] = newI;
