@@ -360,7 +360,7 @@ function insertSubscriptionToDOM(s, subscriptionHtml, animate) {
     }
   }
   if (animate)
-    subscriptionHtml.hide().show('blind', {direction:'vertical'}, 1000);
+    subscriptionHtml.hide().show(1000);
 }
 function addSubscription(s, animate) {
   debug('Adding subscription '+s.id+' ('+s.list.name+')');
