@@ -309,7 +309,7 @@ function makeSubscription(s) {
       +' class="list-name">'+l.name+'</span>')
       .editable(editableUrl, editableSettings);
   var addItemHtml = $('<a id="additem_list_'+l.id+'" title="Add item"'
-      +' class="subscriptionaction" href="#">&#x23ce;</a>')
+      +' class="subscriptionaction" href="#">&#x21b2;</a>')
       .click(subscriptionAddItemHandler);
   var moveUpHtml = $('<a id="move_subscription_'+s.id+'_up" title="Move up"'
       +' class="subscriptionaction move_subscription" href="#">&uarr;</a>')
@@ -470,7 +470,7 @@ function makeItem(item) {
       +' class="itemaction remove_item" href="#">&times;</a>')
       .click(removeItemHandler);
   var addItemHtml = $('<a class="itemaction" title="Add item"'
-      +' href="#">&#x23ce;</a>').click(itemAddItemHandler);
+      +' href="#">&#x21b2;</a>').click(itemAddItemHandler);
   var moveUpHtml = $('<a id="move_item_'+item.id+'_up" title="Move up"'
       +' class="itemaction move_item" href="#">&uarr;</a>')
       .click(moveHandler);
