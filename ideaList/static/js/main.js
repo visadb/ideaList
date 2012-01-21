@@ -186,7 +186,6 @@ function parseErrorThrown(errorThrown) {
 
 function moveHandler(e) {
   e.preventDefault();
-  var obj_elem = $(this).parent();
   var res = /^move_(item|subscription)_(\d+)_(up|down)$/
     .exec($(this).attr('id'));
   if (!res || res.length != 4)
@@ -194,12 +193,13 @@ function moveHandler(e) {
   var obj_type = res[1];
   var obj_id = res[2];
   var direction = res[3];
+  var obj_elem = $(this).parents('.'+obj_type);
   var obj_before = null; // Item before which to insert obj_elem
   if (direction == 'up')
     obj_before = obj_elem.prev();
   else
     obj_before = obj_elem.next();
-  if (obj_before.length != 1 || !obj_before.hasClass(obj_type)) {
+  if (obj_before.length != 1) {
     debug('Not moving; already topmost/bottommost.');
     return false;
   }
