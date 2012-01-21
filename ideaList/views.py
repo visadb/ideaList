@@ -78,7 +78,9 @@ def move(req, cls):
                 position__lt=oldpos).order_by('-position')
         if 'user' in dir(cls):
             followers = followers.filter(user=req.user)
-        if 'list' in dir(cls):
+        if isinstance(obj, Item):
+            followers = followers.filter(list=obj.list)
+        elif isinstance(obj, Subscription):
             followers = followers.filter(list__trashed_at__isnull=True)
         if oldpos == 0 or followers.count() == 0:
             return state_response(req, msg='Could not raise: was on top')
