@@ -30,7 +30,8 @@ class List(Trashable):
     n_items.short_description = u'# of items'
     def subscription_for(self, user):
         try:
-            return self.subscriptions.filter(user=user)[0]
+            return self.subscriptions.filter(trashed_at__isnull=True,
+                    user=user)[0]
         except IndexError:
             return None
     def as_dict(self, include_items=True):

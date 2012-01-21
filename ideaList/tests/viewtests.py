@@ -276,43 +276,60 @@ class SubscriptionMinimizationViewsTest(MyViewTest):
 class RemoveItemViewTest(MyViewTest):
     def setUp(self):
         super(RemoveItemViewTest, self).setUp()
-        self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
-        self.i1 = Item.objects.create(list=self.l1, text='testitem')
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
+        self.i1 = Item.objects.create(list=self.l1, text='testitem1')
+        self.i2 = Item.objects.create(list=self.l1, text='testitem2')
+        self.i3 = Item.objects.create(list=self.l1, text='testitem3')
+        self.assertEqual(Item.objects.count(), 3)
+        self.assertEqual(Item.nontrash.count(), 3)
     def test_login_required(self):
-        self.check_login_required('ideaList.views.remove_item')
+        self.check_login_required('ideaList.views.remove_items')
     def test_valid_item_id(self):
-        self.assertEqual(Item.objects.count(), 1)
-        r = self.c.post(reverse('ideaList.views.remove_item'),
-                {'item_id':self.i1.id},
+        r = self.c.post(reverse('ideaList.views.remove_items'),
+                {'item_ids':self.i1.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(Item.objects.count(), 1)
         self.assertEqual(Item.trash.count(), 1)
-        self.assertEqual(Item.nontrash.count(), 0)
+        self.assertEqual(Item.nontrash.count(), 2)
         self.check_state_in_response(r)
-    def test_item_id_missing(self):
-        self.assertEqual(Item.objects.count(), 1)
-        r = self.c.post(reverse('ideaList.views.remove_item'),
-                {'item_id_mispelled':self.i1.id},
+    def test_valid_item_ids(self):
+        r = self.c.post(reverse('ideaList.views.remove_items'),
+                {'item_ids':(self.i1.id, self.i3.id)},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.trash.count(), 2)
+        self.assertEqual(Item.nontrash.count(), 1)
+        self.check_state_in_response(r)
+    def test_not_own_item(self):
+        self.s1.delete()
+        r = self.c.post(reverse('ideaList.views.remove_items'),
+                {'item_ids':self.i1.id},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(Item.trash.count(), 0)
+        self.assertEqual(Item.nontrash.count(), 3)
+        self.check_state_in_response(r)
+    def test_item_ids_missing(self):
+        r = self.c.post(reverse('ideaList.views.remove_items'),
+                {'item_ids_mispelled':self.i1.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
-        self.assertEqual(Item.objects.count(), 1)
+        self.assertEqual(Item.nontrash.count(), 3)
         self.check_state_in_response(r)
     def test_invalid_item_id(self):
-        self.assertEqual(Item.objects.count(), 1)
-        r = self.c.post(reverse('ideaList.views.remove_item'),
-                {'item_id':'invalid'},
+        r = self.c.post(reverse('ideaList.views.remove_items'),
+                {'item_ids':'invalid'},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 400)
-        self.assertEqual(Item.objects.count(), 1)
+        self.assertEqual(Item.nontrash.count(), 3)
         self.check_state_in_response(r)
     def test_nonexisting_item_id(self):
-        self.assertEqual(Item.objects.count(), 1)
-        r = self.c.post(reverse('ideaList.views.remove_item'),
-                {'item_id':self.i1.id+1},
+        r = self.c.post(reverse('ideaList.views.remove_items'),
+                {'item_ids':self.i1.id+100},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 404)
-        self.assertEqual(Item.objects.count(), 1)
+        self.assertEqual(Item.nontrash.count(), 3)
         self.check_state_in_response(r)
 
 class MoveItemViewTest(MyViewTest):

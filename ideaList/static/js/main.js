@@ -442,10 +442,11 @@ function makeItem(item) {
   function removeItemHandler(e) {
     e.preventDefault();
     var item_elem = $(this).parent();
-    var res = /^remove_item_(\d+)$/.exec($(this).attr('id'));
-    if (!res || res.length != 2)
+    var r = /^remove_item_(\d+)$/.exec($(this).attr('id'));
+    if (!r || r.length != 2)
       return false;
-    $.ajax('remove_item/',{dataType:"json",type:"POST",data:{item_id:res[1]}})
+    $.ajax('remove_items/', {dataType:"json", type:"POST", traditional:true,
+        data:{item_ids:[r[1]]}})
       .done(function(data) { mergeState(data.state); })
       .fail(get_ajax_fail_handler('remove_item'));
   }

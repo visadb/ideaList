@@ -275,19 +275,25 @@ def add_item(req):
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware
-def remove_item(req):
+def remove_items(req):
     if req.method != 'POST':
         return state_response(req, code=400, msg='Only POST supported')
-    if 'item_id' not in req.POST:
-        return state_response(req, code=400, msg='item_id not provided')
-    try:
-        i = Item.objects.get(pk=req.POST['item_id'])
-    except ValueError:
-        return state_response(req, code=400, msg='invalid item_id')
-    except Item.DoesNotExist:
-        return state_response(req, code=404, msg='No such item')
-    i.delete()
-    return state_response(req, msg='Item '+req.POST['item_id']+' removed')
+    if 'item_ids' not in req.POST:
+        return state_response(req, code=400, msg='item_ids not provided')
+    items = []
+    for item_id in req.POST.getlist('item_ids'):
+        try:
+            i = Item.objects.get(pk=item_id)
+        except ValueError:
+            return state_response(req, code=400, msg='invalid item_id '+item_id)
+        except Item.DoesNotExist:
+            return state_response(req, code=404, msg='No such item: '+item_id)
+        if i.list.subscription_for(req.user) is None:
+            return state_response(req, code=403, msg='not your item: '+item_id)
+        items.append(i)
+    for i in items:
+        i.delete()
+    return state_response(req,msg='Items '+str(req.POST['item_ids'])+' removed')
 
 @login_required
 @csrf_protect # Unnecessary, handled by the csrf middleware
