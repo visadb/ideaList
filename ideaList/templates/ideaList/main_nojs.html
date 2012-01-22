@@ -1,5 +1,7 @@
 {% extends "ideaList/base.html" %}
 
+{% load ideaList_extras %}
+
 {% block header %}
 {% endblock %}
 
@@ -9,22 +11,25 @@
 <p>{{ msg }}</p>
 {% endif %}
 
+<a href="/d/ideaList/">Refresh</a>
+
 <form action="remove_items/" method="post">
   {% csrf_token %}
-  <ul class="listlist">
+  <div><input type="submit" name="remove_items" value="Remove selected items" /></div>
+  <ul class="listlist_nojs">
   {% for s in subscriptions %}
-    <li><span class="subscription-title">{{ s.list.name }}</span>
-      <ul class="itemlist">
+  <li><b>{{ s.list.name|escape|escape_utf8_scands|safe }}</b>
+      <ul class="itemlist_nojs">
         {% for i in s.list.nontrashed_items %}
           <li>
             <input type="checkbox" name="item_ids" value="{{i.id}}" />
-            {{i.text}}
+            {{i.text|escape|escape_utf8_scands|safe}}
           </li>
         {% endfor %}
       </ul>
     </li>
   {% endfor %}
   </ul>
-  <div><input type="submit" name="remove_lines" value="Poista valitut rivit" /></div>
+  <div><input type="submit" name="remove_items" value="Remove selected items" /></div>
 </form>
 {% endblock %}

@@ -5,7 +5,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_exempt
 from ideaList.models import List, Item, Subscription
 from django.forms import ModelForm
 
@@ -280,6 +280,7 @@ def add_item(req):
             RequestContext(req))
 
 @login_required
+@csrf_exempt
 def remove_items(req):
     def my_response(code=200, msg=''):
         if req.is_ajax():
@@ -304,7 +305,8 @@ def remove_items(req):
             return my_response(code=403, msg='not your item: '+item_id)
         items.append(i)
     for i in items:
-        i.delete()
+        if i.trashed_at == None:
+            i.delete()
     return my_response(code=200, msg='Items '+(','.join(item_ids))+' removed')
 
 @login_required
