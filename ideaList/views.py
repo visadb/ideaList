@@ -104,7 +104,9 @@ def move(req, cls):
         followers = cls.nontrash.filter(position__gt=oldpos)
         if 'user' in dir(cls):
             followers = followers.filter(user=req.user)
-        if 'list' in dir(cls):
+        if isinstance(obj, Item):
+            followers = followers.filter(list=obj.list)
+        elif isinstance(obj, Subscription):
             followers = followers.filter(list__trashed_at__isnull=True)
         if oldpos == cls.objects.count()-1 or followers.count() == 0:
             return state_response(req, msg='Could not lower: was on bottom')

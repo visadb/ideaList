@@ -314,7 +314,7 @@ class RemoveItemViewTest(MyViewTest):
         r = self.c.post(reverse('ideaList.views.remove_items'),
                 {'item_ids_mispelled':self.i1.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(Item.nontrash.count(), 3)
         self.check_state_in_response(r)
     def test_invalid_item_id(self):
@@ -336,12 +336,17 @@ class MoveItemViewTest(MyViewTest):
     def setUp(self):
         super(MoveItemViewTest, self).setUp()
         self.l1 = List.objects.create(name='List1', owner=User.objects.all()[0])
-        self.i1 = Item.objects.create(list=self.l1, text='testitem1')
-        self.i2 = Item.objects.create(list=self.l1, text='testitem2')
-        self.i3 = Item.objects.create(list=self.l1, text='testitem3')
+        self.l2 = List.objects.create(name='List2', owner=User.objects.all()[0])
+        self.i1 = Item.objects.create(list=self.l1, text='testitem1-1')
+        self.i2 = Item.objects.create(list=self.l1, text='testitem1-2')
+        self.i3 = Item.objects.create(list=self.l1, text='testitem1-3')
+        self.i4 = Item.objects.create(list=self.l2, text='testitem2-1')
+        self.i5 = Item.objects.create(list=self.l2, text='testitem2-2')
         self.assertEqual(self.i1.position, 0)
         self.assertEqual(self.i2.position, 1)
         self.assertEqual(self.i3.position, 2)
+        self.assertEqual(self.i4.position, 0)
+        self.assertEqual(self.i5.position, 1)
     def test_login_required(self):
         self.check_login_required('ideaList.views.move_item')
     def test_move_up(self):
