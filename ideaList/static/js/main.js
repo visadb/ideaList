@@ -540,7 +540,7 @@ function insertItemToDOM(item, itemHtml, animate) {
     }
     if (!added) {
       //debug('  Adding item to last position');
-      $('#subscription_'+sub_id+' > ul > li.item').last().after(itemHtml);
+      $('#subscription_'+sub_id+' > ul').append(itemHtml);
     }
   }
   if (animate)
