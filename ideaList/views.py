@@ -115,6 +115,17 @@ def move(req, cls):
     else:
         newpos = where
 
+    if cls is Item and 'list_id' in req.POST:
+        if where in ('up', 'down'):
+            return state_response(req, code=400, msg='up/down with list_id')
+        try:
+            l = List.objects.get(pk=req.POST['list_id'])
+        except ValueError:
+            return state_response(req, code=400, msg='invalid list_id')
+        except List.DoesNotExist:
+            return state_response(req, code=400, msg='list_id does not exist')
+        obj.list = l
+
     obj.position = newpos
     obj.save()
     return state_response(req, msg=cls_name+" "+str(obj.id)
@@ -315,7 +326,9 @@ def remove_items(req):
 def move_item(req):
     """
     Request must have POST keys 'item_id' and 'where'. 'where' is either up/down
-    or item_id's new position as an integer.
+    or item_id's new position as an integer. For moving items across lists,
+    request may also contain the POST key 'list_id' - in this case 'where' must
+    be an integer.
     """
     return move(req, Item)
 

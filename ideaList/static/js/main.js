@@ -278,7 +278,32 @@ function makeSubscription(s) {
   var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
       +' class="subscription"></li>').data('id', s.id);
   var subscriptionTitleHtml = $('<span class="subscription-title"></span>');
-  var itemListHtml = $('<ul class="itemlist"></ul>\n');
+  var itemListHtml = $('<ul class="itemlist"></ul>\n').sortable({
+    connectWith: '.itemlist',
+    axis: 'y',
+    update: function(e, ui) {
+      if (ui.sender != null)
+        return; // prevent double ajax: this call is for the destination list
+      var prev = ui.item.prev();
+      var subscriptionElem = ui.item.parents('.subscription');
+      var list_id = state.subscriptions[subscriptionElem.data('id')].list.id;
+      var where = null;
+      if (prev.length == 0)
+        where = 0;
+      else
+        where = state.subscriptions[subscriptionElem.data('id')]
+          .list.items[prev.data('id')].position + 1;
+      $.ajax('move_item/', {
+        dataType:"json", type:"POST",
+        data:{item_id:ui.item.data('id'), list_id:list_id, where:where}
+      }).done(function(data) {
+        mergeState(data.state);
+      }).fail(
+        //TODO: cancel drag!
+        get_ajax_fail_handler('drag_item')
+      );
+    }
+  });
 
   function minimizationHandler(e) {
     var res = /^minmax_subscription_(\d+)$/
@@ -522,10 +547,6 @@ function addItem(item, animate) {
     debug('Tried to add an item to a nonexisting list');
     return false;
   }
-  if ($('#item_'+item.id).length != 0) {
-    debug('Tried to add item '+item.id+', but it already exists');
-    return;
-  }
   if ($('#subscription_'+sub_id).length == 0) {
     debug('Tried to add item '+item.id+' to a nonexisting subscription');
     return;
@@ -702,7 +723,10 @@ function initSubscriptionDragAndDrop() {
         data:{subscription_id:ui.item.data('id'), where:where}
       }).done(function(data) {
         mergeState(data.state);
-      }).fail(get_ajax_fail_handler('drag_subscription'));
+      }).fail(
+        //TODO: cancel drag!
+        get_ajax_fail_handler('drag_subscription')
+      );
     }
   });
 }

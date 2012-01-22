@@ -402,6 +402,47 @@ class MoveItemViewTest(MyViewTest):
         self.assertEqual(Item.objects.get(pk=self.i2.id).position, 0)
         self.assertEqual(Item.objects.get(pk=self.i3.id).position, 1)
         self.check_state_in_response(r)
+    def test_move_abs_with_invalid_integer(self):
+        r = self.c.post(reverse('ideaList.views.move_item'),
+                {'item_id':self.i1.id, 'where':'invalid'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).position, 0)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).position, 1)
+        self.assertEqual(Item.objects.get(pk=self.i3.id).position, 2)
+        self.check_state_in_response(r)
+    def test_move_to_other_list(self):
+        r = self.c.post(reverse('ideaList.views.move_item'),
+                {'item_id':self.i2.id, 'list_id':self.l2.id, 'where':1},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).list, self.l1)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).position, 0)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).list, self.l2)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).position, 1)
+        self.assertEqual(Item.objects.get(pk=self.i3.id).list, self.l1)
+        self.assertEqual(Item.objects.get(pk=self.i3.id).position, 1)
+        self.assertEqual(Item.objects.get(pk=self.i4.id).list, self.l2)
+        self.assertEqual(Item.objects.get(pk=self.i4.id).position, 0)
+        self.assertEqual(Item.objects.get(pk=self.i5.id).list, self.l2)
+        self.assertEqual(Item.objects.get(pk=self.i5.id).position, 2)
+        self.check_state_in_response(r)
+    def test_up_with_other_list(self):
+        r = self.c.post(reverse('ideaList.views.move_item'),
+                {'item_id':self.i2.id, 'list_id':self.l2.id, 'where':'up'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).list, self.l1)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).position, 0)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).list, self.l1)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).position, 1)
+        self.assertEqual(Item.objects.get(pk=self.i3.id).list, self.l1)
+        self.assertEqual(Item.objects.get(pk=self.i3.id).position, 2)
+        self.assertEqual(Item.objects.get(pk=self.i4.id).list, self.l2)
+        self.assertEqual(Item.objects.get(pk=self.i4.id).position, 0)
+        self.assertEqual(Item.objects.get(pk=self.i5.id).list, self.l2)
+        self.assertEqual(Item.objects.get(pk=self.i5.id).position, 1)
+        self.check_state_in_response(r)
 
 class EditTextViewTest(MyViewTest):
     def setUp(self):
