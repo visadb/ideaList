@@ -68,6 +68,7 @@
 .itemlist {
   font-weight: normal;
   list-style-type: none;
+  padding-bottom: 2px /* So that items can be dragged here even when empty */
 }
 .itemlist_nojs {
   font-weight: normal;

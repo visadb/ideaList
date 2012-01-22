@@ -281,6 +281,10 @@ function makeSubscription(s) {
   var itemListHtml = $('<ul class="itemlist"></ul>\n').sortable({
     connectWith: '.itemlist',
     axis: 'y',
+    start: function(e, ui) {
+      old_list_id = state.subscriptions[ui.item.parents('.subscription')
+        .data('id')].list.id;
+    },
     update: function(e, ui) {
       if (ui.sender != null)
         return; // prevent double ajax: this call is for the destination list
@@ -288,20 +292,23 @@ function makeSubscription(s) {
       var subscriptionElem = ui.item.parents('.subscription');
       var list_id = state.subscriptions[subscriptionElem.data('id')].list.id;
       var where = null;
-      if (prev.length == 0)
+      if (prev.length == 0) {
         where = 0;
-      else
+      } else {
         where = state.subscriptions[subscriptionElem.data('id')]
-          .list.items[prev.data('id')].position + 1;
-      $.ajax('move_item/', {
-        dataType:"json", type:"POST",
-        data:{item_id:ui.item.data('id'), list_id:list_id, where:where}
-      }).done(function(data) {
-        mergeState(data.state);
-      }).fail(
-        //TODO: cancel drag!
-        get_ajax_fail_handler('drag_item')
-      );
+          .list.items[prev.data('id')].position;
+        if (ui.position.top < ui.originalPosition.top || list_id != old_list_id)
+          where++; //If moving up or across lists, must be 1 greater than prev's
+      }
+      var data = {item_id:ui.item.data('id'), where:where}
+      if (list_id != old_list_id)
+        data.list_id = list_id;
+      $.ajax('move_item/', { dataType:"json", type:"POST", data:data })
+        .done(function(data) { mergeState(data.state); })
+        .fail(
+          //TODO: cancel drag!
+          get_ajax_fail_handler('drag_item')
+        );
     }
   });
 
@@ -714,10 +721,13 @@ function initSubscriptionDragAndDrop() {
     update: function(e, ui) {
       var prev = ui.item.prev();
       var where = null;
-      if (prev.length == 0)
+      if (prev.length == 0) {
         where = 0;
-      else
-        where = state.subscriptions[prev.data('id')].position + 1;
+      } else {
+        where = state.subscriptions[prev.data('id')].position;
+        if (ui.position.top < ui.originalPosition.top)
+          where++; //If moving up, position must be one greater than prev's
+      }
       $.ajax('move_subscription/', {
         dataType:"json", type:"POST",
         data:{subscription_id:ui.item.data('id'), where:where}
