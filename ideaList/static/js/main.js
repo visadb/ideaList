@@ -410,7 +410,7 @@ function updateSubscription(s) {
     updated.push('listname');
   }
   if (s.position != old_sub.position) {
-    insertSubscriptionToDOM(s, $('#subscription_'+s.id).detach(), true);
+    insertSubscriptionToDOM(s, $('#subscription_'+s.id).detach(), false);
     state.subscriptions[s.id].position = s.position;
     updated.push('position');
   }
@@ -634,7 +634,7 @@ var newitemText = "New item..."
 
 // Refresh when state is this old (in seconds). Must be at least 3 seconds.
 // Set to -1 to disable autorefresh.
-var autorefresh_freq = 30;
+var autorefresh_freq = 300;
 
 var editableUrl = 'edit_text/';
 var editableSettings = {
@@ -686,6 +686,27 @@ function initTopBar() {
   });
 }
 
+function initSubscriptionDragAndDrop() {
+  $('#listlist').sortable({
+    distance:30,
+    axis:'y',
+    update: function(e, ui) {
+      var prev = ui.item.prev();
+      var where = null;
+      if (prev.length == 0)
+        where = 0;
+      else
+        where = state.subscriptions[prev.data('id')].position + 1;
+      $.ajax('move_subscription/', {
+        dataType:"json", type:"POST",
+        data:{subscription_id:ui.item.data('id'), where:where}
+      }).done(function(data) {
+        mergeState(data.state);
+      }).fail(get_ajax_fail_handler('drag_subscription'));
+    }
+  });
+}
+
 var initDone = false;
 $(document).ready(function() {
   initTopBar();
@@ -693,6 +714,7 @@ $(document).ready(function() {
   state = {subscriptions: {}};
   subOfList = {};
   mergeState(init_state);
+  initSubscriptionDragAndDrop();
   refresher();
   initDone = true;
 });
