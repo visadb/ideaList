@@ -278,39 +278,43 @@ function makeSubscription(s) {
   var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
       +' class="subscription"></li>').data('id', s.id);
   var subscriptionTitleHtml = $('<span class="subscription-title"></span>');
-  var itemListHtml = $('<ul class="itemlist"></ul>\n').sortable({
-    connectWith: '.itemlist',
-    axis: 'y',
-    start: function(e, ui) {
-      old_list_id = state.subscriptions[ui.item.parents('.subscription')
-        .data('id')].list.id;
-    },
-    update: function(e, ui) {
-      if (ui.sender != null)
-        return; // prevent double ajax: this call is for the destination list
-      var prev = ui.item.prev();
-      var subscriptionElem = ui.item.parents('.subscription');
-      var list_id = state.subscriptions[subscriptionElem.data('id')].list.id;
-      var where = null;
-      if (prev.length == 0) {
-        where = 0;
-      } else {
-        where = state.subscriptions[subscriptionElem.data('id')]
-          .list.items[prev.data('id')].position;
-        if (ui.position.top < ui.originalPosition.top || list_id != old_list_id)
-          where++; //If moving up or across lists, must be 1 greater than prev's
+  var itemListHtml = $('<ul class="itemlist"></ul>\n');
+  // Workaround for bug in Android 1.5 browser: $.offset() crashes for invisible
+  setTimeout(function() {
+    itemListHtml.sortable({
+      connectWith: '.itemlist',
+      axis: 'y',
+      start: function(e, ui) {
+        old_list_id = state.subscriptions[ui.item.parents('.subscription')
+          .data('id')].list.id;
+      },
+      update: function(e, ui) {
+        if (ui.sender != null)
+          return; // prevent double ajax: this call is for the destination list
+        var prev = ui.item.prev();
+        var subscriptionElem = ui.item.parents('.subscription');
+        var list_id = state.subscriptions[subscriptionElem.data('id')].list.id;
+        var where = null;
+        if (prev.length == 0) {
+          where = 0;
+        } else {
+          where = state.subscriptions[subscriptionElem.data('id')]
+            .list.items[prev.data('id')].position;
+          if (ui.position.top<ui.originalPosition.top || list_id != old_list_id)
+            where++; //If moving up or b/w lists, must be 1 greater than prev's
+        }
+        var data = {item_id:ui.item.data('id'), where:where}
+        if (list_id != old_list_id)
+          data.list_id = list_id;
+        $.ajax('move_item/', { dataType:"json", type:"POST", data:data })
+          .done(function(data) { mergeState(data.state); })
+          .fail(
+            //TODO: cancel drag!
+            get_ajax_fail_handler('drag_item')
+          );
       }
-      var data = {item_id:ui.item.data('id'), where:where}
-      if (list_id != old_list_id)
-        data.list_id = list_id;
-      $.ajax('move_item/', { dataType:"json", type:"POST", data:data })
-        .done(function(data) { mergeState(data.state); })
-        .fail(
-          //TODO: cancel drag!
-          get_ajax_fail_handler('drag_item')
-        );
-    }
-  });
+    });
+  }, 1);
 
   function minimizationHandler(e) {
     var res = /^minmax_subscription_(\d+)$/
