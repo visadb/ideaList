@@ -1,14 +1,14 @@
 import time
 from datetime import datetime
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from positions.fields import PositionField
 from undelete.models import Trashable
-from undelete.signals import pre_trash, pre_restore
+#from django.dispatch import receiver
+#from undelete.signals import pre_trash, pre_restore
+#from django.db.models.signals import post_save
 
 def _nontrash_subscriptions_of_user(self):
     return self.subscriptions.filter(
@@ -195,7 +195,7 @@ class LogEntry(models.Model):
         return dict(cls.CHANGE_TYPE_CHOICES)[change_type].lower()
 
 
-@receiver(post_save)
+#@receiver(post_save)
 def detect_change(sender, **kwargs):
     if sender not in (List, Item, Subscription):
         return
@@ -213,15 +213,14 @@ def detect_change(sender, **kwargs):
             change_type=change_type)
     c.save()
 
-@receiver(pre_trash)
+#@receiver(pre_trash)
 def detect_trash(sender, **kwargs):
     if sender not in (List, Item, Subscription):
         return
     kwargs['instance'].update_is_trash = True
 
-@receiver(pre_restore)
+#@receiver(pre_restore)
 def detect_restore(sender, **kwargs):
     if sender not in (List, Item, Subscription):
         return
     kwargs['instance'].update_is_restore = True
-
