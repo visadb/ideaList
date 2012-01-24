@@ -628,7 +628,7 @@ $(document).ajaxSuccess(function() {
 $(document).ajaxError(function() {
   pendingAjaxCalls--;
   $('#status-light').attr('class', 'red');
-  setTimeout('setStatusLight()', 2000);
+  setTimeout('setStatusLight()', 10000);
 });
 
 ///////////// INITIALIZATION /////////////
@@ -659,7 +659,7 @@ $(document).ajaxSend(function(event, xhr, settings) {
   }
 });
 
-$.ajaxSetup({timeout:3000});
+$.ajaxSetup({timeout:10000});
 
 // The text that appears in the new item boxes
 var newitemText = "New item..."
