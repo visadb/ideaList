@@ -6,9 +6,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from positions.fields import PositionField
 from undelete.models import Trashable
-#from django.dispatch import receiver
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 #from undelete.signals import pre_trash, pre_restore
-#from django.db.models.signals import post_save
 
 def _nontrash_subscriptions_of_user(self):
     return self.subscriptions.filter(
@@ -77,6 +77,39 @@ class Item(Trashable):
             val += " (trashed)"
         return val
 
+class ItemFrequencyManager(models.Manager):
+    def increment(self, text):
+        """Increment the frequency of the given text if it exists or create a
+        new ItemFrequency with frequency=1. Returns the ItemFrequency object"""
+        text = text.lower().strip()
+        try:
+            freq = self.get(text=text)
+            freq.frequency += 1
+            freq.save()
+            return freq
+        except ItemFrequency.DoesNotExist:
+            return self.create(text=text, frequency=1)
+class ItemFrequency(models.Model):
+    """
+    Info about frequency of a certain Item text. Used for item suggestions.
+    """
+    text = models.CharField(max_length=200, primary_key=True)
+    frequency = models.PositiveIntegerField()
+    last_changed = models.DateTimeField(auto_now=True)
+
+    objects = ItemFrequencyManager()
+
+    class Meta:
+        ordering = ['-frequency']
+
+    def __unicode__(self):
+        return '%s: %d' % (self.text, self.frequency)
+@receiver(post_save, sender=Item)
+def autoincrement_on_item_creation(sender, **kwargs):
+    "Detect Item creation and increment its text's frequency."
+    if kwargs['created']:
+        ItemFrequency.objects.increment(kwargs['instance'].text)
+
 class Subscription(Trashable):
     """
     A user's (:model:`django.contrib.auth.User`) subscription of a certain List
@@ -103,7 +136,6 @@ class Subscription(Trashable):
 
 ### Change log stuff: ###
 class LogEntryManager(models.Manager):
-    ''' Query only objects which have not been trashed. '''
     def newer_than(self, time):
         if isinstance(time, float) or isinstance(time, int):
             dt = datetime.fromtimestamp(time)

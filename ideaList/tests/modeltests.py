@@ -1,4 +1,4 @@
-from ideaList.models import Item, List, Subscription
+from ideaList.models import Item, ItemFrequency, List, Subscription
 from django.contrib.auth.models import User
 from django import test
 
@@ -41,6 +41,50 @@ class ItemTest(test.TestCase):
         self.assertEqual(i.url, '')
         self.assertEqual(i.priority, u'NO')
         self.assertEqual(i.position, 0)
+
+class ItemFrequencyTest(test.TestCase):
+    def setUp(self):
+        self.u1 = User.objects.create_user('pena', 'lol@lol.lol', 'passwd')
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.assertEqual(ItemFrequency.objects.count(), 0)
+    def test_increment_new_text(self):
+        ItemFrequency.objects.increment('milk')
+        self.assertEqual(ItemFrequency.objects.count(), 1)
+        i = ItemFrequency.objects.all()[0]
+        self.assertEqual(i.text, 'milk')
+        self.assertEqual(i.frequency, 1)
+    def test_increment_old_text(self):
+        ItemFrequency.objects.increment('milk')
+        self.assertEqual(ItemFrequency.objects.count(), 1)
+        ItemFrequency.objects.increment('milk')
+        self.assertEqual(ItemFrequency.objects.count(), 1)
+        i = ItemFrequency.objects.all()[0]
+        self.assertEqual(i.text, 'milk')
+        self.assertEqual(i.frequency, 2)
+    def test_increment_two_different(self):
+        ItemFrequency.objects.increment('milk')
+        self.assertEqual(ItemFrequency.objects.count(), 1)
+        ItemFrequency.objects.increment('bread')
+        self.assertEqual(ItemFrequency.objects.count(), 2)
+        self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 1)
+        self.assertEqual(ItemFrequency.objects.get(text='bread').frequency, 1)
+    def test_increment_canonization(self):
+        ItemFrequency.objects.increment(' miLk')
+        self.assertEqual(ItemFrequency.objects.count(), 1)
+        ItemFrequency.objects.increment('   milk')
+        self.assertEqual(ItemFrequency.objects.count(), 1)
+        self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 2)
+    def test_autoincrement(self):
+        Item.objects.create(text='milk', list=self.l1)
+        self.assertEqual(ItemFrequency.objects.count(), 1)
+        self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 1)
+        Item.objects.create(text='milk', list=self.l1)
+        self.assertEqual(ItemFrequency.objects.count(), 1)
+        self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 2)
+        Item.objects.create(text='bread', list=self.l1)
+        self.assertEqual(ItemFrequency.objects.count(), 2)
+        self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 2)
+        self.assertEqual(ItemFrequency.objects.get(text='bread').frequency, 1)
 
 class SubscriptionTest(test.TestCase):
     def setUp(self):
