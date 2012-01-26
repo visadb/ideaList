@@ -80,7 +80,7 @@ class Item(Trashable):
 class ItemFrequencyManager(models.Manager):
     def increment(self, text):
         """Increment the frequency of the given text if it exists or create a
-        new ItemFrequency with frequency=1. Returns the ItemFrequency object"""
+        new ItemFrequency with frequency=1. Returns the ItemFrequency object."""
         text = text.lower().strip()
         try:
             freq = self.get(text=text)
@@ -89,6 +89,9 @@ class ItemFrequencyManager(models.Manager):
             return freq
         except ItemFrequency.DoesNotExist:
             return self.create(text=text, frequency=1)
+    def frequency_list(self, limit=None):
+        return list(ItemFrequency.objects.all()[:limit] \
+            .values_list('text','frequency'))
 class ItemFrequency(models.Model):
     """
     Info about frequency of a certain Item text. Used for item suggestions.

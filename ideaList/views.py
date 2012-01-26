@@ -6,7 +6,7 @@ from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
-from ideaList.models import List, Item, Subscription
+from ideaList.models import List, Item, ItemFrequency, Subscription
 from django.forms import ModelForm
 
 # Decorator that adds RequestContext
@@ -34,8 +34,10 @@ def main(req):
                 {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg},
                 RequestContext(req));
     else:
+        frequencies = json.dumps(ItemFrequency.objects.frequency_list(1000))
         return render_to_response('ideaList/main.html',
-                {'init_state': json.dumps(make_state(req.user))},
+                {'init_state': json.dumps(make_state(req.user)),
+                 'frequencies': frequencies},
                 RequestContext(req));
 
 @login_required
