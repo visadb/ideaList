@@ -26,19 +26,18 @@ def csrf_failure(req, reason=""):
 
 @login_required
 def main(req):
-    m = req.META
-    agent = 'HTTP_USER_AGENT' in m and m['HTTP_USER_AGENT'] or None
-    if 'dumb' in req.REQUEST or agent and ("SymbianOS/9.1" in agent or "NokiaN73" in agent):
-        msg = 'msg' in req.REQUEST and req.REQUEST['msg'] or ''
-        return render_to_response('ideaList/main_nojs.html',
-                {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg},
-                RequestContext(req));
-    else:
-        frequencies = json.dumps(ItemFrequency.objects.frequency_list(1000))
-        return render_to_response('ideaList/main.html',
-                {'init_state': json.dumps(make_state(req.user)),
-                 'frequencies': frequencies},
-                RequestContext(req));
+    frequencies = json.dumps(ItemFrequency.objects.frequency_list(1000))
+    return render_to_response('ideaList/main.html',
+            {'init_state': json.dumps(make_state(req.user)),
+             'frequencies': frequencies},
+            RequestContext(req));
+
+@login_required
+def basic(req):
+    msg = 'msg' in req.REQUEST and req.REQUEST['msg'] or ''
+    return render_to_response('ideaList/main_nojs.html',
+            {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg},
+            RequestContext(req));
 
 @login_required
 def get_state(req):
