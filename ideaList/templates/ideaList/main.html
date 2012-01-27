@@ -36,11 +36,13 @@
   </li>
 </ul>
 
-<div id="columns">
-  <ul id="listlist" class="listlist">
+<table id="columns"><tr>
+<td>
+  <ul id="listlist" class="listlist column">
   </ul>
-
-  <table id="suggestion_box">
+</td>
+<td>
+  <table id="suggestion_box" class="column">
     {% for i in suggestions_per_col|get_range %}
     <tr>
       {% for j in suggestions_per_row|get_range %}
@@ -52,7 +54,8 @@
     </tr>
     {% endfor %}
   </table>
-</div>
+</td>
+</table>
 
 <div id="debug"></div>
 {% endblock %}

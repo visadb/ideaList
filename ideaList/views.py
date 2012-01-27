@@ -31,7 +31,7 @@ def main(req):
     return {'init_state': json.dumps(make_state(req.user)),
             'frequents': frequents,
             'suggestions_per_row': 3,
-            'suggestions_per_col': 9}
+            'suggestions_per_col': 7}
 
 @login_required
 @render_to('ideaList/main_nojs.html')

@@ -245,7 +245,7 @@ function makeAddItemField(list_id, pos) {
     pos = 'end';
   var addItemHtml = $('<li class="additemrow" />');
   var addItemField = $('<input id="add_to_'+pos+'_of_list_'+list_id+'"'
-    +' class="additem" type="text"></input>').keydown(function(e) {
+    +' class="additem" type="text"></input>').keyup(function(e) {
       if(e.keyCode == 13) {
         $('#suggestion_box').hide();
         var addField = $(this); //For resetting later...
@@ -267,12 +267,15 @@ function makeAddItemField(list_id, pos) {
           addItemHtml.hide(1000, function(){addItemHtml.remove()});
           mergeState(data.state);
         }).fail(get_ajax_fail_handler('add_item'));
+      } else {
+        setSuggestionBoxItems(freqtreeGetItems($(this).val()));
       }
     });
-  var cancelHtml = $('<a href="#">cancel</a>').click(function(e) {
-    $('#suggestion_box').hide();
-    addItemHtml.remove();
-  });
+  var cancelHtml = $('<a href="#" class="cancel_additem">cancel</a>')
+    .click(function(e) {
+      $('#suggestion_box').hide();
+      addItemHtml.remove();
+    });
   return addItemHtml.append(addItemField).append(cancelHtml);
 }
 function makeSubscription(s) {
@@ -704,7 +707,7 @@ function initTopBar() {
   $(".dropcontent").click(function(e) { e.stopPropagation(); });
   $('#background-underlay').add('body')
     .click(function(e) {$('.dropcontent').slideUp();});
-  $('#create_list_nameinput').keydown(function(e) {
+  $('#create_list_nameinput').keyup(function(e) {
     if(e.keyCode == 13) {
       var val = $(this).val();
       if (val.length == 0)
@@ -747,12 +750,34 @@ function initSubscriptionDragAndDrop() {
 }
 
 function setSuggestionBoxItems(items) {
+  var wordLimit = 16;
   for (var i=0; i<nrOfSuggestions; i++) {
     var sug = $('#suggestion_'+i)
-    if (i < items.length)
-      sug.html(items[i]);
-    else
+    if (i < items.length) {
+      if (items[i].length > wordLimit) {
+        var words = items[i].split(/ +/);
+        var newWords = [];
+        for (var j in words) {
+          var word = words[j];
+          if (word.length > wordLimit)
+            newWords.push(word.substr(0,wordLimit-1)+'&hellip;');
+          else
+            newWords.push(word);
+        }
+        var label = newWords.join(' ');
+        if (label.length > wordLimit*3)
+          sug.html(label.substr(0,wordLimit*3-1)+'&hellip;');
+        else
+          sug.html(label);
+      } else {
+        sug.html(items[i]);
+      }
+      sug.attr('title', items[i]);
+      sug.parent().removeClass('empty');
+    } else {
       sug.html('');
+      sug.parent().addClass('empty');
+    }
   }
 }
 function freqtreeGetItems(prefix) {
@@ -785,7 +810,7 @@ function initSuggestionBox(nrOfInitials) {
   }
   $('.suggestion').click(function(e) {
     // Trigger enter press in field:
-    var e = jQuery.Event("keydown");
+    var e = jQuery.Event("keyup");
     e.keyCode = 13;
     $('.additem').val($(this).html()).trigger(e);
   });
