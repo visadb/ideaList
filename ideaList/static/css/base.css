@@ -22,18 +22,35 @@
 .red { color: #f00; }
 .green { color: #0f0; }
 .yellow { color: #d5d500; }
+
+#columns {
+}
 .listlist {
   clear: both;
   display: table; /* Minimize width for nice double-tap zoom on N900 */
   list-style-type: none;
-  padding-left: 1em;
   padding-top: 0.5em;
+  padding-left: 1em;
+  float: left;
 }
 .listlist_nojs {
   clear: both;
   list-style-type: none;
   padding-left: 0;
   padding-top: 0;
+}
+#suggestion_box {
+  /* display: none; */
+  padding-top: 0.5em;
+  float: left;
+}
+#suggestion_box td {
+  padding: 5px;
+}
+#suggestion_box .suggestion {
+  /* display: none; */
+  text-decoration: none;
+  color: blue;
 }
 
 .listaction {

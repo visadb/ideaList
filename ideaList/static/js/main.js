@@ -745,8 +745,13 @@ function initSubscriptionDragAndDrop() {
   });
 }
 
+function initSuggestionBox() {
+  $('#suggestion_box').hide();
+}
+
 var initDone = false;
 $(document).ready(function() {
+  initSuggestionBox();
   initTopBar();
   setStatusLight();
   state = {subscriptions: {}};

@@ -1,4 +1,5 @@
 {% extends "ideaList/base.html" %}
+{% load ideaList_extras %}
 
 {% block extrahead %}
   <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.js"></script> -->
@@ -34,8 +35,24 @@
   </li>
 </ul>
 
-<ul id="listlist" class="listlist">
-</ul>
+<div id="columns">
+  <ul id="listlist" class="listlist">
+  </ul>
+
+  <table id="suggestion_box">
+    {% for i in 5|get_range %}
+    <tr>
+      {% for j in 3|get_range %}
+      <td>
+        <a href="#" class="suggestion" id="suggestion_{{ j|multiply:5|add:i }}">
+          Suggestion {{i}},{{j}}
+        </a>
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </table>
+</div>
 
 <div id="debug"></div>
 {% endblock %}
