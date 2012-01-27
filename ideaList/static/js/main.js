@@ -632,6 +632,7 @@ $(document).ajaxSuccess(function() {
 $(document).ajaxError(function() {
   pendingAjaxCalls--;
   $('#status-light').attr('class', 'red');
+  $('html').effect('highlight', {color:'red'}, 5000);
   setTimeout('setStatusLight()', 10000);
 });
 
