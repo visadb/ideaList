@@ -611,10 +611,13 @@ function updateItem(newI) {
 
 var pendingAjaxCalls = 0;
 function setStatusLight() {
-  if (pendingAjaxCalls > 0)
+  if (pendingAjaxCalls > 0) {
     $('#status-light').attr('class', 'yellow');
-  else
+    $('html').addClass('yellow-bg');
+  } else {
     $('#status-light').attr('class', 'green');
+    $('html').removeClass('yellow-bg');
+  }
 }
 
 $(document).ajaxSend(function() {

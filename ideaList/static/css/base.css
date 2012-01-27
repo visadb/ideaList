@@ -20,8 +20,11 @@
 
 /* BEGIN MAIN PAGE STYLE */
 .red { color: #f00; }
+.red-bg { background-color: #f00; }
 .green { color: #0f0; }
+.green-bg { background-color: #0f0; }
 .yellow { color: #d5d500; }
+.yellow-bg { background-color: #ff8; }
 
 #columns {
 }
