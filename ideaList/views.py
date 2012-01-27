@@ -27,8 +27,11 @@ def csrf_failure(req, reason=""):
 @login_required
 @render_to('ideaList/main.html')
 def main(req):
-    f = json.dumps(ItemFrequency.objects.frequent_list(1000))
-    return {'init_state': json.dumps(make_state(req.user)), 'frequencts': f}
+    frequents = json.dumps(ItemFrequency.objects.frequent_list(1000))
+    return {'init_state': json.dumps(make_state(req.user)),
+            'frequents': frequents,
+            'suggestions_per_row': 3,
+            'suggestions_per_col': 5}
 
 @login_required
 @render_to('ideaList/main_nojs.html')
