@@ -375,22 +375,10 @@
   pk: sinappi
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: kaljaa x 24
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: pätkäspageemi
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: ranskankermaa
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: jllhlj
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: gfdsaf
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: kakkupohja+taytteet(mango)
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: maalarinteippi
@@ -447,12 +435,6 @@
   pk: piparjuurituorejuusto
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: 6x isoja pahviloota
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: 50 g sinihomejuustomurua
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: pasta-ateriat
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -483,12 +465,6 @@
   pk: pikkujatkari
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: hdffg
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: asdf
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: hometta
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -504,16 +480,10 @@
   pk: näkkäri/hapankorppu
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: ghi
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: pepperonit
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: pirkka rooibus karpalo kerma
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: (naposteltavaa)
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: käsisaippua
@@ -630,9 +600,6 @@
   pk: knuspy
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: afsdfasdf
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: 9v paristoja (1-2 kpl)
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -696,16 +663,10 @@
   pk: glögi
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: dfgdfgasd
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: mieto lonkero, hartwall
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: pikkulautasia
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: jdshhd
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: pakasteherneitä
@@ -715,9 +676,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: tabasco
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: djukdjeu
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: tofupihveja
@@ -732,9 +690,6 @@
   pk: soijajugurmi
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: </gazpacho>
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: zipit
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -747,9 +702,6 @@
   pk: 200g jauhoista perunaa
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: -----------
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: salaattikastikkeet
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -757,9 +709,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: hunaja
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: 2 x lihapussikeitto
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: 2x chilipavut
@@ -771,15 +720,6 @@
   pk: vsipulipeunat
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: c
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: b
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: a
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: kananmunia
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -787,9 +727,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: soijamaito
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: 2x cappu
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: pihvit
@@ -918,12 +855,6 @@
   pk: emmental-raaste 100g
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: munakoiso?
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: maanantain ruoka?
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: makeutusaine
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -1038,9 +969,6 @@
   pk: maanantairuoka
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: 2x 3/4\" tulppia
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: graavisuolattu kirjolohi
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -1054,9 +982,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: kumimatto
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: 1x ~5cm pyykinpesukoneen poistoveden tulppa
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: uunimakkara
@@ -1143,9 +1068,6 @@
   pk: nandan pakasteintialaisruoka
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: actimel!
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: pikkuherkkusienipurkkeja
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -1185,12 +1107,6 @@
   pk: visiblin
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: earl gray töihin
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: aaltopääväripaita/kraka
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: jätski
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -1198,12 +1114,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: pakastepussit
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: telarulla 8cm
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: halborsuola
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: leivinarkit
@@ -1215,9 +1125,6 @@
   pk: lahjapaperi
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: sdf
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: ohrakas-ohratärkkelys
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
@@ -1225,9 +1132,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: shampoo & hoitoaine
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: ammastahna
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: pirkkanuudelit
@@ -1246,9 +1150,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: visathaikuutio
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: puu/muovipulikka
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: cuisine-mosso
@@ -1282,9 +1183,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: ponnareita
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: <gazpacho>
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: flubenol-matolääke
@@ -1371,13 +1269,7 @@
   pk: pastapussit
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
-  pk: juhla-arpa
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
   pk: naudan ulko- tai sisafilee
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: sadfasf
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: 300g parsakaalia
@@ -1390,9 +1282,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: 2 x kissanruoka
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: abc
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: pussipasta
@@ -1429,9 +1318,6 @@
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: huoneistossa kotieläimiä -tarra
-- fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
-  model: ideaList.itemfrequency
-  pk: asdfg
 - fields: {frequency: 1, last_changed: !!timestamp '2012-01-24 21:49:41.232485'}
   model: ideaList.itemfrequency
   pk: paketti pussiteetä (earl gray)
