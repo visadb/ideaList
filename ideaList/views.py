@@ -25,19 +25,16 @@ def csrf_failure(req, reason=""):
     return HttpResponse('Security error: '+reason)
 
 @login_required
+@render_to('ideaList/main.html')
 def main(req):
-    frequencies = json.dumps(ItemFrequency.objects.frequency_list(1000))
-    return render_to_response('ideaList/main.html',
-            {'init_state': json.dumps(make_state(req.user)),
-             'frequencies': frequencies},
-            RequestContext(req));
+    f = json.dumps(ItemFrequency.objects.frequent_list(1000))
+    return {'init_state': json.dumps(make_state(req.user)), 'frequencts': f}
 
 @login_required
+@render_to('ideaList/main_nojs.html')
 def basic(req):
     msg = 'msg' in req.REQUEST and req.REQUEST['msg'] or ''
-    return render_to_response('ideaList/main_nojs.html',
-            {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg},
-            RequestContext(req));
+    return {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg}
 
 @login_required
 def get_state(req):

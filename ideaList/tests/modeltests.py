@@ -85,21 +85,18 @@ class ItemFrequencyTest(test.TestCase):
         self.assertEqual(ItemFrequency.objects.count(), 2)
         self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 2)
         self.assertEqual(ItemFrequency.objects.get(text='bread').frequency, 1)
-    def test_frequency_list_with_no_limit(self):
+    def test_frequent_list_with_no_limit(self):
         for t in ('a','b','c','b','c','c'):
             Item.objects.create(text=t, list=self.l1)
-        f = dict(ItemFrequency.objects.frequency_list())
+        f = ItemFrequency.objects.frequent_list()
         self.assertEqual(len(f), 3)
-        self.assertEqual(f['a'], 1)
-        self.assertEqual(f['b'], 2)
-        self.assertEqual(f['c'], 3)
-    def test_frequency_list_with_limit(self):
+        self.assertEqual(f, ['c','b','a'])
+    def test_frequent_list_with_limit(self):
         for t in ('a','b','c','b','c','c'):
             Item.objects.create(text=t, list=self.l1)
-        f = dict(ItemFrequency.objects.frequency_list(2))
+        f = ItemFrequency.objects.frequent_list(limit=2)
         self.assertEqual(len(f), 2)
-        self.assertEqual(f['b'], 2)
-        self.assertEqual(f['c'], 3)
+        self.assertEqual(f, ['c','b'])
 
 
 
