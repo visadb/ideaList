@@ -43,15 +43,17 @@
   padding-top: 0;
 }
 #suggestion_box {
-  /* display: none; */
-  padding-top: 0.5em;
+  display: none;
+  border: 1px solid black;
+  background-color: #ddd;
+  margin: 1em;
+  padding: 0.5em;
   float: left;
 }
 #suggestion_box td {
   padding: 5px;
 }
 #suggestion_box .suggestion {
-  /* display: none; */
   text-decoration: none;
   color: blue;
 }

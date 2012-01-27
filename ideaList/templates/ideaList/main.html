@@ -13,6 +13,7 @@
     var init_state = {{ init_state|safe }};
     var frequents = {{ frequents|safe }};
     var user_id = {{ user.id }};
+    var nrOfSuggestions = {{suggestions_per_row|multiply:suggestions_per_col}};
   </script>
 {% endblock %}
 
@@ -44,9 +45,8 @@
     <tr>
       {% for j in suggestions_per_row|get_range %}
       <td>
-        <a href="#" class="suggestion" id="suggestion_{{ j|multiply:suggestions_per_col|add:i }}">
-          Suggestion {{i}},{{j}}
-        </a>
+        <a href="#" class="suggestion"
+          id="suggestion_{{ j|multiply:suggestions_per_col|add:i }}"></a>
       </td>
       {% endfor %}
     </tr>

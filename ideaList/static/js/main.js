@@ -243,10 +243,11 @@ function initAddItemField(field) {
 function makeAddItemField(list_id, pos) {
   if (pos == null)
     pos = 'end';
-  var addItemHtml = $('<li />');
+  var addItemHtml = $('<li class="additemrow" />');
   var addItemField = $('<input id="add_to_'+pos+'_of_list_'+list_id+'"'
     +' class="additem" type="text"></input>').keydown(function(e) {
       if(e.keyCode == 13) {
+        $('#suggestion_box').hide();
         var addField = $(this); //For resetting later...
         if (addField.val().length == 0)
           return false;
@@ -263,12 +264,13 @@ function makeAddItemField(list_id, pos) {
           type: "POST",
           data: {list:list_id, text:addField.val(), position:position},
         }).done(function(data) {
-          addItemHtml.hide(1000, function(){$(this).remove()});
+          addItemHtml.hide(1000, function(){addItemHtml.remove()});
           mergeState(data.state);
         }).fail(get_ajax_fail_handler('add_item'));
       }
     });
   var cancelHtml = $('<a href="#">cancel</a>').click(function(e) {
+    $('#suggestion_box').hide();
     addItemHtml.remove();
   });
   return addItemHtml.append(addItemField).append(cancelHtml);
@@ -329,13 +331,11 @@ function makeSubscription(s) {
     .fail(get_ajax_fail_handler(action+'_subscription'));
   }
   function subscriptionAddItemHandler(e) {
-    if (itemListHtml.children().length != 0
-        && !$('li:first', itemListHtml).hasClass('item'))
-      return;
-
+    $('.additemrow').remove();
     var addItemField = makeAddItemField(l.id, 'begin');
     itemListHtml.prepend(addItemField);
     $('.additem', addItemField).focus();
+    $('#suggestion_box').show();
   }
   var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
       +' title="minimize/maximize" class="subscriptionaction minmax" href="#">'
@@ -487,17 +487,15 @@ function makeItem(item) {
       .fail(get_ajax_fail_handler('remove_item'));
   }
   function itemAddItemHandler(e) {
+    $('.additemrow', addItemField).remove();
     var itemElem = $(this).parents('.item');
     var subscriptionElem = $(this).parents('.subscription');
-    if (itemElem.length != 1 || subscriptionElem.length != 1)
-      return;
-    if (itemElem.next().length == 1 && !itemElem.next().hasClass('item'))
-      return;
     var subscription = state.subscriptions[subscriptionElem.data('id')];
     var addItemField = makeAddItemField(subscription.list.id,
       subscription.list.items[itemElem.data('id')].position+1);
     itemElem.after(addItemField);
     $('.additem', addItemField).focus();
+    $('#suggestion_box').show();
   }
   var itemHtml = $('<li id="item_'+item.id+'" class="item"></li>')
     .data('id', item.id);
@@ -748,13 +746,55 @@ function initSubscriptionDragAndDrop() {
   });
 }
 
-function initSuggestionBox() {
-  $('#suggestion_box').hide();
+function setSuggestionBoxItems(items) {
+  for (var i=0; i<nrOfSuggestions; i++) {
+    var sug = $('#suggestion_'+i)
+    if (i < items.length)
+      sug.html(items[i]);
+    else
+      sug.html('');
+  }
+}
+function freqtreeGetItems(prefix) {
+  prefix = prefix.trim().toLowerCase();
+  function getItemsHelper(tree, i) {
+    if (i == prefix.length)
+      return tree.items.sort();
+    if (tree[prefix[i]] == undefined)
+      return [];
+    else
+      return getItemsHelper(tree[prefix[i]], i+1);
+  }
+  return getItemsHelper(freqtree, 0);
+}
+function initSuggestionBox(nrOfInitials) {
+  function freqtreeInsert(tree, text, i) {
+    if (tree.items.length < nrOfSuggestions)
+      tree.items.push(text);
+    if (i >= Math.min(text.length, nrOfInitials))
+      return;
+    var c = text[i];
+    if (tree[c] == undefined)
+      tree[c] = {items: []};
+    freqtreeInsert(tree[c], text, i+1)
+  }
+  freqtree = {items: []};
+  for (var i in frequents) {
+    var text = frequents[i];
+    freqtreeInsert(freqtree, text, 0);
+  }
+  $('.suggestion').click(function(e) {
+    // Trigger enter press in field:
+    var e = jQuery.Event("keydown");
+    e.keyCode = 13;
+    $('.additem').val($(this).html()).trigger(e);
+  });
+  setSuggestionBoxItems(freqtreeGetItems(''));
 }
 
 var initDone = false;
 $(document).ready(function() {
-  initSuggestionBox();
+  setTimeout(function(){initSuggestionBox(10);}, 1); //Init later
   initTopBar();
   setStatusLight();
   state = {subscriptions: {}};
