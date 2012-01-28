@@ -826,7 +826,6 @@ function initSuggestionBox(nrOfInitials) {
     e.keyCode = 13;
     $('.additem').val($(this).html()).trigger(e);
   });
-  hideAndResetSuggestionBox();
 }
 
 var initDone = false;
