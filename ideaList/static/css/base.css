@@ -133,9 +133,6 @@
 {
   color: red;
 }
-.move_item, .move_subscription {
-  display: none;
-}
 .cancel_additem {
   font-size: small;
   text-decoration: none;

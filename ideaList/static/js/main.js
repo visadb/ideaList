@@ -364,6 +364,11 @@ function makeSubscription(s) {
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
 
+  if (!arrows_on) {
+    moveUpHtml.hide();
+    moveDownHtml.hide();
+  }
+
   var items = valuesSortedByPosition(l.items);
   for (var i in items) {
     var itemHtml = makeItem(items[i]);
@@ -513,6 +518,12 @@ function makeItem(item) {
     .append('&nbsp;').append(addItemHtml)
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
+
+  if (!arrows_on) {
+    moveUpHtml.hide();
+    moveDownHtml.hide();
+  }
+
   return itemHtml;
 }
 // Insert an already constructed itemHtml to DOM
@@ -698,13 +709,13 @@ function initTopBar() {
   });
   $("#refresh_button").click(function() {refresh();});
   $("#arrows_button").click(function() {
-    if ($('.move_item').css('display') == 'none') {
-      $('.move_item, .move_subscription').fadeIn();
-      $('> span', this).html('Arrows off');
-    } else {
+    if (arrows_on) {
       $('.move_item, .move_subscription').fadeOut();
-      $('> span', this).html('Arrows on');
+    } else {
+      $('.move_item, .move_subscription').fadeIn();
     }
+    arrows_on = !arrows_on;
+    $("#actions_button .dropcontent").slideUp();
   });
   $("#actions_button").click(function(e) {
     $('.dropcontent',this).slideToggle();
@@ -832,6 +843,7 @@ function initSuggestionBox(nrOfInitials) {
 
 var initDone = false;
 $(document).ready(function() {
+  arrows_on = false;
   setTimeout(function(){initSuggestionBox(10);}, 1); //Init later
   initTopBar();
   setStatusLight();
