@@ -782,7 +782,7 @@ function setSuggestionBoxItems(items) {
   }
 }
 function freqtreeGetItems(prefix) {
-  prefix = prefix.trim().toLowerCase();
+  prefix = $.trim(prefix.toLowerCase());
   function getItemsHelper(tree, i) {
     if (i == prefix.length)
       return tree.items.sort();
