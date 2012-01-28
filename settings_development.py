@@ -51,8 +51,9 @@ USE_I18N = True
 # calendars according to the current locale
 USE_L10N = False
 
-LOGIN_URL='/login/'
-LOGIN_REDIRECT_URL='/'
+URL_PREFIX = ''
+LOGIN_URL = URL_PREFIX+'/login/'
+LOGIN_REDIRECT_URL = URL_PREFIX+'/ideaList'
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
