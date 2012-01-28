@@ -479,17 +479,6 @@ function updateSubscription(s) {
 
 
 function makeItem(item) {
-  function removeItemHandler(e) {
-    e.preventDefault();
-    var item_elem = $(this).parent();
-    var r = /^remove_item_(\d+)$/.exec($(this).attr('id'));
-    if (!r || r.length != 2)
-      return false;
-    $.ajax('remove_items/', {dataType:"json", type:"POST", traditional:true,
-        data:{item_ids:[r[1]]}})
-      .done(function(data) { mergeState(data.state); })
-      .fail(get_ajax_fail_handler('remove_item'));
-  }
   function itemAddItemHandler(e) {
     $('.additemrow', addItemField).remove();
     var itemElem = $(this).parents('.item');
@@ -505,9 +494,13 @@ function makeItem(item) {
     .data('id', item.id);
   var itemTextHtml = $('<span id="item_'+item.id+'_text" class="item-text">'
       +item.text+'</span>').editable(editableUrl, editableSettings);
-  var removeHtml = $('<a id="remove_item_'+item.id+'" title="Remove"'
-      +' class="itemaction remove_item" href="#">&times;</a>')
-      .click(removeItemHandler);
+  var checkHtml = $('<input type="checkbox" class="itemcheck"'
+      +' value="'+item.id+'" />').change(function(e) {
+        if ($('.itemcheck:checked').length == 0)
+          $('#remove_button').hide();
+        else
+          $('#remove_button').show();
+      });
   var addItemHtml = $('<a class="itemaction" title="Add item"'
       +' href="#">&#x21b2;</a>').click(itemAddItemHandler);
   var moveUpHtml = $('<a id="move_item_'+item.id+'_up" title="Move up"'
@@ -517,7 +510,7 @@ function makeItem(item) {
       +' class="itemaction move_item" href="#">&darr;</a>')
       .click(moveHandler);
   itemHtml
-    .append(removeHtml)
+    .append(checkHtml)
     .append('&nbsp;').append(itemTextHtml)
     .append('&nbsp;').append(addItemHtml)
     .append('&nbsp;').append(moveUpHtml)
@@ -692,6 +685,19 @@ var editableSettings = {
     }};
 
 function initTopBar() {
+  $('#remove_button').click(function(e) {
+    var checked_items = [];
+    $('.itemcheck:checked').each(function(){checked_items.push($(this).val())});
+    if (checked_items.length == 0)
+      return;
+    $.ajax('remove_items/', {dataType:"json", type:"POST", traditional:true,
+        data:{item_ids:checked_items}})
+      .done(function(data) {
+          $('#remove_button').hide();
+          mergeState(data.state);
+        })
+      .fail(get_ajax_fail_handler('remove_item'));
+  });
   $("#refresh_button").click(function() {refresh();});
   $("#arrows_button").click(function() {
     if ($('.move_item').css('display') == 'none') {

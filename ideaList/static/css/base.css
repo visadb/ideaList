@@ -100,7 +100,8 @@
 .itemlist {
   font-weight: normal;
   list-style-type: none;
-  padding-bottom: 2px /* So that items can be dragged here even when empty */
+  padding-left: 20px;
+  padding-bottom: 2px; /* So that items can be dragged here even when empty */
 }
 .itemlist_nojs {
   font-weight: normal;
@@ -178,6 +179,10 @@ ul.listmenu {
   list-style: none;
   padding: 0 5px 0 5px;
   text-align: left;
+}
+
+li#remove_button {
+  display: none;
 }
 
 /* END MAIN PAGE STYLE */
