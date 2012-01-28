@@ -369,8 +369,6 @@ function makeSubscription(s) {
     var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
   }
-  if (items.length == 0)
-    addItemHtml.click(); // Show add item field if no items on list
   if (s.minimized)
     itemListHtml.hide();
 
