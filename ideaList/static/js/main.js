@@ -339,7 +339,7 @@ function makeSubscription(s) {
     var addItemField = makeAddItemField(l.id, 'begin');
     itemListHtml.prepend(addItemField);
     $('.additem', addItemField).focus();
-    $('#suggestion_box').show();
+    showAndResetSuggestionBox();
   }
   var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
       +' title="minimize/maximize" class="subscriptionaction minmax" href="#">'
@@ -488,7 +488,7 @@ function makeItem(item) {
       subscription.list.items[itemElem.data('id')].position+1);
     itemElem.after(addItemField);
     $('.additem', addItemField).focus();
-    $('#suggestion_box').show();
+    showAndResetSuggestionBox();
   }
   var itemHtml = $('<li id="item_'+item.id+'" class="item"></li>')
     .data('id', item.id);
@@ -800,6 +800,10 @@ function freqtreeGetItems(prefix) {
   }
   return getItemsHelper(freqtree, 0);
 }
+function showAndResetSuggestionBox() {
+  $('#suggestion_box').show();
+  setSuggestionBoxItems(freqtreeGetItems(''));
+}
 function initSuggestionBox(nrOfInitials) {
   function freqtreeInsert(tree, text, i) {
     if (tree.items.length < nrOfSuggestions)
@@ -822,7 +826,7 @@ function initSuggestionBox(nrOfInitials) {
     e.keyCode = 13;
     $('.additem').val($(this).html()).trigger(e);
   });
-  setSuggestionBoxItems(freqtreeGetItems(''));
+  hideAndResetSuggestionBox();
 }
 
 var initDone = false;
