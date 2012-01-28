@@ -33,11 +33,10 @@
   vertical-align: top;
 }
 .listlist {
-  clear: both;
   display: table; /* Minimize width for nice double-tap zoom on N900 */
   list-style-type: none;
-  padding-top: 0.5em;
-  padding-left: 1em;
+  padding: 0 0 0 0.5em;
+  margin: 0;
   float: left;
 }
 .listlist_nojs {
@@ -143,10 +142,60 @@
   color: blue;
 }
 
-/* The nav bar */
-ul#list-nav {
+ul.listmenu {
   list-style: none;
-  margin:10px 0 0 0;
+  padding: 0 5px 0 5px;
+  text-align: left;
+}
+
+li#remove_button {
+  display: none;
+}
+
+#actions_list {
+  list-style-type: none;
+  text-align: left;
+  padding: 0.5em;
+}
+#actions_list li {
+  margin-top: 0.25em;
+}
+#actions_list a {
+  color: yellow;
+  text-decoration: none;
+  font-weight: bold;
+}
+/* END MAIN PAGE STYLE */
+
+
+/* BEGIN UNDELETE PAGE STYLE */
+.deleted_table {
+  border-collapse: collapse;
+  border: 1px solid black;
+}
+.deleted_table th {
+  text-align: left;
+}
+.deleted_table th span.sort {
+  display: none;
+}
+.deleted_table th.sorting_asc span.sort.asc {
+  display: inline;
+}
+.deleted_table th.sorting_desc span.sort.desc {
+  display: inline;
+}
+.deleted_table tr.even {
+  background-color: #ddd;
+}
+/* END UNDELETE PAGE STYLE */
+
+
+/* BEGIN NAV BAR STYLE */
+ul#list-nav {
+  display: table;
+  list-style-type: none;
+  margin: 0 0 0.5em 0;
   padding:0;
 }
 ul#list-nav > li {
@@ -174,15 +223,4 @@ ul#list-nav > li > div.dropcontent {
   background:#485e49;
   color:#eee;
 }
-
-ul.listmenu {
-  list-style: none;
-  padding: 0 5px 0 5px;
-  text-align: left;
-}
-
-li#remove_button {
-  display: none;
-}
-
-/* END MAIN PAGE STYLE */
+/* BEGIN NAV BAR STYLE */

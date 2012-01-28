@@ -495,9 +495,9 @@ function makeItem(item) {
   var checkHtml = $('<input type="checkbox" class="itemcheck"'
       +' value="'+item.id+'" />').change(function(e) {
         if ($('.itemcheck:checked').length == 0)
-          $('#remove_button').hide();
+          $('#remove_button').hide(1000);
         else
-          $('#remove_button').show();
+          $('#remove_button').show(1000);
       });
   var addItemHtml = $('<a class="itemaction" title="Add item"'
       +' href="#">&#x21b2;</a>').click(itemAddItemHandler);
@@ -705,6 +705,10 @@ function initTopBar() {
       $('.move_item, .move_subscription').fadeOut();
       $('> span', this).html('Arrows on');
     }
+  });
+  $("#actions_button").click(function(e) {
+    $('.dropcontent',this).slideToggle();
+    e.stopPropagation();
   });
   $("#lists_button").click(function(e) {
     $('.dropcontent',this).slideToggle();

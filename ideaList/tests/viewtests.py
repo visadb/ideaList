@@ -35,7 +35,29 @@ class MainViewTest(MyViewTest):
         r = self.c.get(reverse('ideaList.views.main'))
         self.assertEqual(r.status_code, 200)
         self.assertIn('init_state', r.context)
+        self.assertIn('frequents', r.context)
+        self.assertIn('suggestions_per_row', r.context)
+        self.assertIn('suggestions_per_col', r.context)
         self.assertIn('ideaList/main.html', [t.name for t in r.templates])
+
+class BasicViewTest(MyViewTest):
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.basic')
+    def test_get(self):
+        r = self.c.get(reverse('ideaList.views.basic'))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('subscriptions', r.context)
+        self.assertIn('ideaList/main_nojs.html', [t.name for t in r.templates])
+
+class UndeleteViewTest(MyViewTest):
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.undelete')
+    def test_get(self):
+        r = self.c.get(reverse('ideaList.views.undelete'))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('trashed_items', r.context)
+        self.assertIn('trashed_lists', r.context)
+        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
 
 class GetStateViewTest(MyViewTest):
     def test_login_required(self):

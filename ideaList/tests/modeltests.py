@@ -41,6 +41,11 @@ class ItemTest(test.TestCase):
         self.assertEqual(i.url, '')
         self.assertEqual(i.priority, u'NO')
         self.assertEqual(i.position, 0)
+    def test_is_on_subscribed_list(self):
+        self.assertFalse(self.i1.is_on_subscribed_list(self.u))
+        Subscription.objects.create(list=self.l1, user=self.u)
+        self.assertTrue(self.i1.is_on_subscribed_list(self.u))
+
 
 class ItemFrequencyTest(test.TestCase):
     def setUp(self):

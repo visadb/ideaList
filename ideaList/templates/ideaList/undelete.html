@@ -1,0 +1,83 @@
+{% extends "ideaList/base.html" %}
+
+{% block extrahead %}
+  <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.js"></script> -->
+  <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui.js"></script> -->
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.dataTables.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+      $('.deleted_table th').append('<span class="sort asc">&uarr;</span><span class="sort desc">&darr;</span>');
+      $('.deleted_table').dataTable({
+        "sScrollY": "200px",
+        "bPaginate": false,
+        "aaSorting": [[3, 'desc']],
+      });
+    });
+  </script>
+{% endblock %}
+
+{% block user-tools-before %}
+{% endblock %}
+
+{% block content %}
+<p><a href="../">Back to main view</a></p>
+
+{% if msg %}
+<p>{{ msg }}</p>
+{% endif %}
+
+<form action="" method="post">
+{% csrf_token %}
+<div><input type="submit" name="undelete" value="Undelete selected items and lists" /></div>
+<h4>Deleted items</h4>
+
+<table id="deleted_items" class="deleted_table">
+  <thead>
+    <tr>
+      <th></th>
+      <th>Text</th>
+      <th>List</th>
+      <th>Trashed at</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in trashed_items %}
+      <tr>
+        <td><input type="checkbox" name="item_ids" value="{{i.id}}" /></td>
+        <td>{{ i.text }}</td>
+        <td>{{ i.list }}</td>
+        <td>{{ i.trashed_at|date:"Y-m-d (D) H:i:s" }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h4>Deleted lists</h4>
+
+<table id="deleted_lists" class="deleted_table">
+  <thead>
+    <tr>
+      <th></th>
+      <th>Name</th>
+      <th>#items</th>
+      <th>Trashed at</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for l in trashed_lists %}
+      <tr>
+        <td><input type="checkbox" name="list_ids" value="{{l.id}}" /></td>
+        <td>{{ l.name }}</td>
+        <td>{{ l.n_items }}</td>
+        <td>{{ l.trashed_at|date:"Y-m-d (D) H:i:s" }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p><input type="submit" name="undelete" value="Undelete selected items and lists" /></p>
+</form>
+
+<div id="debug"></div>
+{% endblock %}

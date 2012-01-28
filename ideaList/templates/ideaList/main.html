@@ -27,7 +27,15 @@
 <ul id="list-nav">
   <li id="remove_button"><span>Remove</span></li>
   <li id="refresh_button"><span>Refresh</span></li>
-  <li id="arrows_button"><span>Arrows on</span></li>
+  <li id="actions_button">
+    <span>Actions &#x25bf;</span>
+    <div class="dropcontent">
+      <ul id="actions_list">
+        <li><a href="#" id="arrows_button">Arrows on</a></li>
+        <li><a href="undelete/">Undelete items and lists</a></li>
+      </ul>
+    </div>
+  </li>
   <li id="lists_button">
     <span>Lists &#x25bf;</span>
     <div class="dropcontent">
@@ -56,7 +64,7 @@
     {% endfor %}
   </table>
 </td>
-</table>
+</tr></table>
 
 <div id="debug"></div>
 {% endblock %}

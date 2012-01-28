@@ -21,6 +21,10 @@ def render_to(template_name):
         return wrapper
     return renderer
 
+#################################
+########## User Views: ##########
+#################################
+
 def csrf_failure(req, reason=""):
     return HttpResponse('Security error: '+reason)
 
@@ -40,9 +44,57 @@ def basic(req):
     return {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg}
 
 @login_required
+@render_to('ideaList/undelete.html')
+def undelete(req):
+    msg = ""
+    if req.method == 'POST':
+        if 'item_ids' not in req.POST:
+            item_ids = []
+        else:
+            item_ids = req.POST.getlist('item_ids')
+        valid_items = []
+        for item_id in item_ids:
+            try:
+                i = Item.trash.get(pk=item_id)
+            except ValueError: continue # Invalid item id
+            except Item.DoesNotExist: continue # No such trashed item id
+            if i.is_on_subscribed_list(req.user) is None: continue#!subscribed
+            i.restore()
+            valid_items.append(i.__unicode__())
+
+        if 'list_ids' not in req.POST:
+            list_ids = []
+        else:
+            list_ids = req.POST.getlist('list_ids')
+        valid_lists = []
+        for list_id in list_ids:
+            try:
+                l = List.trash.get(pk=list_id)
+            except ValueError: continue # Invalid list id
+            except List.DoesNotExist: continue # No such trashed list
+            if l.subscription_for(req.user) == None: continue #!subscribed
+            l.restore()
+            valid_lists.append(l.__unicode__())
+        if len(valid_items) > 0:
+            msg += "Undeleted items "+(", ".join(valid_items))+". "
+        if len(valid_lists) > 0:
+            msg += "Undeleted lists "+(", ".join(valid_lists))+". "
+
+    trashed_items = Item.trash.filter(
+            list__in=req.user.nontrash_subscriptions()).order_by('-trashed_at')
+    trashed_lists = List.trash.filter(
+            pk__in=req.user.subscribed_lists.all()).order_by('-trashed_at')
+    return {'msg': msg,
+            'trashed_items': trashed_items,
+            'trashed_lists': trashed_lists}
+
+#################################
+########## AJAX Views: ##########
+#################################
+
+@login_required
 def get_state(req):
     return state_response(req)
-
 
 ########## COMMON STUFF: ##########
 
@@ -315,7 +367,7 @@ def remove_items(req):
             return my_response(code=400, msg='invalid item_id '+item_id)
         except Item.DoesNotExist:
             return my_response(code=404, msg='No such item: '+item_id)
-        if i.list.subscription_for(req.user) is None:
+        if i.is_on_subscribed_list(req.user) is None:
             return my_response(code=403, msg='not your item: '+item_id)
         items.append(i)
     for i in items:

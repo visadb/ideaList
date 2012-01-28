@@ -10,6 +10,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 #from undelete.signals import pre_trash, pre_restore
 
+#TODO: Replace with a manager
 def _nontrash_subscriptions_of_user(self):
     return self.subscriptions.filter(
             trashed_at__isnull=True, list__trashed_at__isnull=True)
@@ -66,6 +67,10 @@ class Item(Trashable):
 
     class Meta:
         ordering = ['position']
+
+    def is_on_subscribed_list(self, user):
+        "Return true iff the item is on a list that the user is subscribed to."
+        return self.list.subscription_for(user) != None
 
     def as_dict(self):
         return {'id':self.id, 'list_id':self.list_id, 'text':self.text,
