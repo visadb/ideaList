@@ -289,6 +289,7 @@ function makeSubscription(s) {
     itemListHtml.sortable({
       connectWith: '.itemlist',
       axis: 'y',
+      cancel: '.additemrow',
       start: function(e, ui) {
         old_list_id = state.subscriptions[ui.item.parents('.subscription')
           .data('id')].list.id;
