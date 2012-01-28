@@ -701,10 +701,10 @@ function initTopBar() {
   $("#refresh_button").click(function() {refresh();});
   $("#arrows_button").click(function() {
     if ($('.move_item').css('display') == 'none') {
-      $('.move_item').add('.move_subscription').fadeIn();
+      $('.move_item, .move_subscription').fadeIn();
       $('> span', this).html('Arrows off');
     } else {
-      $('.move_item').add('.move_subscription').fadeOut();
+      $('.move_item, .move_subscription').fadeOut();
       $('> span', this).html('Arrows on');
     }
   });
