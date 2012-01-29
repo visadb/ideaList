@@ -48,6 +48,7 @@ def basic(req):
     return {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg}
 
 @login_required
+@csrf_exempt
 @render_to('ideaList/undelete.html')
 def undelete(req):
     msg = ""
