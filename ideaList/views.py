@@ -81,7 +81,8 @@ def undelete(req):
             msg += "Undeleted lists "+(", ".join(valid_lists))+". "
 
     trashed_items = Item.trash.filter(
-            list__in=req.user.nontrash_subscriptions()).order_by('-trashed_at')
+            list__in=[s.list for s in req.user.nontrash_subscriptions()]) \
+                    .order_by('-trashed_at')
     trashed_lists = List.trash.filter(
             pk__in=req.user.subscribed_lists.all()).order_by('-trashed_at')
     return {'msg': msg,
