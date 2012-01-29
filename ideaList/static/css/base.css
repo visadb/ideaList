@@ -86,6 +86,7 @@
 .subscriptionaction {
   text-decoration: none;
   color: blue;
+  font-weight: bold;
 }
 .subscriptionaction:hover {
   color: red;
@@ -101,6 +102,9 @@
   list-style-type: none;
   padding-left: 20px;
   padding-bottom: 2px; /* So that items can be dragged here even when empty */
+}
+.itemlist > li {
+  white-space: nowrap;
 }
 .itemlist_nojs {
   font-weight: normal;
@@ -124,19 +128,13 @@
 .item {
 }
 .itemaction {
-  vertical-align: middle;
   text-decoration: none;
-  font-size: small;
+  font-weight: bold;
   color: blue;
 }
 .itemaction:hover
 {
   color: red;
-}
-.cancel_additem {
-  font-size: small;
-  text-decoration: none;
-  color: blue;
 }
 
 ul.listmenu {
@@ -150,17 +148,19 @@ li#remove_button {
 }
 
 #actions_list {
-  list-style-type: none;
   text-align: left;
-  padding: 0.5em;
+  padding: 0.5em 0.5em 0 1em;
 }
 #actions_list li {
-  margin-top: 0.25em;
+  margin-bottom: 0.6em;
 }
 #actions_list a {
   color: yellow;
   text-decoration: none;
   font-weight: bold;
+}
+img.icon {
+  vertical-align: middle;
 }
 /* END MAIN PAGE STYLE */
 
@@ -190,7 +190,6 @@ li#remove_button {
 
 /* BEGIN NAV BAR STYLE */
 ul#list-nav {
-  display: table;
   list-style-type: none;
   margin: 0 0 0.5em 0;
   padding:0;
@@ -198,18 +197,34 @@ ul#list-nav {
 ul#list-nav > li {
   float: left;
   cursor: pointer;
-  padding:5px 0;
-  width:110px;
-  background:#485e49;
-  text-align:center;
-  border-left:1px solid #fff;
+  padding: 5px 0 5px 0;
+  width: 100px;
+  height: 20px;
+  background: #485e49;
+  text-align: center;
+  border-left: 1px solid #fff;
 }
 ul#list-nav > li:hover {
-  background:#a2b3a1;
-  color:#000;
+  background: #a2b3a1;
+  color: #000;
+}
+ul#list-nav > li.symbol_button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+}
+ul#list-nav img.navicon {
+  width: 26px;
+  height: 26px;
+  padding-top: 2px; /* For vertical align */
+}
+ul#list-nav > li.gapleft {
+  margin-left: 20px
 }
 ul#list-nav > li > span {
-  color:#eee;
+  color: #eee;
+  font-size: 18px;
+  text-align: center;
 }
 ul#list-nav > li > div.dropcontent {
   position: absolute;
@@ -217,7 +232,7 @@ ul#list-nav > li > div.dropcontent {
   cursor: auto;
   margin-top: 4px;
   padding: 5px 5px 5px 5px;
-  background:#485e49;
-  color:#eee;
+  background: #485e49;
+  color: #eee;
 }
 /* BEGIN NAV BAR STYLE */

@@ -271,7 +271,7 @@ function makeAddItemField(list_id, pos) {
         setSuggestionBoxItems(freqtreeGetItems($(this).val()));
       }
     });
-  var cancelHtml = $('<a href="#" class="cancel_additem">cancel</a>')
+  var cancelHtml = $('<a href="#" title="cancel" class="itemaction">&times;</a>')
     .click(function(e) {
       $('#suggestion_box').hide();
       addItemHtml.remove();
@@ -290,6 +290,7 @@ function makeSubscription(s) {
       connectWith: '.itemlist',
       axis: 'y',
       cancel: '.additemrow',
+      distance:10,
       start: function(e, ui) {
         old_list_id = state.subscriptions[ui.item.parents('.subscription')
           .data('id')].list.id;
@@ -343,13 +344,13 @@ function makeSubscription(s) {
   }
   var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
       +' title="minimize/maximize" class="subscriptionaction minmax" href="#">'
-      +(s.minimized?'&#x229e;':'&#x229f;')+'</a>').click(minimizationHandler);
+      +(s.minimized?'&#x25b6;':'&#x25bc;')+'</a>').click(minimizationHandler);
 
   var listNameHtml = $('<span id="subscription_'+s.id+'_listname"'
       +' class="list-name">'+l.name+'</span>')
       .editable(editableUrl, editableSettings);
   var addItemHtml = $('<a id="additem_list_'+l.id+'" title="Add item"'
-      +' class="subscriptionaction" href="#">&#x21b2;</a>')
+      +' class="subscriptionaction" href="#">+</a>')
       .click(subscriptionAddItemHandler);
   var moveUpHtml = $('<a id="move_subscription_'+s.id+'_up" title="Move up"'
       +' class="subscriptionaction move_subscription" href="#">&uarr;</a>')
@@ -459,10 +460,10 @@ function updateSubscription(s) {
   }
   if (s.minimized != old_sub.minimized) {
     if (s.minimized) {
-      $('#minmax_subscription_'+s.id).html('&#x229e;');
+      $('#minmax_subscription_'+s.id).html('&#x25b6;');
       $('#subscription_'+s.id+' > .itemlist').slideUp();
     } else {
-      $('#minmax_subscription_'+s.id).html('&#x229f;');
+      $('#minmax_subscription_'+s.id).html('&#x25bc;');
       $('#subscription_'+s.id+' > .itemlist').slideDown();
     }
     state.subscriptions[s.id].minimized = s.minimized;
@@ -498,14 +499,9 @@ function makeItem(item) {
   var itemTextHtml = $('<span id="item_'+item.id+'_text" class="item-text">'
       +item.text+'</span>').editable(editableUrl, editableSettings);
   var checkHtml = $('<input type="checkbox" class="itemcheck"'
-      +' value="'+item.id+'" />').change(function(e) {
-        if ($('.itemcheck:checked').length == 0)
-          $('#remove_button').hide(1000);
-        else
-          $('#remove_button').show(1000);
-      });
+      +' value="'+item.id+'" />').change(updateNavbarItemactions);
   var addItemHtml = $('<a class="itemaction" title="Add item"'
-      +' href="#">&#x21b2;</a>').click(itemAddItemHandler);
+      +' href="#">+</a>').click(itemAddItemHandler);
   var moveUpHtml = $('<a id="move_item_'+item.id+'_up" title="Move up"'
       +' class="itemaction move_item" href="#">&uarr;</a>')
       .click(moveHandler);
@@ -525,6 +521,12 @@ function makeItem(item) {
   }
 
   return itemHtml;
+}
+function updateNavbarItemactions() {
+  if ($('.itemcheck:checked').length == 0)
+    $('#remove_button').hide();
+  else
+    $('#remove_button').show();
 }
 // Insert an already constructed itemHtml to DOM
 function insertItemToDOM(item, itemHtml, animate) {
@@ -572,10 +574,15 @@ function addItem(item, animate) {
 }
 function removeItem(item, animate) {
   debug('Removing item '+item.id+' ('+item.text+')');
-  if (animate)
-    $('#item_'+item.id).hide(1000, function(){$(this).remove()});
-  else
+  if (animate) {
+    $('#item_'+item.id).hide(1000, function(){
+      $(this).remove();
+      updateNavbarItemactions();
+    });
+  } else {
     $('#item_'+item.id).remove();
+    updateNavbarItemactions();
+  }
   delete state.subscriptions[subOfList[item.list_id]].list.items[item.id];
 }
 function updateItem(newI) {

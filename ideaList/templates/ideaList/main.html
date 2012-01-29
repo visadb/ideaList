@@ -23,12 +23,15 @@
 {% endblock %}
 
 {% block content %}
-<!-- <div id="background-underlay"></div> -->
 <ul id="list-nav">
-  <li id="remove_button"><span>Remove</span></li>
-  <li id="refresh_button"><span>Refresh</span></li>
-  <li id="actions_button">
-    <span>Actions &#x25bf;</span>
+  <li id="refresh_button" class="symbol_button">
+    <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/reload_32_white.png">
+  </li>
+  <li id="remove_button" class="symbol_button gapleft">
+    <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/trash_32_white.png">
+  </li>
+  <li id="actions_button" class="gapleft">
+    <span>Actions &#x25bc;</span>
     <div class="dropcontent">
       <ul id="actions_list">
         <li><a href="#" id="arrows_button">Toggle arrows</a></li>
@@ -37,7 +40,7 @@
     </div>
   </li>
   <li id="lists_button">
-    <span>Lists &#x25bf;</span>
+    <span>Lists &#x25bc;</span>
     <div class="dropcontent">
       <div id="listmenu_listlist">Loading...</div>
       <div>New:&nbsp;<input id="create_list_nameinput" size="15"></input></div>
