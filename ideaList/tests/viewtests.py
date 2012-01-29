@@ -50,6 +50,24 @@ class BasicViewTest(MyViewTest):
         self.assertIn('ideaList/main_nojs.html', [t.name for t in r.templates])
 
 class UndeleteViewTest(MyViewTest):
+    def setUp(self):
+        super(UndeleteViewTest, self).setUp()
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.l2 = List.objects.create(name='List2', owner=self.u1)
+        self.l1.delete()
+        self.l1.save()
+        self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
+        self.i1 = Item.objects.create(list=self.l1, text='testitem1')
+        self.i2 = Item.objects.create(list=self.l1, text='testitem2')
+        self.i3 = Item.objects.create(list=self.l1, text='testitem3')
+        self.i1.delete()
+        self.i1.save()
+        self.i3.delete()
+        self.i3.save()
+        self.assertEqual(Item.objects.count(), 3)
+        self.assertEqual(Item.trash.count(), 2)
+        self.assertEqual(List.objects.count(), 2)
+        self.assertEqual(List.trash.count(), 1)
     def test_login_required(self):
         self.check_login_required('ideaList.views.undelete')
     def test_get(self):
@@ -57,6 +75,37 @@ class UndeleteViewTest(MyViewTest):
         self.assertEqual(r.status_code, 200)
         self.assertIn('trashed_items', r.context)
         self.assertIn('trashed_lists', r.context)
+        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
+    def test_undelete_one_item(self):
+        r = self.c.post(reverse('ideaList.views.undelete'),
+                {'item_ids':(self.i1.id,)})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.trash.count(), 1)
+        self.assertEqual(Item.trash.all()[0], self.i3)
+        self.assertEqual(Item.nontrash.count(), 2)
+        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
+    def test_undelete_two_items(self):
+        r = self.c.post(reverse('ideaList.views.undelete'),
+                {'item_ids':(self.i1.id,self.i3.id)})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.trash.count(), 0)
+        self.assertEqual(Item.nontrash.count(), 3)
+        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
+    def test_undelete_item_and_list(self):
+        r = self.c.post(reverse('ideaList.views.undelete'),
+                {'item_ids':(self.i1.id,self.i3.id)})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.trash.count(), 0)
+        self.assertEqual(Item.nontrash.count(), 3)
+        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
+    def test_undelete_two_items_and_an_invalid_id(self):
+        r = self.c.post(reverse('ideaList.views.undelete'),
+                {'item_ids':(self.i1.id,), 'list_ids':(self.l1.id,)})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.trash.count(), 1)
+        self.assertEqual(Item.nontrash.count(), 2)
+        self.assertEqual(List.trash.count(), 0)
+        self.assertEqual(List.nontrash.count(), 2)
         self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
 
 class GetStateViewTest(MyViewTest):
@@ -295,9 +344,9 @@ class SubscriptionMinimizationViewsTest(MyViewTest):
         self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
         self.check_state_in_response(r)
 
-class RemoveItemViewTest(MyViewTest):
+class RemoveItemsViewTest(MyViewTest):
     def setUp(self):
-        super(RemoveItemViewTest, self).setUp()
+        super(RemoveItemsViewTest, self).setUp()
         self.l1 = List.objects.create(name='List1', owner=self.u1)
         self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
         self.i1 = Item.objects.create(list=self.l1, text='testitem1')
@@ -328,7 +377,7 @@ class RemoveItemViewTest(MyViewTest):
         r = self.c.post(reverse('ideaList.views.remove_items'),
                 {'item_ids':self.i1.id},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 403)
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(Item.trash.count(), 0)
         self.assertEqual(Item.nontrash.count(), 3)
         self.check_state_in_response(r)
@@ -350,7 +399,7 @@ class RemoveItemViewTest(MyViewTest):
         r = self.c.post(reverse('ideaList.views.remove_items'),
                 {'item_ids':self.i1.id+100},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 400)
         self.assertEqual(Item.nontrash.count(), 3)
         self.check_state_in_response(r)
 
@@ -466,59 +515,65 @@ class MoveItemViewTest(MyViewTest):
         self.assertEqual(Item.objects.get(pk=self.i5.id).position, 1)
         self.check_state_in_response(r)
 
-class EditTextViewTest(MyViewTest):
+class SetItemImportancesViewTest(MyViewTest):
     def setUp(self):
-        super(EditTextViewTest, self).setUp()
-        u = User.objects.all()[0]
-        self.l1 = List.objects.create(name='List1', owner=u)
-        self.i1 = Item.objects.create(list=self.l1, text='testitem1')
-        self.s1 = Subscription.objects.create(user=u, list=self.l1)
+        super(SetItemImportancesViewTest, self).setUp()
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
+        self.i1 = Item.objects.create(list=self.l1, text='testitem1',
+                important=True)
+        self.i2 = Item.objects.create(list=self.l1, text='testitem2')
+        self.i3 = Item.objects.create(list=self.l1, text='testitem3',
+                important=True)
+        self.i4 = Item.objects.create(list=self.l1, text='testitem4')
+        self.assertTrue(self.i1.important)
+        self.assertFalse(self.i2.important)
+        self.assertTrue(self.i3.important)
+        self.assertFalse(self.i4.important)
     def test_login_required(self):
-        self.check_login_required('ideaList.views.edit_text')
-    def test_valid_item_request(self):
-        r = self.c.post(reverse('ideaList.views.edit_text'),
-                {'element_id':'item_'+str(self.i1.id)+'_text', 'text':'lolo'},
+        self.check_login_required('ideaList.views.set_item_importances')
+    def test_set_only_important(self):
+        r = self.c.post(reverse('ideaList.views.set_item_importances'),
+                {'important_item_ids':(self.i1.id,self.i2.id,self.i3.id)},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'lolo')
-        data = self.check_state_in_response(r)
-        self.assertIn('text', data)
-        self.assertEqual(data['text'], 'lolo')
-    def test_valid_list_request(self):
-        r = self.c.post(reverse('ideaList.views.edit_text'),
-                {'element_id':'subscription_'+str(self.s1.id)+'_listname',
-                    'text':'wololo'},
+        self.assertTrue(Item.objects.get(pk=self.i1.id).important)
+        self.assertTrue(Item.objects.get(pk=self.i2.id).important)
+        self.assertTrue(Item.objects.get(pk=self.i3.id).important)
+        self.assertFalse(Item.objects.get(pk=self.i4.id).important)
+        self.check_state_in_response(r)
+    def test_set_only_unimportant(self):
+        r = self.c.post(reverse('ideaList.views.set_item_importances'),
+                {'unimportant_item_ids':(self.i1.id,self.i2.id,self.i3.id)},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(List.objects.get(pk=self.l1.id).name, 'wololo')
-        data = self.check_state_in_response(r)
-        self.assertIn('text', data)
-        self.assertEqual(data['text'], 'wololo')
-    def test_element_id_missing(self):
-        r = self.c.post(reverse('ideaList.views.edit_text'),
-                {'text':'lolo'},
+        self.assertFalse(Item.objects.get(pk=self.i1.id).important)
+        self.assertFalse(Item.objects.get(pk=self.i2.id).important)
+        self.assertFalse(Item.objects.get(pk=self.i3.id).important)
+        self.assertFalse(Item.objects.get(pk=self.i4.id).important)
+        self.check_state_in_response(r)
+    def test_set_both(self):
+        r = self.c.post(reverse('ideaList.views.set_item_importances'),
+                {'important_item_ids':(self.i2.id,),
+                 'unimportant_item_ids':(self.i1.id,)},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 400)
-        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
-    def test_element_id_invalid(self):
-        r = self.c.post(reverse('ideaList.views.edit_text'),
-                {'element_id':'item_'+str(self.i1.id)+'_tex', 'text':'lolo'},
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(Item.objects.get(pk=self.i1.id).important)
+        self.assertTrue(Item.objects.get(pk=self.i2.id).important)
+        self.assertTrue(Item.objects.get(pk=self.i3.id).important)
+        self.assertFalse(Item.objects.get(pk=self.i4.id).important)
+        self.check_state_in_response(r)
+    def test_set_both_not_disjoint(self):
+        r = self.c.post(reverse('ideaList.views.set_item_importances'),
+                {'important_item_ids':(self.i2.id,),
+                 'unimportant_item_ids':(self.i2.id,)},
                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 400)
-        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
-    def test_item_id_invalid(self):
-        r = self.c.post(reverse('ideaList.views.edit_text'),
-                {'element_id':'item_'+str(self.i1.id+1)+'_text', 'text':'lolo'},
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 404)
-        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
-    def test_text_missing(self):
-        r = self.c.post(reverse('ideaList.views.edit_text'),
-                {'element_id':'item_'+str(self.i1.id)+'_text'},
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 400)
-        self.assertEqual(Item.objects.get(pk=self.i1.id).text, 'testitem1')
-
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(Item.objects.get(pk=self.i1.id).important)
+        self.assertTrue(Item.objects.get(pk=self.i2.id).important)
+        self.assertTrue(Item.objects.get(pk=self.i3.id).important)
+        self.assertFalse(Item.objects.get(pk=self.i4.id).important)
+        self.check_state_in_response(r)
 
 class AddListViewTest(MyViewTest):
     def setUp(self):

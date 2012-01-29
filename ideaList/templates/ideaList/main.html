@@ -23,12 +23,15 @@
 {% endblock %}
 
 {% block content %}
-<ul id="list-nav">
+<ul id="topnav">
   <li id="refresh_button" class="symbol_button">
     <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/reload_32_white.png">
   </li>
-  <li id="remove_button" class="symbol_button gapleft">
+  <li id="remove_button" class="topnav_itembutton symbol_button gapleft">
     <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/trash_32_white.png">
+  </li>
+  <li id="important_button" class="topnav_itembutton symbol_button gapleft">
+    <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/important_32_white.png">
   </li>
   <li id="actions_button" class="gapleft">
     <span>Actions &#x25bc;</span>

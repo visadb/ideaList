@@ -39,7 +39,7 @@ class ItemTest(test.TestCase):
         self.assertEqual(i.list, self.l1)
         self.assertEqual(i.text, 'testitem')
         self.assertEqual(i.url, '')
-        self.assertEqual(i.priority, u'NO')
+        self.assertEqual(i.important, False)
         self.assertEqual(i.position, 0)
     def test_is_on_subscribed_list(self):
         self.assertFalse(self.i1.is_on_subscribed_list(self.u))

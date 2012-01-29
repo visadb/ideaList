@@ -106,6 +106,10 @@
 .itemlist > li {
   white-space: nowrap;
 }
+.itemlist > li.important {
+  white-space: nowrap;
+  color: red;
+}
 .itemlist_nojs {
   font-weight: normal;
   list-style-type: none;
@@ -143,7 +147,7 @@ ul.listmenu {
   text-align: left;
 }
 
-li#remove_button {
+li.topnav_itembutton {
   display: none;
 }
 
@@ -189,12 +193,12 @@ img.icon {
 
 
 /* BEGIN NAV BAR STYLE */
-ul#list-nav {
+ul#topnav {
   list-style-type: none;
   margin: 0 0 0.5em 0;
   padding:0;
 }
-ul#list-nav > li {
+ul#topnav > li {
   float: left;
   cursor: pointer;
   padding: 5px 0 5px 0;
@@ -204,29 +208,29 @@ ul#list-nav > li {
   text-align: center;
   border-left: 1px solid #fff;
 }
-ul#list-nav > li:hover {
+ul#topnav > li:hover {
   background: #a2b3a1;
   color: #000;
 }
-ul#list-nav > li.symbol_button {
+ul#topnav > li.symbol_button {
   width: 30px;
   height: 30px;
   padding: 0;
 }
-ul#list-nav img.navicon {
+ul#topnav img.navicon {
   width: 26px;
   height: 26px;
   padding-top: 2px; /* For vertical align */
 }
-ul#list-nav > li.gapleft {
+ul#topnav > li.gapleft {
   margin-left: 20px
 }
-ul#list-nav > li > span {
+ul#topnav > li > span {
   color: #eee;
   font-size: 18px;
   text-align: center;
 }
-ul#list-nav > li > div.dropcontent {
+ul#topnav > li > div.dropcontent {
   position: absolute;
   display: none;
   cursor: auto;

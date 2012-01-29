@@ -51,21 +51,16 @@ def basic(req):
 @csrf_exempt
 @render_to('ideaList/undelete.html')
 def undelete(req):
+    "Undelete given item_ids and list_ids. Will ignore any invalid ids."
     msg = ""
     if req.method == 'POST':
         if 'item_ids' not in req.POST:
             item_ids = []
         else:
             item_ids = req.POST.getlist('item_ids')
-        valid_items = []
-        for item_id in item_ids:
-            try:
-                i = Item.trash.get(pk=item_id)
-            except ValueError: continue # Invalid item id
-            except Item.DoesNotExist: continue # No such trashed item id
-            if i.is_on_subscribed_list(req.user) is None: continue#!subscribed
+        valid_items = get_valid_items(item_ids,user=req.user,manager=Item.trash)
+        for i in valid_items:
             i.restore()
-            valid_items.append(i.__unicode__())
 
         if 'list_ids' not in req.POST:
             list_ids = []
@@ -80,10 +75,8 @@ def undelete(req):
             if l.subscription_for(req.user) == None: continue #!subscribed
             l.restore()
             valid_lists.append(l.__unicode__())
-        if len(valid_items) > 0:
-            msg += "Undeleted items "+(", ".join(valid_items))+". "
-        if len(valid_lists) > 0:
-            msg += "Undeleted lists "+(", ".join(valid_lists))+". "
+        msg = "Undeleted %d items and %d lists." % (len(valid_items),
+                len(valid_lists))
 
     trashed_items = Item.trash.filter(
             list__in=[s.list for s in req.user.nontrash_subscriptions()]) \
@@ -329,6 +322,20 @@ def set_subscription_minimization(req, minimized):
 
 ########## ITEM MANIPULATION VIEWS: ##########
 
+def get_valid_items(item_ids, user=None, manager=Item.objects):
+    """Filters invalid item ids out. If user is given, he/she must be subscribed
+    to the item's list."""
+    valid_items = []
+    for item_id in item_ids:
+        try:
+            i = manager.get(pk=item_id)
+        except ValueError: continue # Invalid item id
+        except Item.DoesNotExist: continue # No such trashed item id
+        if user is not None and not i.is_on_subscribed_list(user):
+            continue # Not subscribed
+        valid_items.append(i)
+    return valid_items
+
 class ItemForm(ModelForm):
     class Meta:
         model = Item
@@ -336,7 +343,7 @@ class ItemForm(ModelForm):
 
 @login_required
 def add_item(req):
-    i = Item(priority='NO')
+    i = Item()
     if req.method == 'POST':
         form = ItemForm(req.POST, instance=i)
         if form.is_valid():
@@ -354,6 +361,7 @@ def add_item(req):
 @login_required
 @csrf_exempt
 def remove_items(req):
+    "Trash given item_ids. If any of the item_ids are invalid, do nothing."
     def my_response(code=200, msg=''):
         if req.is_ajax():
             return state_response(req, code=code, msg=msg)
@@ -365,17 +373,9 @@ def remove_items(req):
     if 'item_ids' not in req.POST:
         return my_response(code=200, msg='Nothing removed')
     item_ids = req.POST.getlist('item_ids')
-    items = []
-    for item_id in item_ids:
-        try:
-            i = Item.objects.get(pk=item_id)
-        except ValueError:
-            return my_response(code=400, msg='invalid item_id '+item_id)
-        except Item.DoesNotExist:
-            return my_response(code=404, msg='No such item: '+item_id)
-        if i.is_on_subscribed_list(req.user) is None:
-            return my_response(code=403, msg='not your item: '+item_id)
-        items.append(i)
+    items = get_valid_items(item_ids, user=req.user)
+    if len(items) != len(item_ids):
+        return my_response(code=400, msg='at least one invalid item_id')
     for i in items:
         if i.trashed_at == None:
             i.delete()
@@ -391,6 +391,40 @@ def move_item(req):
     """
     return move(req, Item)
 
+@login_required
+def set_item_importances(req):
+    """
+    Request may have POST keys 'important_item_ids' and 'unimportant_item_ids'.
+    Will set their importance accordingly. Ignore invalid ids. If sets are not
+    disjoint, important_item_ids wins.
+    """
+    if req.method != 'POST':
+        return state_response(code=400, msg='Only POST supported')
+    if 'important_item_ids' in req.POST:
+        important_item_ids = req.POST.getlist('important_item_ids')
+    else:
+        important_item_ids = []
+    important_items = get_valid_items(important_item_ids, user=req.user)
+
+    if 'unimportant_item_ids' in req.POST:
+        unimportant_item_ids = req.POST.getlist('unimportant_item_ids')
+    else:
+        unimportant_item_ids = []
+    unimportant_items = get_valid_items(unimportant_item_ids, user=req.user)
+
+    # Unimportant first, so if sets aren't disjoint, important wins
+    for i in unimportant_items:
+        if i.important:
+            i.important = False
+            i.save()
+    for i in important_items:
+        if not i.important:
+            i.important = True
+            i.save()
+ 
+    total_items = len(important_item_ids) + len(unimportant_item_ids)
+    updated_items = len(important_items) + len(unimportant_items)
+    return state_response(req, code=200, msg='Item priorities of %d/%d items updated' % (updated_items, total_items))
 
 ########## LIST MANIPULATION VIEWS: ##########
 

@@ -515,6 +515,8 @@ function makeItem(item) {
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
 
+  if (item.important)
+    itemHtml.addClass('important');
   if (!arrows_on) {
     moveUpHtml.hide();
     moveDownHtml.hide();
@@ -524,9 +526,9 @@ function makeItem(item) {
 }
 function updateNavbarItemactions() {
   if ($('.itemcheck:checked').length == 0)
-    $('#remove_button').hide();
+    $('.topnav_itembutton').hide();
   else
-    $('#remove_button').show();
+    $('.topnav_itembutton').show();
 }
 // Insert an already constructed itemHtml to DOM
 function insertItemToDOM(item, itemHtml, animate) {
@@ -596,9 +598,12 @@ function updateItem(newI) {
     $('#item_'+curI.id+"_text").html(newI.text);
     updated.push('text');
   }
-  if (newI.priority != curI.priority) {
-    // TODO: update priority when it is implemented
-    updated.push('priority');
+  if (newI.important != curI.important) {
+    if (newI.important)
+      $('#item_'+curI.id).addClass('important');
+    else
+      $('#item_'+curI.id).removeClass('important');
+    updated.push('important');
   }
   if (newI.url != curI.url) {
     // TODO: update url when it is implemented
@@ -700,21 +705,55 @@ var editableSettings = {
       return data.text;
     }};
 
+function get_checked_items() {
+  var checked_items = [];
+  $('.itemcheck:checked').each(function(){checked_items.push($(this).val())});
+  return checked_items;
+}
+function get_item(item_id) {
+  for (var i in state.subscriptions) {
+    if (state.subscriptions[i].list.items[item_id] !== undefined)
+      return state.subscriptions[i].list.items[item_id]
+  }
+  return null;
+}
 function initTopBar() {
+  $("#refresh_button").click(function() {refresh();});
   $('#remove_button').click(function(e) {
-    var checked_items = [];
-    $('.itemcheck:checked').each(function(){checked_items.push($(this).val())});
+    var checked_items = get_checked_items();
     if (checked_items.length == 0)
       return;
     $.ajax('remove_items/', {dataType:"json", type:"POST", traditional:true,
         data:{item_ids:checked_items}})
       .done(function(data) {
-          $('#remove_button').hide();
+          updateNavbarItemactions();
           mergeState(data.state);
         })
       .fail(get_ajax_fail_handler('remove_item'));
   });
-  $("#refresh_button").click(function() {refresh();});
+  $('#important_button').click(function(e) {
+    var checked_items = get_checked_items();
+    if (checked_items.length == 0)
+      return;
+    var important_items = [], unimportant_items = [];
+    for (var i in checked_items) {
+      var item = get_item(checked_items[i]);
+      debug(item)
+      if (item.important)
+        unimportant_items.push(checked_items[i]);
+      else
+        important_items.push(checked_items[i]);
+    }
+    $.ajax('set_item_importances/', { dataType:"json", type:"POST",
+        traditional:true, data:{important_item_ids:important_items,
+                                unimportant_item_ids:unimportant_items}})
+      .done(function(data) {
+          $('.itemcheck:checked').attr('checked', false);
+          updateNavbarItemactions();
+          mergeState(data.state);
+        })
+      .fail(get_ajax_fail_handler('remove_item'));
+  });
   $("#arrows_button").click(function() {
     if (arrows_on) {
       $('.move_item, .move_subscription').fadeOut();

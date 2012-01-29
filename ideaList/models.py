@@ -54,13 +54,7 @@ class Item(Trashable):
     list = models.ForeignKey(List, related_name='items')
     text = models.CharField(max_length=200)
     url = models.URLField(blank=True, default="")
-    PRIORITY_CHOICES = (
-            (u'HI',u'High'),
-            (u'NO',u'Normal'),
-            (u'LO',u'Low'),
-    )
-    priority = models.CharField(max_length=2, choices=PRIORITY_CHOICES,
-            default=u'NO')
+    important = models.BooleanField(default=False)
     position = PositionField(collection='list', default=-1)
     last_changed = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -74,7 +68,7 @@ class Item(Trashable):
 
     def as_dict(self):
         return {'id':self.id, 'list_id':self.list_id, 'text':self.text,
-                'url':self.url, 'priority':self.priority,
+                'url':self.url, 'important':self.important,
                 'position':self.position}
     def __unicode__(self):
         val = self.list.name+": "+self.text
