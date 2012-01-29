@@ -31,6 +31,10 @@ def csrf_failure(req, reason=""):
 @login_required
 @render_to('ideaList/main.html')
 def main(req):
+    m = req.META
+    agent = 'HTTP_USER_AGENT' in m and m['HTTP_USER_AGENT'] or None
+    if agent and ("SymbianOS/9.1" in agent or "NokiaN73" in agent):
+        return HttpResponseRedirect(reverse('ideaList.views.basic'))
     frequents = json.dumps(ItemFrequency.objects.frequent_list(1000))
     return {'init_state': json.dumps(make_state(req.user)),
             'frequents': frequents,
