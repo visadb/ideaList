@@ -214,32 +214,6 @@ function moveHandler(e) {
 
 ///////////// SUBSCRIPTION RELATED DOM MANIPULATION /////////////
 
-function initAddItemField(field) {
-  return field.keydown(function(e) {
-    if(e.keyCode == 13) {
-      var addfield = $(this); //For resetting later...
-      if (addfield.val().length == 0)
-        return false;
-      var res = /^add_to_(end|begin|\d+)_of_list_(\d+)$/
-        .exec($(this).attr('id'));
-      if (!res || res.length != 3) {
-        debug('addItemHandler called with for invalid element id');
-        return false;
-      }
-      var pos = res[1];
-      var list_id = res[2];
-      var position = pos=='begin' ? 0 : (pos=='end' ? -1 : pos);
-      $.ajax('add_item/', {
-        dataType: "json",
-        type: "POST",
-        data: {list:list_id, text:addfield.val(), position:position},
-      }).done(function(data) {
-        addfield.val("").blur(); // Reset add item field
-        mergeState(data.state);
-      }).fail(get_ajax_fail_handler('add_item'));
-    }
-  });
-}
 function makeAddItemField(list_id, pos) {
   if (pos == null)
     pos = 'end';
@@ -264,7 +238,10 @@ function makeAddItemField(list_id, pos) {
           type: "POST",
           data: {list:list_id, text:addField.val(), position:position},
         }).done(function(data) {
-          addItemHtml.hide(1000, function(){addItemHtml.remove()});
+          if (!e.ctrlKey)
+            addItemHtml.hide(1000, function(){addItemHtml.remove()});
+          else
+            addField.val('');
           mergeState(data.state);
         }).fail(get_ajax_fail_handler('add_item'));
       } else {
@@ -816,8 +793,11 @@ function initSubscriptionDragAndDrop() {
   });
 }
 
+prevItems = null;
 function setSuggestionBoxItems(items) {
   var wordLimit = 16;
+  if (items == prevItems)
+    return;
   for (var i=0; i<nrOfSuggestions; i++) {
     var sug = $('#suggestion_'+i)
     if (i < items.length) {
@@ -846,6 +826,7 @@ function setSuggestionBoxItems(items) {
       sug.parent().addClass('empty');
     }
   }
+  prevItems = items;
 }
 function freqtreeGetItems(prefix) {
   prefix = $.trim(prefix.toLowerCase());
@@ -880,10 +861,14 @@ function initSuggestionBox(nrOfInitials) {
     freqtreeInsert(freqtree, text, 0);
   }
   $('.suggestion').click(function(e) {
+    debug(e);
+    e.preventDefault();
     // Trigger enter press in field:
-    var e = jQuery.Event("keyup");
-    e.keyCode = 13;
-    $('.additem').val($(this).html()).trigger(e);
+    var e2 = jQuery.Event("keyup");
+    e2.keyCode = 13;
+    if (e.ctrlKey)
+      e2.ctrlKey = true;
+    $('.additem').val($(this).html()).trigger(e2);
   });
 }
 
