@@ -214,7 +214,7 @@ function moveHandler(e) {
 
 ///////////// SUBSCRIPTION RELATED DOM MANIPULATION /////////////
 
-function makeAddItemField(list_id, pos) {
+function makeAddItemRow(list_id, pos) {
   if (pos == null)
     pos = 'end';
   var addItemHtml = $('<li class="additemrow" />');
@@ -314,7 +314,7 @@ function makeSubscription(s) {
   }
   function subscriptionAddItemHandler(e) {
     $('.additemrow').remove();
-    var addItemField = makeAddItemField(l.id, 'begin');
+    var addItemField = makeAddItemRow(l.id, 'begin');
     itemListHtml.prepend(addItemField);
     $('.additem', addItemField).focus();
     showAndResetSuggestionBox();
@@ -465,7 +465,7 @@ function makeItem(item) {
     var itemElem = $(this).parents('.item');
     var subscriptionElem = $(this).parents('.subscription');
     var subscription = state.subscriptions[subscriptionElem.data('id')];
-    var addItemField = makeAddItemField(subscription.list.id,
+    var addItemField = makeAddItemRow(subscription.list.id,
       subscription.list.items[itemElem.data('id')].position+1);
     itemElem.after(addItemField);
     $('.additem', addItemField).focus();
