@@ -740,11 +740,7 @@ function initTopBar() {
     arrows_on = !arrows_on;
     $("#actions_button .dropcontent").slideUp();
   });
-  $("#actions_button").click(function(e) {
-    $('.dropcontent',this).slideToggle();
-    e.stopPropagation();
-  });
-  $("#lists_button").click(function(e) {
+  $(".dropdown").click(function(e) {
     $('.dropcontent',this).slideToggle();
     e.stopPropagation();
   });
