@@ -795,9 +795,10 @@ function initSubscriptionDragAndDrop() {
 
 prevItems = null;
 function setSuggestionBoxItems(items) {
-  var wordLimit = 16;
   if (items == prevItems)
     return;
+  var columnsInUse = (items.length+suggestionsPerCol-1)/suggestionsPerCol;
+  var wordLimit = 50/columnsInUse;
   for (var i=0; i<nrOfSuggestions; i++) {
     var sug = $('#suggestion_'+i)
     if (i < items.length) {

@@ -13,7 +13,9 @@
     var init_state = {{ init_state|safe }};
     var frequents = {{ frequents|safe }};
     var user_id = {{ user.id }};
-    var nrOfSuggestions = {{suggestions_per_row|multiply:suggestions_per_col}};
+    var suggestionsPerRow = {{suggestions_per_row}};
+    var suggestionsPerCol = {{suggestions_per_col}};
+    var nrOfSuggestions = suggestionsPerRow * suggestionsPerCol;
   </script>
 {% endblock %}
 
