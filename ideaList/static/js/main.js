@@ -269,10 +269,12 @@ function makeSubscription(s) {
       cancel: '.additemrow',
       distance:10,
       start: function(e, ui) {
-        old_list_id = state.subscriptions[ui.item.parents('.subscription')
-          .data('id')].list.id;
+        old_prev_item = ui.item.prev('.item'); // For revert on AJAX fail
+        old_sub_id = ui.item.parents('.subscription').data('id'); // ditto
+        old_list_id = state.subscriptions[old_sub_id].list.id;
       },
       update: function(e, ui) {
+        debug(e, ui);
         if (ui.sender != null)
           return; // prevent double ajax: this call is for the destination list
         var prev = ui.item.prev();
@@ -292,10 +294,13 @@ function makeSubscription(s) {
           data.list_id = list_id;
         $.ajax('move_item/', { dataType:"json", type:"POST", data:data })
           .done(function(data) { mergeState(data.state); })
-          .fail(
-            //TODO: cancel drag!
-            get_ajax_fail_handler('drag_item')
-          );
+          .fail(function(jqXHR, textStatus, errorThrown) {
+            if (old_prev_item.length == 0)
+              $('#subscription_'+old_sub_id+' > .itemlist').prepend(ui.item);
+            else
+              old_prev_item.after(ui.item);
+            get_ajax_fail_handler('drag_item')(jqXHR, textStatus, errorThrown);
+          });
       }
     });
   }, 1);
@@ -766,6 +771,9 @@ function initSubscriptionDragAndDrop() {
   $('#listlist').sortable({
     distance:30,
     axis:'y',
+    start: function(e, ui) {
+      old_prev_sub = ui.item.prev('.subscription'); // For revert on AJAX fail
+    },
     update: function(e, ui) {
       var prev = ui.item.prev();
       var where = null;
@@ -779,14 +787,15 @@ function initSubscriptionDragAndDrop() {
       $.ajax('move_subscription/', {
         dataType:"json", type:"POST",
         data:{subscription_id:ui.item.data('id'), where:where}
-      }).done(function(data) {
-        mergeState(data.state);
-      }).fail(
-        //TODO: cancel drag!
-        get_ajax_fail_handler('drag_subscription')
-      );
-    }
-  });
+      }).done(function(data) { mergeState(data.state); })
+        .fail(function(jqXHR, textStatus, errorThrown) {
+          if (old_prev_sub.length == 0)
+            $('#listlist').prepend(ui.item);
+          else
+            old_prev_sub.after(ui.item);
+          get_ajax_fail_handler('drag_item')(jqXHR, textStatus, errorThrown);
+        });
+    }});
 }
 
 prevItems = null;
