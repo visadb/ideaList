@@ -60,12 +60,12 @@ function updateSubscriptions(newState) {
 //  debug("Subs to add/remove/update: "
 //    +"("+subs_to_add+")/("+subs_to_remove+")/("+subs_to_update+")");
 
-  for(var i in subs_to_add)
-    addSubscription(newState.subscriptions[subs_to_add[i]], initDone);
   for(var i in subs_to_remove)
     removeSubscription(state.subscriptions[subs_to_remove[i]], true);
-  for(var i in subs_to_update)
-    updateSubscription(newState.subscriptions[subs_to_update[i]]);
+  for(var i in subs_to_add)
+    addSubscription(newState.subscriptions[subs_to_add[i]], initDone);
+  updateChangedSubscriptions(
+    $.map(subs_to_update, function(i){return newState.subscriptions[i];}));
 }
 
 // To be called as part of mergeState: after subscriptions have been updated
@@ -274,7 +274,6 @@ function makeSubscription(s) {
         old_list_id = state.subscriptions[old_sub_id].list.id;
       },
       update: function(e, ui) {
-        debug(e, ui);
         if (ui.sender != null)
           return; // prevent double ajax: this call is for the destination list
         var prev = ui.item.prev();
@@ -412,52 +411,61 @@ function removeSubscription(s, animate) {
   delete state.subscriptions[s.id];
   delete subOfList[s.list.id]
 }
-function updateSubscription(s) {
-  //debug('Updating subscription '+s.id+' ('+s.list.name+')');
-  var old_sub = state.subscriptions[s.id];
-  var old_item_ids = objectKeys(old_sub.list.items);
-  var new_item_ids = objectKeys(s.list.items);
-  var items_to_remove = array_diff(old_item_ids, new_item_ids);
-  var items_to_add = array_diff(new_item_ids, old_item_ids);
-  var items_to_update = array_intersect(old_item_ids, new_item_ids);
-  //debug("Items to add/remove/update: "
-  //  +"("+items_to_add+")/("+items_to_remove+")/("+items_to_update+")");
-  for(var i in items_to_add)
-    addItem(s.list.items[items_to_add[i]], true);
-  for(var i in items_to_remove)
-    removeItem(old_sub.list.items[items_to_remove[i]], true);
-  for(var i in items_to_update)
-    updateItem(s.list.items[items_to_update[i]], true);
+function updateChangedSubscriptions(subs) {
+  var subsWhosePositionChanged = [];
+  for (var i in subs) {
+    var s = subs[i];
+    //debug('Updating subscription '+s.id+' ('+s.list.name+')');
+    var old_sub = state.subscriptions[s.id];
+    var old_item_ids = objectKeys(old_sub.list.items);
+    var new_item_ids = objectKeys(s.list.items);
+    var items_to_remove = array_diff(old_item_ids, new_item_ids);
+    var items_to_add = array_diff(new_item_ids, old_item_ids);
+    var items_to_update = array_intersect(old_item_ids, new_item_ids);
+    //debug("Items to add/remove/update: "
+    //  +"("+items_to_add+")/("+items_to_remove+")/("+items_to_update+")");
+    for(var j in items_to_add)
+      addItem(s.list.items[items_to_add[j]], true);
+    for(var j in items_to_remove)
+      removeItem(old_sub.list.items[items_to_remove[j]], true);
+    updateChangedItems(
+      $.map(items_to_update, function(j){return s.list.items[j];}));
 
-  var updated = [];
-  if(s.list.name != old_sub.list.name) {
-    $('#subscription_'+s.id+'_listname').html(s.list.name);
-    state.subscriptions[s.id].list.name = s.list.name;
-    updated.push('listname');
+    var updated = [];
+    if(s.list.name != old_sub.list.name) {
+      $('#subscription_'+s.id+'_listname').html(s.list.name);
+      state.subscriptions[s.id].list.name = s.list.name;
+      updated.push('listname');
+    }
+    if (s.position != old_sub.position) {
+      // Delay DOM update until all positions are updated
+      subsWhosePositionChanged.push(s);
+      state.subscriptions[s.id].position = s.position;
+      updated.push('position');
+    }
+    if (s.minimized != old_sub.minimized) {
+      if (s.minimized) {
+        $('#minmax_subscription_'+s.id).html('&#x25b6;');
+        $('#subscription_'+s.id+' > .itemlist').slideUp();
+      } else {
+        $('#minmax_subscription_'+s.id).html('&#x25bc;');
+        $('#subscription_'+s.id+' > .itemlist').slideDown();
+      }
+      state.subscriptions[s.id].minimized = s.minimized;
+      updated.push('minimized');
+    }
+    if (updated.length > 0) {
+      if ($.inArray('listname',updated)>=0 && $.inArray('position',updated)<0) {
+        $('#subscription_'+s.id+'_listname')
+          .effect('highlight', {color:'lightgreen'}, 2000);
+      }
+      debug('Updated '+updated.join(', ').replace(/, ([^,]+)$/, ' and $1')
+        +' of subscription '+s.id+' ('+s.list.name+')');
+    }
   }
-  if (s.position != old_sub.position) {
+  for (var i in subsWhosePositionChanged) {
+    var s = subsWhosePositionChanged[i];
     insertSubscriptionToDOM(s, $('#subscription_'+s.id).detach(), false);
-    state.subscriptions[s.id].position = s.position;
-    updated.push('position');
-  }
-  if (s.minimized != old_sub.minimized) {
-    if (s.minimized) {
-      $('#minmax_subscription_'+s.id).html('&#x25b6;');
-      $('#subscription_'+s.id+' > .itemlist').slideUp();
-    } else {
-      $('#minmax_subscription_'+s.id).html('&#x25bc;');
-      $('#subscription_'+s.id+' > .itemlist').slideDown();
-    }
-    state.subscriptions[s.id].minimized = s.minimized;
-    updated.push('minimized');
-  }
-  if (updated.length > 0) {
-    if ($.inArray('listname',updated)>=0 && $.inArray('position',updated)<0) {
-      $('#subscription_'+s.id+'_listname')
-        .effect('highlight', {color:'lightgreen'}, 2000);
-    }
-    debug('Updated '+updated.join(', ').replace(/, ([^,]+)$/, ' and $1')
-      +' of subscription '+s.id+' ('+s.list.name+')');
   }
 }
 
@@ -569,39 +577,48 @@ function removeItem(item, animate) {
   }
   delete state.subscriptions[subOfList[item.list_id]].list.items[item.id];
 }
-function updateItem(newI) {
-  curI = state.subscriptions[subOfList[newI.list_id]].list.items[newI.id];
-  if (!curI) {
-    debug('Tried to update a nonexisting item: '+item.id);
-    return
+function updateChangedItems(items) {
+  var itemsWhosePositionChanged = [];
+  for (var i in items) {
+    var newI = items[i];
+    curI = state.subscriptions[subOfList[newI.list_id]].list.items[newI.id];
+    if (!curI) {
+      debug('Tried to update a nonexisting item: '+item.id);
+      return
+    }
+    var updated = [];
+    if (newI.text != curI.text) {
+      $('#item_'+curI.id+"_text").html(newI.text);
+      updated.push('text');
+    }
+    if (newI.important != curI.important) {
+      if (newI.important)
+        $('#item_'+curI.id).addClass('important');
+      else
+        $('#item_'+curI.id).removeClass('important');
+      updated.push('important');
+    }
+    if (newI.url != curI.url) {
+      // TODO: update url when it is implemented
+      updated.push('url');
+    }
+    if (newI.position != curI.position) {
+      // Delay DOM update until all positions are updated
+      itemsWhosePositionChanged.push(newI);
+      updated.push('position');
+    }
+    state.subscriptions[subOfList[curI.list_id]].list.items[curI.id] = newI;
+    if (updated.length > 0) {
+      // Flash the item if it wasn't moved (to avoid double animation)
+      if ($.inArray('position', updated) == -1)
+        $('#item_'+curI.id).effect('highlight', {color:'lightgreen'}, 2000);
+      debug('Updated '+updated.join(', ').replace(/, ([^,]+)$/, ' and $1')
+        +' of item '+curI.id+' ('+curI.text+')');
+    }
   }
-  var updated = [];
-  if (newI.text != curI.text) {
-    $('#item_'+curI.id+"_text").html(newI.text);
-    updated.push('text');
-  }
-  if (newI.important != curI.important) {
-    if (newI.important)
-      $('#item_'+curI.id).addClass('important');
-    else
-      $('#item_'+curI.id).removeClass('important');
-    updated.push('important');
-  }
-  if (newI.url != curI.url) {
-    // TODO: update url when it is implemented
-    updated.push('url');
-  }
-  if (newI.position != curI.position) {
-    insertItemToDOM(newI, $('#item_'+curI.id).detach(), false);
-    updated.push('position');
-  }
-  state.subscriptions[subOfList[curI.list_id]].list.items[curI.id] = newI;
-  if (updated.length > 0) {
-    // Flash the item if it wasn't moved (to avoid double animation)
-    if ($.inArray('position', updated) == -1)
-      $('#item_'+curI.id).effect('highlight', {color:'lightgreen'}, 2000);
-    debug('Updated '+updated.join(', ').replace(/, ([^,]+)$/, ' and $1')
-      +' of item '+curI.id+' ('+curI.text+')');
+  for (var i in itemsWhosePositionChanged) {
+    var item = itemsWhosePositionChanged[i];
+    insertItemToDOM(item, $('#item_'+item.id).detach(), false);
   }
 }
 
