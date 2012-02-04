@@ -737,7 +737,6 @@ function initTopBar() {
     var important_items = [], unimportant_items = [];
     for (var i in checked_items) {
       var item = get_item(checked_items[i]);
-      debug(item)
       if (item.important)
         unimportant_items.push(checked_items[i]);
       else
@@ -884,7 +883,6 @@ function initSuggestionBox(nrOfInitials) {
     freqtreeInsert(freqtree, text, 0);
   }
   $('.suggestion').click(function(e) {
-    debug(e);
     e.preventDefault();
     // Trigger enter press in field:
     var e2 = jQuery.Event("keyup");
