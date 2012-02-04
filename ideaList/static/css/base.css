@@ -82,6 +82,10 @@
 }
 .subscription-title {
   font-size: large;
+  white-space: nowrap;
+}
+.list-name {
+  font-weight: bold;
 }
 .subscriptionaction {
   text-decoration: none;
@@ -92,10 +96,9 @@
   color: red;
 }
 .minmax {
-/*  border: 1px dotted black; */
 }
-.list-name {
-  font-weight: bold;
+.itemcount {
+  font-size: small;
 }
 .itemlist {
   font-weight: normal;

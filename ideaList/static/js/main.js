@@ -255,6 +255,16 @@ function makeAddItemRow(list_id, pos) {
     });
   return addItemHtml.append(addItemField).append(cancelHtml);
 }
+function updateItemcount(sub_id, increment) {
+  var itemCount = $('#itemcount_subscription_'+sub_id+' > span.count');
+  var oldVal = parseInt(itemCount.html());
+  var newVal = oldVal+increment;
+  itemCount.html(newVal);
+  if (oldVal != 1 && newVal == 1)
+    $('#itemcount_subscription_'+sub_id+' > span.title').html('item');
+  else if (oldVal == 1 && newVal != 1)
+    $('#itemcount_subscription_'+sub_id+' > span.title').html('items');
+}
 function makeSubscription(s) {
   var l = s.list;
   var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
@@ -339,10 +349,17 @@ function makeSubscription(s) {
   var moveDownHtml=$('<a id="move_subscription_'+s.id+'_down" title="Move down"'
       +' class="subscriptionaction move_subscription" href="#">&darr;</a>')
       .click(moveHandler);
+  var nrOfItems = $.map(s.list.items, function(x){return 0;}).length;
+  var itemCountHtml=$('<span id="itemcount_subscription_'+s.id+'"'
+      +' title="Item count" class="itemcount">'
+      +'(<span class="count">'+nrOfItems+'</span>'
+      +' <span class="title">'+(nrOfItems==1?'item':'items')+'</span>)</span>')
+      .css('display','none');
   subscriptionTitleHtml
     .append(minimizationButtonHtml)
     .append('&nbsp;').append(listNameHtml)
     .append('&nbsp;').append(addItemHtml)
+    .append('&nbsp;').append(itemCountHtml)
     .append('&nbsp;').append(moveUpHtml)
     .append('&nbsp;').append(moveDownHtml);
 
@@ -356,8 +373,10 @@ function makeSubscription(s) {
     var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
   }
-  if (s.minimized)
+  if (s.minimized) {
     itemListHtml.hide();
+    itemCountHtml.show();
+  }
 
   subscriptionHtml.append(subscriptionTitleHtml).append(itemListHtml);
   return subscriptionHtml;
@@ -447,9 +466,11 @@ function updateChangedSubscriptions(subs) {
       if (s.minimized) {
         $('#minmax_subscription_'+s.id).html('&#x25b6;');
         $('#subscription_'+s.id+' > .itemlist').slideUp();
+        $('#itemcount_subscription_'+s.id).show();
       } else {
         $('#minmax_subscription_'+s.id).html('&#x25bc;');
         $('#subscription_'+s.id+' > .itemlist').slideDown();
+        $('#itemcount_subscription_'+s.id).hide();
       }
       state.subscriptions[s.id].minimized = s.minimized;
       updated.push('minimized');
@@ -563,6 +584,7 @@ function addItem(item, animate) {
   var itemHtml = makeItem(item);
   insertItemToDOM(item, itemHtml, animate);
   state.subscriptions[sub_id].list.items[item.id] = item;
+  updateItemcount(sub_id, +1);
 }
 function removeItem(item, animate) {
   debug('Removing item '+item.id+' ('+item.text+')');
@@ -576,6 +598,7 @@ function removeItem(item, animate) {
     updateNavbarItemactions();
   }
   delete state.subscriptions[subOfList[item.list_id]].list.items[item.id];
+  updateItemcount(subOfList[item.list_id], -1);
 }
 function updateChangedItems(items) {
   var itemsWhosePositionChanged = [];
