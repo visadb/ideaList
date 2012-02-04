@@ -912,7 +912,7 @@ function initSuggestionBox(nrOfInitials) {
     e2.keyCode = 13;
     if (e.ctrlKey)
       e2.ctrlKey = true;
-    $('.additem').val($(this).html()).trigger(e2);
+    $('.additem').val($(this).attr('title')).trigger(e2);
   });
 }
 
