@@ -1,4 +1,5 @@
 settings.py
+settings_production.py
 ipythonrc
 puhveli.sqlite3
 *.pyc
