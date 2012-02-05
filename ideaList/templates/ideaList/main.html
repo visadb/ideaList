@@ -26,14 +26,17 @@
 
 {% block content %}
 <ul id="topnav">
-  <li id="refresh_button" class="symbol_button">
+  <li id="refresh_button" title="Refresh" class="symbol_button">
     <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/reload_32_white.png">
   </li>
-  <li id="remove_button" class="topnav_itembutton symbol_button gapleft">
+  <li id="remove_button" title="Remove" class="topnav_itembutton symbol_button gapleft">
     <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/trash_32_white.png">
   </li>
-  <li id="important_button" class="topnav_itembutton symbol_button gapleft">
+  <li id="important_button" title="Toggle important" class="topnav_itembutton symbol_button gapleft">
     <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/important_32_white.png">
+  </li>
+  <li id="link_button" title="Edit item link" class="topnav_linkbutton symbol_button gapleft">
+    <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/link_32_white.png">
   </li>
   <li id="actions_button" class="dropdown gapleft">
     <span>Actions &#x25bc;</span>
@@ -52,6 +55,11 @@
     </div>
   </li>
 </ul>
+
+<div id="url_input_container">
+  URL: <input id="url_input" type="text" size="50"></input>
+  <button id="url_submit">Update URL</button>
+</div>
 
 <table id="columns"><tr>
 <td>

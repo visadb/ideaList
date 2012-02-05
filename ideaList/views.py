@@ -2,6 +2,8 @@ import re
 import json
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -425,6 +427,40 @@ def set_item_importances(req):
     total_items = len(important_item_ids) + len(unimportant_item_ids)
     updated_items = len(important_items) + len(unimportant_items)
     return state_response(req, code=200, msg='Item priorities of %d/%d items updated' % (updated_items, total_items))
+
+@login_required
+def set_item_url(req):
+    """
+    Request must have POST keys 'item_id' and 'url'.
+    """
+    if req.method != 'POST':
+        return state_response(code=400, msg='Only POST supported')
+    if 'item_id' not in req.POST:
+        return state_response(req, code=400, msg='item_id missing')
+    if 'url' not in req.POST:
+        return state_response(req, code=400, msg='url missing')
+
+    try:
+        i = Item.objects.get(pk=req.POST['item_id'])
+    except ValueError:
+        return state_response(req, code=400, msg='Invalid item_id')
+    except Item.DoesNotExist:
+        return state_response(req, code=404, msg='item_id doesn\'t exist')
+    if req.user is not None and not i.is_on_subscribed_list(req.user):
+        return state_response(req, code=403, msg='Not subscribed')
+
+    if len(req.POST['url']) != 0:
+        validate = URLValidator()
+        try:
+            validate(req.POST['url'])
+        except ValidationError:
+            return state_response(req, code=400, msg='invalid url')
+
+    i.url = req.POST['url']
+    i.save()
+    return state_response(req, code=200,
+            msg='Item %s\'s url updated' % req.POST['item_id'])
+
 
 ########## LIST MANIPULATION VIEWS: ##########
 

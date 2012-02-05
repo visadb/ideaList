@@ -575,6 +575,55 @@ class SetItemImportancesViewTest(MyViewTest):
         self.assertFalse(Item.objects.get(pk=self.i4.id).important)
         self.check_state_in_response(r)
 
+class SetItemUrlViewTest(MyViewTest):
+    def setUp(self):
+        super(SetItemUrlViewTest, self).setUp()
+        self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
+        self.i1 = Item.objects.create(list=self.l1, text='testitem1', url='')
+        self.i2 = Item.objects.create(list=self.l1, text='testitem1',
+                url='http://google.com/')
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.set_item_url')
+    def test_set_url(self):
+        r = self.c.post(reverse('ideaList.views.set_item_url'),
+                {'item_id':self.i1.id, 'url':'http://google.com/'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).url,
+                'http://google.com/')
+        self.check_state_in_response(r)
+    def test_unset_url(self):
+        r = self.c.post(reverse('ideaList.views.set_item_url'),
+                {'item_id':self.i2.id, 'url':''},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.objects.get(pk=self.i2.id).url,
+                '')
+        self.check_state_in_response(r)
+    def test_404(self):
+        r = self.c.post(reverse('ideaList.views.set_item_url'),
+                {'item_id':self.i1.id+100, 'url':'http://google.com/'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).url, '')
+        self.check_state_in_response(r)
+    def test_not_subscribed(self):
+        Subscription.objects.all().delete()
+        r = self.c.post(reverse('ideaList.views.set_item_url'),
+                {'item_id':self.i1.id, 'url':'http://google.com/'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).url, '')
+        self.check_state_in_response(r)
+    def test_set_invalid_url(self):
+        r = self.c.post(reverse('ideaList.views.set_item_url'),
+                {'item_id':self.i1.id, 'url':'htINVALIDtp://google.com/'},
+                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(Item.objects.get(pk=self.i1.id).url, '')
+        self.check_state_in_response(r)
+
 class AddListViewTest(MyViewTest):
     def setUp(self):
         super(AddListViewTest, self).setUp()

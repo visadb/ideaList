@@ -357,11 +357,11 @@ function makeSubscription(s) {
       .css('display','none');
   subscriptionTitleHtml
     .append(minimizationButtonHtml)
-    .append('&nbsp;').append(listNameHtml)
-    .append('&nbsp;').append(addItemHtml)
-    .append('&nbsp;').append(itemCountHtml)
-    .append('&nbsp;').append(moveUpHtml)
-    .append('&nbsp;').append(moveDownHtml);
+    .append(listNameHtml)
+    .append(itemCountHtml)
+    .append(addItemHtml)
+    .append(moveUpHtml)
+    .append(moveDownHtml);
 
   if (!arrows_on) {
     moveUpHtml.hide();
@@ -509,6 +509,8 @@ function makeItem(item) {
     .data('id', item.id);
   var itemTextHtml = $('<span id="item_'+item.id+'_text" class="item-text">'
       +item.text+'</span>').editable(editableUrl, editableSettings);
+  var linkHtml = $('<a id="item_'+item.id+'_link" class="itemlink"></a>')
+    .attr('href', item.url);
   var checkHtml = $('<input type="checkbox" class="itemcheck"'
       +' value="'+item.id+'" />').change(updateNavbarItemactions);
   var addItemHtml = $('<a class="itemaction" title="Add item"'
@@ -521,10 +523,11 @@ function makeItem(item) {
       .click(moveHandler);
   itemHtml
     .append(checkHtml)
-    .append('&nbsp;').append(itemTextHtml)
-    .append('&nbsp;').append(addItemHtml)
-    .append('&nbsp;').append(moveUpHtml)
-    .append('&nbsp;').append(moveDownHtml);
+    .append(itemTextHtml)
+    .append(linkHtml)
+    .append(addItemHtml)
+    .append(moveUpHtml)
+    .append(moveDownHtml);
 
   if (item.important)
     itemHtml.addClass('important');
@@ -532,14 +535,10 @@ function makeItem(item) {
     moveUpHtml.hide();
     moveDownHtml.hide();
   }
+  if (item.url.length == 0)
+    linkHtml.hide();
 
   return itemHtml;
-}
-function updateNavbarItemactions() {
-  if ($('.itemcheck:checked').length == 0)
-    $('.topnav_itembutton').hide();
-  else
-    $('.topnav_itembutton').show();
 }
 // Insert an already constructed itemHtml to DOM
 function insertItemToDOM(item, itemHtml, animate) {
@@ -622,7 +621,12 @@ function updateChangedItems(items) {
       updated.push('important');
     }
     if (newI.url != curI.url) {
-      // TODO: update url when it is implemented
+      var link = $('#item_'+curI.id+'_link');
+      link.attr('href', newI.url);
+      if (newI.url == '')
+        link.hide();
+      else if (curI.url == '')
+        link.show();
       updated.push('url');
     }
     if (newI.position != curI.position) {
@@ -727,22 +731,34 @@ var editableSettings = {
       return data.text;
     }};
 
-function get_checked_items() {
+function getCheckedItems() {
   var checked_items = [];
   $('.itemcheck:checked').each(function(){checked_items.push($(this).val())});
   return checked_items;
 }
-function get_item(item_id) {
+function getItem(item_id) {
   for (var i in state.subscriptions) {
     if (state.subscriptions[i].list.items[item_id] !== undefined)
       return state.subscriptions[i].list.items[item_id]
   }
   return null;
 }
+function updateNavbarItemactions() {
+  if ($('.itemcheck:checked').length == 0)
+    $('.topnav_itembutton').hide();
+  else
+    $('.topnav_itembutton').show();
+  if ($('.itemcheck:checked').length == 1) {
+    $('.topnav_linkbutton').show();
+  } else {
+    $('.topnav_linkbutton').hide();
+    $('#url_input_container').hide();
+  }
+}
 function initTopBar() {
   $("#refresh_button").click(function() {refresh();});
   $('#remove_button').click(function(e) {
-    var checked_items = get_checked_items();
+    var checked_items = getCheckedItems();
     if (checked_items.length == 0)
       return;
     $.ajax('remove_items/', {dataType:"json", type:"POST", traditional:true,
@@ -754,12 +770,12 @@ function initTopBar() {
       .fail(get_ajax_fail_handler('remove_item'));
   });
   $('#important_button').click(function(e) {
-    var checked_items = get_checked_items();
+    var checked_items = getCheckedItems();
     if (checked_items.length == 0)
       return;
     var important_items = [], unimportant_items = [];
     for (var i in checked_items) {
-      var item = get_item(checked_items[i]);
+      var item = getItem(checked_items[i]);
       if (item.important)
         unimportant_items.push(checked_items[i]);
       else
@@ -773,8 +789,41 @@ function initTopBar() {
           updateNavbarItemactions();
           mergeState(data.state);
         })
-      .fail(get_ajax_fail_handler('remove_item'));
+      .fail(get_ajax_fail_handler('set_item_importances'));
   });
+  $('#link_button').click(function(e) {
+    var checked_items = getCheckedItems();
+    if (checked_items.length != 1)
+      return;
+    var item_id = checked_items[0];
+    var item = getItem(item_id);
+    $('#url_input_container').show();
+    $('#url_input').val(item.url).focus();
+  });
+  function submitUrl() {
+    var checked_items = getCheckedItems();
+    if (checked_items.length != 1)
+      return;
+    var item_id = checked_items[0];
+    var url = $('#url_input').val();
+    if (url.length != 0 && !urlRegex.test(url)) {
+      debug('Invalid url!');
+      return;
+    }
+
+    $.ajax('set_item_url/', { dataType:"json", type:"POST",
+        data:{item_id:item_id, url:url}})
+      .done(function(data) {
+          $('.itemcheck:checked').attr('checked', false);
+          updateNavbarItemactions();
+          $('#url_input_container').hide();
+          mergeState(data.state);
+        })
+      .fail(get_ajax_fail_handler('set_item_url'));
+  }
+  $('#url_input').keydown(
+    function(e) { if(e.keyCode == 13) submitUrl(); });
+  $('#url_submit').click(function(e) { submitUrl(); });
   $("#arrows_button").click(function() {
     if (arrows_on) {
       $('.move_item, .move_subscription').fadeOut();
@@ -915,6 +964,8 @@ function initSuggestionBox(nrOfInitials) {
     $('.additem').val($(this).attr('title')).trigger(e2);
   });
 }
+
+var urlRegex = /^([a-z]([a-z]|\d|\+|-|\.)*):(\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?((\[(|(v[\da-f]{1,}\.(([a-z]|\d|-|\.|_|~)|[!\$&'\(\)\*\+,;=]|:)+))\])|((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=])*)(:\d*)?)(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*|(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)|((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)|((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)){0})(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i;
 
 var initDone = false;
 $(document).ready(function() {
