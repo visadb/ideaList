@@ -15,7 +15,7 @@ function cloneObject(obj) {
   var newObj = {};
   for (var i in obj)
     newObj[i] = obj[i];
-  return newObj; 
+  return newObj;
 }
 function objectKeys(obj) {
   return $.map(obj, function(x,y) { return y; });
@@ -36,6 +36,20 @@ function debug() {
   // Set a timeout to work around bugs:
   var origArguments = arguments;
   setTimeout(function(){console.debug.apply(console, origArguments)}, 1);
+}
+
+///////////// FLASH MESSAGES /////////////
+
+function flashMessage(msg, type, duration) {
+  var flash = $('<div class="message"></div>').html(msg).addClass(type)
+    .delay(duration).hide(1000);
+  $('#messages').append(flash);
+}
+function flashSuccess(msg) {
+  flashMessage(msg, 'success', 1500);
+}
+function flashError(msg) {
+  flashMessage(msg, 'error', 5000);
 }
 
 ///////////// GENERAL DOM MANIPULATION /////////////
@@ -105,8 +119,11 @@ function updateListMenu(newState) {
     var url = res[1]=='subscribe' ? 'add_subscription/'
       : 'remove_subscription/';
     $.ajax(url, {dataType: "json", type: "POST", data: {list_id:res[2]}})
-      .done(function(data) { mergeState(data.state); })
-      .fail(get_ajax_fail_handler('add_subscription'));
+      .done(function(data) {
+        flashSuccess('list '
+          +state.lists[res[2]].name+' '+res[1]+'d');
+        mergeState(data.state);
+      }).fail(getAjaxFailHandler('toggle subscription'));
   }
   function removeListHandler(e) {
     var res = /^remove_list_(\d+)$/.exec($(this).attr('id'));
@@ -116,8 +133,11 @@ function updateListMenu(newState) {
     }
     $.ajax('remove_list/',
         {dataType: "json", type: "POST", data: {list_id:res[1]}})
-      .done(function(data) { mergeState(data.state); })
-      .fail(get_ajax_fail_handler('add_subscription'));
+      .done(function(data) {
+        flashSuccess('list '
+         +state.subscriptions[subOfList[res[1]]].list.name+' removed');
+        mergeState(data.state);
+      }).fail(getAjaxFailHandler('remove list'));
   }
   for (var i in newLists) {
     var l = newLists[i];
@@ -141,10 +161,13 @@ function updateListMenu(newState) {
   state.lists = newState.lists;
 }
 
-function refresh() {
+function refresh(flashOnSuccess) {
   $.ajax('get_state/', { dataType: "json", type: "GET" })
-    .done(function(data) { mergeState(data.state); })
-    .fail(get_ajax_fail_handler('refresh'));
+    .done(function(data) {
+      if (flashOnSuccess)
+        flashSuccess('refreshed');
+      mergeState(data.state);
+    }).fail(getAjaxFailHandler('refresh'));
 }
 function refresher() {
   if (autorefresh_freq < 3) {
@@ -163,12 +186,13 @@ function refresher() {
 
 ///////////// COMMON HELPERS /////////////
 
-function get_ajax_fail_handler(action) {
+function getAjaxFailHandler(action) {
   if (!action)
     action = "";
   return function(jqXHR, textStatus, errorThrown) {
     var data = parseErrorThrown(errorThrown);
-    debug(action+": error: "+(data && data.msg ? data.msg : textStatus));
+    console.error(action+" failed: "+(data && data.msg ? data.msg:textStatus));
+    flashError(action+" failed");
     if (data && data.state)
       mergeState(data.state);
   }
@@ -208,8 +232,9 @@ function moveHandler(e) {
   $.ajax('move_'+obj_type+'/', {
     dataType:"json", type:"POST", data:data
   }).done(function(data) {
+    flashSuccess(obj_type+' moved');
     mergeState(data.state);
-  }).fail(get_ajax_fail_handler('move_'+obj_type));
+  }).fail(getAjaxFailHandler('move '+obj_type));
 }
 
 ///////////// SUBSCRIPTION RELATED DOM MANIPULATION /////////////
@@ -223,7 +248,8 @@ function makeAddItemRow(list_id, pos) {
       if(e.keyCode == 13) {
         $('#suggestion_box').hide();
         var addField = $(this); //For resetting later...
-        if (addField.val().length == 0)
+        var val = addField.val();
+        if (val.length == 0)
           return false;
         var res = /^add_to_(end|begin|\d+)_of_list_(\d+)$/.exec(addField.attr('id'));
         if (!res || res.length != 3) {
@@ -236,14 +262,15 @@ function makeAddItemRow(list_id, pos) {
         $.ajax('add_item/', {
           dataType: "json",
           type: "POST",
-          data: {list:list_id, text:addField.val(), position:position},
+          data: {list:list_id, text:val, position:position},
         }).done(function(data) {
+          flashSuccess('item '+val+' added');
           if (!e.ctrlKey)
             addItemHtml.hide(1000, function(){addItemHtml.remove()});
           else
             addField.val('');
           mergeState(data.state);
-        }).fail(get_ajax_fail_handler('add_item'));
+        }).fail(getAjaxFailHandler('add item'));
       } else {
         setSuggestionBoxItems(freqtreeGetItems($(this).val()));
       }
@@ -302,13 +329,15 @@ function makeSubscription(s) {
         if (list_id != old_list_id)
           data.list_id = list_id;
         $.ajax('move_item/', { dataType:"json", type:"POST", data:data })
-          .done(function(data) { mergeState(data.state); })
-          .fail(function(jqXHR, textStatus, errorThrown) {
+          .done(function(data) {
+            flashSuccess('item moved (drag)');
+            mergeState(data.state);
+          }).fail(function(jqXHR, textStatus, errorThrown) {
             if (old_prev_item.length == 0)
               $('#subscription_'+old_sub_id+' > .itemlist').prepend(ui.item);
             else
               old_prev_item.after(ui.item);
-            get_ajax_fail_handler('drag_item')(jqXHR, textStatus, errorThrown);
+            getAjaxFailHandler('drag item')(jqXHR, textStatus, errorThrown);
           });
       }
     });
@@ -323,8 +352,10 @@ function makeSubscription(s) {
     var action = state.subscriptions[s_id].minimized ? 'maximize' : 'minimize';
     $.ajax(action+'_subscription/', {
       dataType: "json", type: "POST", data: {subscription_id:s_id} })
-    .done(function(data) { mergeState(data.state); })
-    .fail(get_ajax_fail_handler(action+'_subscription'));
+    .done(function(data) {
+      //flashSuccess('subscription '+action+'d');
+      mergeState(data.state);
+    }).fail(getAjaxFailHandler(action+' subscription'));
   }
   function subscriptionAddItemHandler(e) {
     $('.additemrow').remove();
@@ -673,7 +704,7 @@ $(document).ajaxSuccess(function() {
 $(document).ajaxError(function() {
   pendingAjaxCalls--;
   $('#status-light').attr('class', 'red');
-  $('html').effect('highlight', {color:'red'}, 5000);
+  $('html').effect('highlight', {color:'red'}, 3000);
   setTimeout('setStatusLight()', 10000);
 });
 
@@ -756,7 +787,7 @@ function updateNavbarItemactions() {
   }
 }
 function initTopBar() {
-  $("#refresh_button").click(function() {refresh();});
+  $("#refresh_button").click(function() {refresh(true);});
   $('#remove_button').click(function(e) {
     var checked_items = getCheckedItems();
     if (checked_items.length == 0)
@@ -764,10 +795,11 @@ function initTopBar() {
     $.ajax('remove_items/', {dataType:"json", type:"POST", traditional:true,
         data:{item_ids:checked_items}})
       .done(function(data) {
+          flashSuccess('items removed');
           updateNavbarItemactions();
           mergeState(data.state);
         })
-      .fail(get_ajax_fail_handler('remove_item'));
+      .fail(getAjaxFailHandler('remove item'));
   });
   $('#important_button').click(function(e) {
     var checked_items = getCheckedItems();
@@ -785,11 +817,12 @@ function initTopBar() {
         traditional:true, data:{important_item_ids:important_items,
                                 unimportant_item_ids:unimportant_items}})
       .done(function(data) {
+          flashSuccess('item importance(s) set');
           $('.itemcheck:checked').attr('checked', false);
           updateNavbarItemactions();
           mergeState(data.state);
         })
-      .fail(get_ajax_fail_handler('set_item_importances'));
+      .fail(getAjaxFailHandler('set item importances'));
   });
   $('#link_button').click(function(e) {
     var checked_items = getCheckedItems();
@@ -814,12 +847,13 @@ function initTopBar() {
     $.ajax('set_item_url/', { dataType:"json", type:"POST",
         data:{item_id:item_id, url:url}})
       .done(function(data) {
+          flashSuccess('item url set');
           $('.itemcheck:checked').attr('checked', false);
           updateNavbarItemactions();
           $('#url_input_container').hide();
           mergeState(data.state);
         })
-      .fail(get_ajax_fail_handler('set_item_url'));
+      .fail(getAjaxFailHandler('set item url'));
   }
   $('#url_input').keydown(
     function(e) { if(e.keyCode == 13) submitUrl(); });
@@ -848,9 +882,10 @@ function initTopBar() {
       $.ajax('add_list/',
         { dataType: "json", type: "POST", data: {name:val, subscribe:true} }
       ).done(function(data) {
+        flashSuccess('list '+val+' created');
         $('#create_list_nameinput').val('');
         mergeState(data.state);
-      }).fail(get_ajax_fail_handler('add_list'));
+      }).fail(getAjaxFailHandler('add list'));
     }
   });
 }
@@ -875,13 +910,15 @@ function initSubscriptionDragAndDrop() {
       $.ajax('move_subscription/', {
         dataType:"json", type:"POST",
         data:{subscription_id:ui.item.data('id'), where:where}
-      }).done(function(data) { mergeState(data.state); })
-        .fail(function(jqXHR, textStatus, errorThrown) {
+      }).done(function(data) {
+        flashSuccess('subscription moved (drag)');
+        mergeState(data.state);
+      }).fail(function(jqXHR, textStatus, errorThrown) {
           if (old_prev_sub.length == 0)
             $('#listlist').prepend(ui.item);
           else
             old_prev_sub.after(ui.item);
-          get_ajax_fail_handler('drag_item')(jqXHR, textStatus, errorThrown);
+          getAjaxFailHandler('drag subscription')(jqXHR, textStatus, errorThrown);
         });
     }});
 }

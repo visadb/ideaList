@@ -14,6 +14,29 @@
   font-size: 11px;
   text-align: right;
 }
+
+#messages {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+}
+#messages > div.message {
+  padding: 0.5em;
+  margin: 0.5em;
+  float: left;
+  border: 3px solid black;
+  opacity: 0.8;
+  filter: alpha(opacity=80); /* for IE */
+  font-weight: bold;
+}
+#messages > div.success {
+  background-color: #5f5;
+}
+#messages > div.error {
+  background-color: #f55;
+}
+
+
 #content {
   /* margin: 10px 15px; */
 }
