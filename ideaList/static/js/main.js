@@ -1,6 +1,49 @@
-////////////////////////////////////////////////////
-// The JS code for ideaList's main view
-////////////////////////////////////////////////////
+/**
+ * The JS code for ideaList's main view
+ * Copyright (c) 2012 Visa Putkinen
+ *
+ * License: GPLv3: http://www.gnu.org/licenses/gpl.html
+ */
+
+///////////// INLINED PLUGINS /////////////
+
+/**
+ * jQuery Cookie plugin - https://github.com/carhartl/jquery-cookie
+ *
+ * Copyright (c) 2010 Klaus Hartl, @carhartl
+ * Dual licensed under the MIT and GPL licenses:
+ * http://www.opensource.org/licenses/mit-license.php
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ */
+(function($) {
+  $.cookie = function(key, value, options) {
+    if (arguments.length > 1 && (!/Object/.test(Object.prototype.toString.call(value)) || value === null || value === undefined)) {
+      options = $.extend({}, options);
+      if (value === null || value === undefined)
+        options.expires = -1;
+      if (typeof options.expires === 'number') {
+        var days = options.expires, t = options.expires = new Date();
+        t.setDate(t.getDate() + days);
+      }
+      value = String(value);
+      return (document.cookie = [
+        encodeURIComponent(key), '=', options.raw ? value : encodeURIComponent(value),
+        options.expires ? '; expires=' + options.expires.toUTCString() : '', // use expires attribute, max-age is not supported by IE
+        options.path    ? '; path=' + options.path : '',
+        options.domain  ? '; domain=' + options.domain : '',
+        options.secure  ? '; secure' : ''
+      ].join(''));
+    }
+    options = value || {};
+    var decode = options.raw ? function(s) { return s; } : decodeURIComponent;
+    var pairs = document.cookie.split('; ');
+    for (var i = 0, pair; pair = pairs[i] && pairs[i].split('='); i++) {
+      if (decode(pair[0]) === key) return decode(pair[1] || ''); // IE saves cookies with empty string as "c; ", e.g. without "=" as opposed to EOMB, thus pair[1] may be undefined
+    }
+    return null;
+  };
+})(jQuery);
 
 ///////////// GENERAL HELPER FUNCTIONS /////////////
 
@@ -292,6 +335,45 @@ function updateItemcount(sub_id, increment) {
   else if (oldVal == 1 && newVal != 1)
     $('#itemcount_subscription_'+sub_id+' > span.title').html('items');
 }
+function isSubscriptionMinimizedInCookie(sub_id) {
+  var minimized = $.cookie('minimized');
+  if (minimized == null)
+    return false;
+  return minimized.split(',').indexOf(''+sub_id) != -1;
+}
+function setSubscriptionMinimization(sub_id, minimize) {
+  var itemlist = $('#subscription_'+sub_id+' > .itemlist');
+  if (itemlist.length == 0)
+    return;
+  var minimized = $.cookie('minimized');
+  if (minimized == null)
+    minimized = '';
+  var ids = minimized.split(',');
+  if (minimize) {
+    $('#minmax_subscription_'+sub_id).html('&#x25b6;');
+    $('#subscription_'+sub_id+' > .itemlist').slideUp();
+    $('#itemcount_subscription_'+sub_id).show();
+    if (ids.indexOf(''+sub_id) == -1) {
+      ids.push(sub_id);
+      $.cookie('minimized', ids.join(','), {expires:365});
+    }
+  } else {
+    $('#minmax_subscription_'+sub_id).html('&#x25bc;');
+    $('#subscription_'+sub_id+' > .itemlist').slideDown();
+    $('#itemcount_subscription_'+sub_id).hide();
+    var idx = ids.indexOf(''+sub_id);
+    if (idx != -1) {
+      ids.splice(idx, 1);
+      $.cookie('minimized', ids.join(','), {expires:365});
+    }
+  }
+}
+function minimizeSubscription(sub_id) {
+  setSubscriptionMinimization(sub_id, true);
+}
+function maximizeSubscription(sub_id) {
+  setSubscriptionMinimization(sub_id, false);
+}
 function makeSubscription(s) {
   var l = s.list;
   var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
@@ -349,13 +431,10 @@ function makeSubscription(s) {
     if (!res || res.length != 2)
       return false;
     var s_id = res[1];
-    var action = state.subscriptions[s_id].minimized ? 'maximize' : 'minimize';
-    $.ajax(action+'_subscription/', {
-      dataType: "json", type: "POST", data: {subscription_id:s_id} })
-    .done(function(data) {
-      //flashSuccess('subscription '+action+'d');
-      mergeState(data.state);
-    }).fail(getAjaxFailHandler(action+' subscription'));
+    if ($('#subscription_'+s_id+' > .itemlist').is(':hidden'))
+      maximizeSubscription(s_id);
+    else
+      minimizeSubscription(s_id);
   }
   function subscriptionAddItemHandler(e) {
     $('.additemrow').remove();
@@ -366,7 +445,8 @@ function makeSubscription(s) {
   }
   var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
       +' title="minimize/maximize" class="subscriptionaction minmax" href="#">'
-      +(s.minimized?'&#x25b6;':'&#x25bc;')+'</a>').click(minimizationHandler);
+      +(isSubscriptionMinimizedInCookie(s.id)?'&#x25b6;':'&#x25bc;')+'</a>')
+      .click(minimizationHandler);
 
   var listNameHtml = $('<span id="subscription_'+s.id+'_listname"'
       +' class="list-name">'+l.name+'</span>')
@@ -404,7 +484,7 @@ function makeSubscription(s) {
     var itemHtml = makeItem(items[i]);
     itemListHtml.append(itemHtml);
   }
-  if (s.minimized) {
+  if (isSubscriptionMinimizedInCookie(s.id)) {
     itemListHtml.hide();
     itemCountHtml.show();
   }
