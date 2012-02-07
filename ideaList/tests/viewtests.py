@@ -159,10 +159,8 @@ class AddSubscriptionViewTest(MyViewTest):
         self.assertEqual(s.user, self.u1)
     def test_add_restore_subscription(self):
         self.assertEqual(Subscription.objects.count(), 0)
-        s = Subscription.objects.create(list=self.l1, user=self.u1,
-                minimized=False)
+        s = Subscription.objects.create(list=self.l1, user=self.u1)
         self.assertEqual(Subscription.objects.count(), 1)
-        s.minimized = True
         s.save()
         s.delete()
         self.assertEqual(Subscription.trash.count(), 1)
@@ -178,7 +176,6 @@ class AddSubscriptionViewTest(MyViewTest):
         s = Subscription.objects.all()[0]
         self.assertEqual(s.list, self.l1)
         self.assertEqual(s.user, self.u1)
-        self.assertTrue(s.minimized)
 
 class RemoveSubscriptionViewTest(MyViewTest):
     def setUp(self):
@@ -285,63 +282,6 @@ class MoveSubscriptionViewTest(MyViewTest):
         self.assertEqual(Subscription.objects.get(pk=self.s1.id).position, 2)
         self.assertEqual(Subscription.objects.get(pk=self.s2.id).position, 0)
         self.assertEqual(Subscription.objects.get(pk=self.s3.id).position, 1)
-        self.check_state_in_response(r)
-
-class SubscriptionMinimizationViewsTest(MyViewTest):
-    def setUp(self):
-        super(SubscriptionMinimizationViewsTest, self).setUp()
-        self.l1 = List.objects.create(name='List1', owner=self.u1)
-        self.s1 = Subscription.objects.create(list=self.l1, user=self.u1)
-        self.assertFalse(self.s1.minimized)
-    def test_login_required(self):
-        self.check_login_required('ideaList.views.minimize_subscription')
-        self.check_login_required('ideaList.views.maximize_subscription')
-    def test_minimize(self):
-        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
-                {'subscription_id':self.s1.id},
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(Subscription.objects.get(pk=self.s1.id).minimized)
-        self.check_state_in_response(r)
-    def test_maximize(self):
-        self.s1.minimized = True
-        self.s1.save()
-        self.assertTrue(Subscription.objects.get(pk=self.s1.id).minimized)
-        r = self.c.post(reverse('ideaList.views.maximize_subscription'),
-                {'subscription_id':self.s1.id},
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 200)
-        self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
-        self.check_state_in_response(r)
-    def test_minimize_other_users_subscription(self):
-        s2 = Subscription.objects.create(list=self.l1, user=self.u2)
-        self.assertFalse(Subscription.objects.get(pk=s2.id).minimized)
-        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
-                {'subscription_id':s2.id},
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 400)
-        self.assertFalse(Subscription.objects.get(pk=s2.id).minimized)
-        self.check_state_in_response(r)
-    def test_minimize_with_missing_sub_id(self):
-        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
-                {'subscription_id_MISSPELLED':self.s1.id},
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 400)
-        self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
-        self.check_state_in_response(r)
-    def test_minimize_with_nonexisting_id(self):
-        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
-                {'subscription_id':self.s1.id+123},
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 404)
-        self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
-        self.check_state_in_response(r)
-    def test_minimize_with_invalid_id(self):
-        r = self.c.post(reverse('ideaList.views.minimize_subscription'),
-                {'subscription_id':'INVALID'},
-                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(r.status_code, 400)
-        self.assertFalse(Subscription.objects.get(pk=self.s1.id).minimized)
         self.check_state_in_response(r)
 
 class RemoveItemsViewTest(MyViewTest):

@@ -115,7 +115,6 @@ class SubscriptionTest(test.TestCase):
         s = Subscription.objects.all()[0]
         self.assertEqual(s.user, self.u1)
         self.assertEqual(s.list, self.l1)
-        self.assertEqual(s.minimized, False)
         self.assertEqual(s.position, 0)
 
 #class LogTest(test.TestCase):

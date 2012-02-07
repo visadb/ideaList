@@ -120,7 +120,6 @@ class Subscription(Trashable):
     """
     user = models.ForeignKey(User, related_name='subscriptions')
     list = models.ForeignKey(List, related_name='subscriptions')
-    minimized = models.BooleanField(default=False)
     position = PositionField(collection='user', default=-1)
 
     class Meta:
@@ -129,8 +128,7 @@ class Subscription(Trashable):
 
     def as_dict(self):
         return {'id':self.id, 'user_id':self.user_id,
-                'list':self.list.as_dict(), 'minimized': self.minimized,
-                'position': self.position}
+                'list':self.list.as_dict(), 'position': self.position}
     def __unicode__(self):
         val = self.user.first_name+": "+self.list.name
         if self.trashed_at:

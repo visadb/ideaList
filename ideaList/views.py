@@ -292,35 +292,6 @@ def move_subscription(req):
     """
     return move(req, Subscription)
 
-@login_required
-def minimize_subscription(req):
-    return set_subscription_minimization(req, minimized=True)
-
-@login_required
-def maximize_subscription(req):
-    return set_subscription_minimization(req, minimized=False)
-
-def set_subscription_minimization(req, minimized):
-    if req.method != 'POST':
-        return state_response(req, code=400, msg='Only POST supported')
-    if 'subscription_id' not in req.POST:
-        return state_response(req, code=400, msg='subscription_id not provided')
-    try:
-        s = Subscription.nontrash.get(pk=req.POST['subscription_id'])
-        if s.user != req.user:
-            return state_response(req, code=400, msg='not your subscription')
-        action = minimized and 'minimized' or 'maximized'
-        if s.minimized != minimized:
-            s.minimized = minimized
-            s.save()
-            return state_response(req, code=200, msg='Subscription '+action)
-        else:
-            return state_response(req, code=200, msg='Already '+action)
-    except ValueError:
-        return state_response(req, code=400, msg='invalid subscription_id')
-    except Subscription.DoesNotExist:
-        return state_response(req, code=404, msg='No such subscription')
-
 
 ########## ITEM MANIPULATION VIEWS: ##########
 
