@@ -76,9 +76,11 @@ function valuesSortedById(obj) {
 
 function debug() {
   //$('#debug').append('<div>'+arguments[0]+'</div>');
-  // Set a timeout to work around bugs:
   var origArguments = arguments;
-  setTimeout(function(){console.debug.apply(console, origArguments)}, 1);
+  if (initDone)
+    console.debug.apply(console, origArguments);
+  else
+    setTimeout(function(){console.debug.apply(console, origArguments)}, 1);
 }
 
 ///////////// FLASH MESSAGES /////////////
@@ -842,7 +844,7 @@ var editableSettings = {
       return data.text;
     }};
 
-function getCheckedItems() {
+function getCheckedItemIds() {
   var checked_items = [];
   $('.itemcheck:checked').each(function(){checked_items.push($(this).val())});
   return checked_items;
@@ -869,20 +871,29 @@ function updateNavbarItemactions() {
 function initTopBar() {
   $("#refresh_button").click(function() {refresh(true);});
   $('#remove_button').click(function(e) {
-    var checked_items = getCheckedItems();
-    if (checked_items.length == 0)
+    var checked_item_ids = getCheckedItemIds();
+    if (checked_item_ids.length == 0)
       return;
+    // Hide the removed items immediately - reshow them in case of ajax fail
+    var items = $();
+    for (var i in checked_item_ids)
+      items = items.add('#item_'+checked_item_ids[i]);
+    items.attr('checked', false).hide()
+      .children('.itemcheck').attr('checked',false);
     $.ajax('remove_items/', {dataType:"json", type:"POST", traditional:true,
-        data:{item_ids:checked_items}})
+        data:{item_ids:checked_item_ids}})
       .done(function(data) {
           flashSuccess('items removed');
           updateNavbarItemactions();
           mergeState(data.state);
         })
-      .fail(getAjaxFailHandler('remove item'));
+      .fail(function(a,b,c) {
+        items.show().children('.itemcheck').attr('checked', true);
+        getAjaxFailHandler('remove item')(a,b,c);
+      });
   });
   $('#important_button').click(function(e) {
-    var checked_items = getCheckedItems();
+    var checked_items = getCheckedItemIds();
     if (checked_items.length == 0)
       return;
     var important_items = [], unimportant_items = [];
@@ -905,7 +916,7 @@ function initTopBar() {
       .fail(getAjaxFailHandler('set item importances'));
   });
   $('#link_button').click(function(e) {
-    var checked_items = getCheckedItems();
+    var checked_items = getCheckedItemIds();
     if (checked_items.length != 1)
       return;
     var item_id = checked_items[0];
@@ -914,7 +925,7 @@ function initTopBar() {
     $('#url_input').val(item.url).focus();
   });
   function submitUrl() {
-    var checked_items = getCheckedItems();
+    var checked_items = getCheckedItemIds();
     if (checked_items.length != 1)
       return;
     var item_id = checked_items[0];
