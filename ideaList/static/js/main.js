@@ -903,6 +903,7 @@ function initTopBar() {
         unimportant_items.push(checked_items[i]);
       else
         important_items.push(checked_items[i]);
+      $('#item_'+checked_items[i]).toggleClass('important');
     }
     $.ajax('set_item_importances/', { dataType:"json", type:"POST",
         traditional:true, data:{important_item_ids:important_items,
@@ -912,8 +913,11 @@ function initTopBar() {
           $('.itemcheck:checked').attr('checked', false);
           updateNavbarItemactions();
           mergeState(data.state);
-        })
-      .fail(getAjaxFailHandler('set item importances'));
+      }).fail(function(a,b,c) {
+        for (var i in checked_items)
+          $('#item_'+checked_items[i]).toggleClass('important');
+        getAjaxFailHandler('set item importances')(a,b,c);
+      });
   });
   $('#link_button').click(function(e) {
     var checked_items = getCheckedItemIds();
