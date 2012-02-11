@@ -25,11 +25,12 @@ class List(Trashable):
                     user=user)[0]
         except IndexError:
             return None
-    def as_dict(self, include_items=True):
+    def as_dict(self, include_items=True, items=None):
         rep = {'id':self.id, 'name':self.name, 'owner_id':self.owner_id }
         if include_items:
-            rep['items'] = dict([(i.id,i.as_dict())
-                for i in self.nontrashed_items().order_by()])
+            if items is None:
+                items = self.nontrashed_items().order_by()
+            rep['items'] = dict([(i.id,i.as_dict()) for i in items])
         return rep
     def __unicode__(self):
         val = self.name
@@ -116,9 +117,11 @@ class Subscription(Trashable):
         ordering = ['position']
         unique_together = (('user','list'),)
 
-    def as_dict(self):
+    def as_dict(self, lst=None):
+        if lst is None:
+            lst = self.list.as_dict()
         return {'id':self.id, 'user_id':self.user_id,
-                'list':self.list.as_dict(), 'position': self.position}
+                'list':lst, 'position': self.position}
     def __unicode__(self):
         val = self.user.first_name+": "+self.list.name
         if self.trashed_at:

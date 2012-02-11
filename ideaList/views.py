@@ -105,10 +105,26 @@ def state_response(request, code=200, msg=''):
 
 # Return all state that is used in client's main view
 def make_state(user):
-    subscriptions = dict([(s.id,s.as_dict())
-        for s in user.nontrash_subscriptions.select_related().all().order_by()])
+    # This function is messy to minimize number of SQL queries
+
+    subs = user.nontrash_subscriptions.all().order_by()
+    # Get all lists now to avoid select_related in above subs query. These are
+    # needed in the list dictionary generation anyway.
+    lsts = dict([(l.id, l) for l in List.nontrash.all()])
+
+    # Get all interesting items in one query
+    list_ids = [s.list_id for s in subs]
+    itms = Item.nontrash.filter(list__in=list_ids).order_by()
+
+    # Generate subscriptions dictionary
+    items_by_sub = dict([(s.id,
+        filter(lambda i:i.list_id==s.list_id, itms)) for s in subs])
+    subscriptions = dict([(s.id, s.as_dict(
+        lst=lsts[s.list_id].as_dict(items=items_by_sub[s.id]))) for s in subs])
+
+    # Generate list dictionary
     lists = dict([(l.id, l.as_dict(include_items=False))
-        for l in List.nontrash.select_related().all()])
+        for l in lsts.itervalues()])
     return {'subscriptions':subscriptions, 'lists':lists}
 
 # A generic view-template for moving objects with positions
