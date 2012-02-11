@@ -31,16 +31,6 @@
   </div>
   {% endblock %}
 
-  {% if messages %}
-  <ul class="messagelist">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
-      {{ message }}
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-
   <!-- Content -->
   <div id="content">
     {% block content %}
