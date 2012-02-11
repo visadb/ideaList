@@ -6,12 +6,6 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 #from undelete.signals import pre_trash, pre_restore
 
-#TODO: Replace with a manager
-def _nontrash_subscriptions_of_user(self):
-    return self.subscriptions.filter(
-            trashed_at__isnull=True, list__trashed_at__isnull=True)
-User.nontrash_subscriptions = _nontrash_subscriptions_of_user
-
 class List(Trashable):
     """
     A list of items (:model:`ideaList.Item`).
@@ -130,3 +124,18 @@ class Subscription(Trashable):
         if self.trashed_at:
             val += " (trashed)"
         return val
+
+# Add a nontrash subscriptions manager to User
+class NonTrashSubscriptionsDescriptor(User.subscriptions.__class__):
+    ''' Query only nontrash subs of nontrash lists. '''
+    def __init__(self):
+        from django.db.models.related import RelatedObject
+        related = RelatedObject(User, Subscription, Subscription.user.field)
+        super(NonTrashSubscriptionsDescriptor, self).__init__(related)
+    def create_manager(self, instance, superclass):
+        manager = super(NonTrashSubscriptionsDescriptor,
+                self).create_manager(instance, superclass)
+        manager.core_filters['trashed_at__isnull'] = True
+        manager.core_filters['list__trashed_at__isnull'] = True
+        return manager
+User.nontrash_subscriptions = NonTrashSubscriptionsDescriptor()

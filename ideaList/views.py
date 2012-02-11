@@ -47,7 +47,7 @@ def main(req):
 @render_to('ideaList/main_nojs.html')
 def basic(req):
     msg = 'msg' in req.REQUEST and req.REQUEST['msg'] or ''
-    return {'subscriptions': req.user.nontrash_subscriptions(), 'msg':msg}
+    return {'subscriptions': req.user.nontrash_subscriptions.all(), 'msg':msg}
 
 @login_required
 @csrf_exempt
@@ -81,7 +81,7 @@ def undelete(req):
                 len(valid_lists))
 
     trashed_items = Item.trash.filter(
-            list__in=[s.list for s in req.user.nontrash_subscriptions()]) \
+            list__in=[s.list for s in req.user.nontrash_subscriptions.all()]) \
                     .order_by('-trashed_at')
     trashed_lists = List.trash.filter(
             pk__in=req.user.subscribed_lists.all()).order_by('-trashed_at')
@@ -106,9 +106,9 @@ def state_response(request, code=200, msg=''):
 # Return all state that is used in client's main view
 def make_state(user):
     subscriptions = dict([(s.id,s.as_dict())
-        for s in user.nontrash_subscriptions().order_by()])
+        for s in user.nontrash_subscriptions.select_related().all().order_by()])
     lists = dict([(l.id, l.as_dict(include_items=False))
-        for l in List.nontrash.all()])
+        for l in List.nontrash.select_related().all()])
     return {'subscriptions':subscriptions, 'lists':lists}
 
 # A generic view-template for moving objects with positions
