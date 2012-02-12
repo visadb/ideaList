@@ -34,9 +34,7 @@ def setup_module(module):
 def teardown_module(module):
     "Logout"
     client = WindmillTestClient(__name__)
-    client = client
-
-    #TODO Remove all ideaList data using Django?
+    client = client # silence warning
 
     #client.click(link=u'Log out')
     #client.waits.forPageLoad(timeout=u'20000')

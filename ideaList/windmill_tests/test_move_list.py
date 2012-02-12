@@ -6,8 +6,7 @@ def test_move_list():
     # show arrows
     client.click(id=u'actions_button')
     client.waits.sleep(milliseconds=u'500')
-    client.click(id=u'arrows_button')
-    client.click(id=u'actions_button')
+    client.click(id=u'arrows_button') # Closes dropdown
 
     client.asserts.assertJS(js=u"$('#listlist > .subscription:nth(0)').attr('id') == 'subscription_1'")
     client.asserts.assertJS(js=u"$('#listlist > .subscription:nth(1)').attr('id') == 'subscription_2'")
@@ -46,5 +45,4 @@ def test_move_list():
     # hide arrows
     client.click(id=u'actions_button')
     client.waits.sleep(milliseconds=u'500')
-    client.click(id=u'arrows_button')
-    client.click(id=u'actions_button')
+    client.click(id=u'arrows_button') # Closes dropdown
