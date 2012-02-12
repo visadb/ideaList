@@ -12,7 +12,7 @@ def setup_module(module):
     client.waits.forPageLoad(timeout=u'20000')
 
     client.asserts.assertText(xpath=u"//div[@id='user-tools']/a", validator=u'Log out')
-    client.execJS(js='autorefresh_freq = -1')
+    client.execJS(js='window.autorefresh_freq = -1;')
 
     def create_list(i):
         name = 'test list '+str(i)
@@ -30,3 +30,15 @@ def setup_module(module):
     for i in [1,2,3]:
         create_list(i)
     client.click(id=u"lists_button") # hide list menu
+
+def teardown_module(module):
+    "Logout"
+    client = WindmillTestClient(__name__)
+    client = client
+
+    #TODO Remove all ideaList data using Django?
+
+    #client.click(link=u'Log out')
+    #client.waits.forPageLoad(timeout=u'20000')
+    #client.asserts.assertNode(name=u'username')
+    #client.asserts.assertNode(name=u'password')

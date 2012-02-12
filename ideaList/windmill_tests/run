@@ -2,6 +2,17 @@
 
 TESTDIR=$(dirname "$(pwd)/$0")
 
+if [ $# = 1 ]; then
+  TEST="$1"
+else
+  TEST="$TESTDIR"
+fi
+
+if ! [ -e "$TEST" ]; then
+  echo "Could not find test $TEST"
+  exit 1
+fi
+
 MANAGEDIR="$TESTDIR"
 while ! [ -e "$MANAGEDIR/manage.py" ] && [ "$MANAGEDIR" != "/" ]; do
   MANAGEDIR=$(dirname "$MANAGEDIR")
@@ -16,5 +27,5 @@ python $MANAGE testserver --addrport 8123 "$MANAGEDIR/ideaList/fixtures/auth.jso
 TESTSERVER_PID=$!
 sleep 5 # give the server some time to start
 
-windmill firefox http://127.0.0.1:8123/ideaList/ test="$TESTDIR"
+windmill shell firefox http://127.0.0.1:8123/ideaList/ test="$TEST"
 kill $TESTSERVER_PID
