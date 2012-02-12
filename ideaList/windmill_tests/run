@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TESTDIR=$(dirname "$(pwd)/$0")
+
+MANAGEDIR="$TESTDIR"
+while ! [ -e "$MANAGEDIR/manage.py" ] && [ "$MANAGEDIR" != "/" ]; do
+  MANAGEDIR=$(dirname "$MANAGEDIR")
+done
+MANAGE="$MANAGEDIR/manage.py"
+if ! [ -e "$MANAGE" ]; then
+  echo "Could not find manage.py in parent dirs"
+  exit 1
+fi
+
+python $MANAGE testserver --addrport 8123 "$MANAGEDIR/ideaList/fixtures/auth.json" "$MANAGEDIR/ideaList/fixtures/itemfrequencies.yaml" &
+TESTSERVER_PID=$!
+sleep 5 # give the server some time to start
+
+windmill firefox http://127.0.0.1:8123/ideaList/ test="$TESTDIR"
+kill $TESTSERVER_PID
