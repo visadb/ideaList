@@ -311,7 +311,7 @@ function makeAddItemRow(list_id, pos) {
         }).done(function(data) {
           flashSuccess('item '+val+' added');
           if (!e.ctrlKey)
-            addItemHtml.hide(1000, function(){addItemHtml.remove()});
+            addItemHtml.hide(500, function(){addItemHtml.remove()});
           else
             addField.val('');
           mergeState(data.state);
@@ -353,7 +353,7 @@ function setSubscriptionMinimization(sub_id, minimize) {
   var ids = minimized.split(',');
   if (minimize) {
     $('#minmax_subscription_'+sub_id).html('&#x25b6;');
-    $('#subscription_'+sub_id+' > .itemlist').slideUp();
+    $('#subscription_'+sub_id+' > .itemlist').slideUp(500);
     $('#itemcount_subscription_'+sub_id).show();
     if (ids.indexOf(''+sub_id) == -1) {
       ids.push(sub_id);
@@ -361,7 +361,7 @@ function setSubscriptionMinimization(sub_id, minimize) {
     }
   } else {
     $('#minmax_subscription_'+sub_id).html('&#x25bc;');
-    $('#subscription_'+sub_id+' > .itemlist').slideDown();
+    $('#subscription_'+sub_id+' > .itemlist').slideDown(500);
     $('#itemcount_subscription_'+sub_id).hide();
     var idx = ids.indexOf(''+sub_id);
     if (idx != -1) {
@@ -517,7 +517,7 @@ function insertSubscriptionToDOM(s, subscriptionHtml, animate) {
     }
   }
   if (animate)
-    subscriptionHtml.hide().show(1000);
+    subscriptionHtml.hide().show(500);
 }
 function addSubscription(s, animate) {
   debug('Adding subscription '+s.id+' ('+s.list.name+')');
@@ -578,11 +578,11 @@ function updateChangedSubscriptions(subs) {
     if (s.minimized != old_sub.minimized) {
       if (s.minimized) {
         $('#minmax_subscription_'+s.id).html('&#x25b6;');
-        $('#subscription_'+s.id+' > .itemlist').slideUp();
+        $('#subscription_'+s.id+' > .itemlist').slideUp(500);
         $('#itemcount_subscription_'+s.id).show();
       } else {
         $('#minmax_subscription_'+s.id).html('&#x25bc;');
-        $('#subscription_'+s.id+' > .itemlist').slideDown();
+        $('#subscription_'+s.id+' > .itemlist').slideDown(500);
         $('#itemcount_subscription_'+s.id).hide();
       }
       state.subscriptions[s.id].minimized = s.minimized;
@@ -679,7 +679,7 @@ function insertItemToDOM(item, itemHtml, animate) {
     }
   }
   if (animate)
-    itemHtml.hide().show(1000);
+    itemHtml.hide().show(500);
 }
 function addItem(item, animate) {
   debug('Adding item '+item.id+' ('+item.text+')');
@@ -701,7 +701,7 @@ function addItem(item, animate) {
 function removeItem(item, animate) {
   debug('Removing item '+item.id+' ('+item.text+')');
   if (animate) {
-    $('#item_'+item.id).hide(1000, function(){
+    $('#item_'+item.id).hide(500, function(){
       $(this).remove();
       updateNavbarItemactions();
     });
@@ -960,7 +960,7 @@ function initTopBar() {
       $('.move_item, .move_subscription').fadeIn();
     }
     arrows_on = !arrows_on;
-    $("#actions_button .dropcontent").slideUp();
+    $("#actions_button .dropcontent").slideUp(500);
   });
   $(".dropdown").click(function(e) {
     $('.dropcontent',this).slideToggle();
@@ -968,7 +968,7 @@ function initTopBar() {
   });
   $(".dropcontent").click(function(e) { e.stopPropagation(); });
   $('#background-underlay').add('body')
-    .click(function(e) {$('.dropcontent').slideUp();});
+    .click(function(e) {$('.dropcontent').slideUp(500);});
   $('#create_list_nameinput').keyup(function(e) {
     if(e.keyCode == 13) {
       var val = $(this).val();
