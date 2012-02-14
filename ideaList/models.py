@@ -68,26 +68,27 @@ class Item(Trashable):
         return val
 
 class ItemFrequencyManager(models.Manager):
-    def increment(self, text):
+    def increment(self, list, text):
         """Increment the frequency of the given text if it exists or create a
         new ItemFrequency with frequency=1. Returns the ItemFrequency object."""
         text = text.lower().strip()
         try:
-            freq = self.get(text=text)
+            freq = self.get(list=list, text=text)
             freq.frequency += 1
             freq.save()
             return freq
         except ItemFrequency.DoesNotExist:
-            return self.create(text=text, frequency=1)
+            return self.create(list=list, text=text, frequency=1)
     def frequent_list(self, limit=None):
         """ Return the most frequent texts, most frequent first"""
         return list(self.all().order_by('-frequency')[:limit] \
                 .values_list('text', flat=True))
 class ItemFrequency(models.Model):
     """
-    Info about frequency of a certain Item text. Used for item suggestions.
-    """
-    text = models.CharField(max_length=200, primary_key=True)
+    Info about frequency of a certain Item text on a certain List. Used for item
+    suggestions."""
+    list = models.ForeignKey(List, related_name='itemfrequencies')
+    text = models.CharField(max_length=200)
     frequency = models.PositiveIntegerField()
     last_changed = models.DateTimeField(auto_now=True)
 
@@ -95,14 +96,16 @@ class ItemFrequency(models.Model):
 
     class Meta:
         ordering = ['-frequency']
+        unique_together = (("list","text"),)
 
     def __unicode__(self):
-        return '%s: %d' % (self.text, self.frequency)
+        return '%s: %s: %d' % (self.list.name, self.text, self.frequency)
 @receiver(post_save, sender=Item)
 def autoincrement_on_item_creation(sender, **kwargs):
     "Detect Item creation and increment its text's frequency."
     if kwargs['created']:
-        ItemFrequency.objects.increment(kwargs['instance'].text)
+        i = kwargs['instance']
+        ItemFrequency.objects.increment(i.list, i.text)
 
 class Subscription(Trashable):
     """

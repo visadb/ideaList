@@ -24,7 +24,7 @@ fi
 TESTSERVER_PID=""
 
 function run_testserver {
-  python $MANAGE testserver --addrport 8123 "$MANAGEDIR/ideaList/fixtures/auth.json" "$MANAGEDIR/ideaList/fixtures/itemfrequencies.yaml" &
+  python $MANAGE testserver --addrport 8123 "$MANAGEDIR/ideaList/fixtures/auth.json" &
   TESTSERVER_PID=$!
   sleep 5 # give the server some time to start
 }

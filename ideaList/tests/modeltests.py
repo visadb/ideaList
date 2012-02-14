@@ -51,32 +51,33 @@ class ItemFrequencyTest(test.TestCase):
     def setUp(self):
         self.u1 = User.objects.create_user('pena', 'lol@lol.lol', 'passwd')
         self.l1 = List.objects.create(name='List1', owner=self.u1)
+        self.l2 = List.objects.create(name='List2', owner=self.u1)
         self.assertEqual(ItemFrequency.objects.count(), 0)
     def test_increment_new_text(self):
-        ItemFrequency.objects.increment('milk')
+        ItemFrequency.objects.increment(self.l1, 'milk')
         self.assertEqual(ItemFrequency.objects.count(), 1)
         i = ItemFrequency.objects.all()[0]
         self.assertEqual(i.text, 'milk')
         self.assertEqual(i.frequency, 1)
     def test_increment_old_text(self):
-        ItemFrequency.objects.increment('milk')
+        ItemFrequency.objects.increment(self.l1, 'milk')
         self.assertEqual(ItemFrequency.objects.count(), 1)
-        ItemFrequency.objects.increment('milk')
+        ItemFrequency.objects.increment(self.l1, 'milk')
         self.assertEqual(ItemFrequency.objects.count(), 1)
         i = ItemFrequency.objects.all()[0]
         self.assertEqual(i.text, 'milk')
         self.assertEqual(i.frequency, 2)
     def test_increment_two_different(self):
-        ItemFrequency.objects.increment('milk')
+        ItemFrequency.objects.increment(self.l1, 'milk')
         self.assertEqual(ItemFrequency.objects.count(), 1)
-        ItemFrequency.objects.increment('bread')
+        ItemFrequency.objects.increment(self.l1, 'bread')
         self.assertEqual(ItemFrequency.objects.count(), 2)
         self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 1)
         self.assertEqual(ItemFrequency.objects.get(text='bread').frequency, 1)
     def test_increment_canonization(self):
-        ItemFrequency.objects.increment(' miLk')
+        ItemFrequency.objects.increment(self.l1, ' miLk')
         self.assertEqual(ItemFrequency.objects.count(), 1)
-        ItemFrequency.objects.increment('   milk')
+        ItemFrequency.objects.increment(self.l1, '   milk')
         self.assertEqual(ItemFrequency.objects.count(), 1)
         self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 2)
     def test_autoincrement(self):

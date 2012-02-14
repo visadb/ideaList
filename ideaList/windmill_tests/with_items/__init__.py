@@ -36,6 +36,9 @@ def setup_module(module):
     enter_item_text('test item 4', ctrl=True)
     client.waits.forElement(id=u"item_4", timeout=u'20000')
 
+    # Refresh to get the newest itemfrequencies
+    client.refresh()
+
     # 5th item to test list 2 (from first suggestion)
     client.asserts.assertJS(js=u"$('#suggestion_box').is(':hidden')")
     client.click(id=u'additem_list_2')
