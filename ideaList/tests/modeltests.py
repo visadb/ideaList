@@ -51,7 +51,7 @@ class ItemFrequencyTest(test.TestCase):
     def setUp(self):
         self.u1 = User.objects.create_user('pena', 'lol@lol.lol', 'passwd')
         self.l1 = List.objects.create(name='List1', owner=self.u1)
-        self.l2 = List.objects.create(name='List2', owner=self.u1)
+        self.s1 = Subscription.objects.create(user=self.u1, list=self.l1)
         self.assertEqual(ItemFrequency.objects.count(), 0)
     def test_increment_new_text(self):
         ItemFrequency.objects.increment(self.l1, 'milk')
@@ -91,19 +91,20 @@ class ItemFrequencyTest(test.TestCase):
         self.assertEqual(ItemFrequency.objects.count(), 2)
         self.assertEqual(ItemFrequency.objects.get(text='milk').frequency, 2)
         self.assertEqual(ItemFrequency.objects.get(text='bread').frequency, 1)
-    def test_frequent_list_with_no_limit(self):
+    def test_frequents_by_list_with_no_limit(self):
         for t in ('a','b','c','b','c','c'):
             Item.objects.create(text=t, list=self.l1)
-        f = ItemFrequency.objects.frequent_list()
-        self.assertEqual(len(f), 3)
-        self.assertEqual(f, ['c','b','a'])
-    def test_frequent_list_with_limit(self):
+        f = ItemFrequency.objects.frequents_by_list(self.u1)
+        self.assertIn(self.l1.id, f)
+        self.assertEqual(len(f[self.l1.id]), 3)
+        self.assertEqual(f[self.l1.id], ['c','b','a'])
+    def test_frequents_by_list_with_limit(self):
         for t in ('a','b','c','b','c','c'):
             Item.objects.create(text=t, list=self.l1)
-        f = ItemFrequency.objects.frequent_list(limit=2)
-        self.assertEqual(len(f), 2)
-        self.assertEqual(f, ['c','b'])
-
+        f = ItemFrequency.objects.frequents_by_list(self.u1, limit=2)
+        self.assertIn(self.l1.id, f)
+        self.assertEqual(len(f[self.l1.id]), 2)
+        self.assertEqual(f[self.l1.id], ['c','b'])
 
 
 class SubscriptionTest(test.TestCase):

@@ -379,7 +379,7 @@ function maximizeSubscription(sub_id) {
 function makeSubscription(s) {
   var l = s.list;
   var subscriptionHtml = $('<li id="subscription_'+s.id+'"'
-      +' class="subscription"></li>').data('id', s.id);
+      +' class="subscription"></li>').data('id',s.id).data('list_id',s.list.id);
   var subscriptionTitleHtml = $('<span class="subscription-title"></span>');
   var itemListHtml = $('<ul class="itemlist"></ul>\n');
   // Workaround for bug in Android 1.5 browser: $.offset() crashes for invisible
@@ -443,6 +443,7 @@ function makeSubscription(s) {
     var addItemField = makeAddItemRow(l.id, 'begin');
     itemListHtml.prepend(addItemField);
     $('.additem', addItemField).focus();
+    freqtree = freqtrees[l.id];
     showAndResetSuggestionBox();
   }
   var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
@@ -616,6 +617,7 @@ function makeItem(item) {
       subscription.list.items[itemElem.data('id')].position+1);
     itemElem.after(addItemField);
     $('.additem', addItemField).focus();
+    freqtree = freqtrees[subscription.list.id];
     showAndResetSuggestionBox();
   }
   var itemHtml = $('<li id="item_'+item.id+'" class="item"></li>')
@@ -1055,6 +1057,8 @@ function setSuggestionBoxItems(items) {
   prevItems = items;
 }
 function freqtreeGetItems(prefix) {
+  if (!freqtree)
+    return [];
   prefix = $.trim(prefix.toLowerCase());
   function getItemsHelper(tree, i) {
     if (i == prefix.length)
@@ -1067,10 +1071,14 @@ function freqtreeGetItems(prefix) {
   return getItemsHelper(freqtree, 0);
 }
 function showAndResetSuggestionBox() {
-  $('#suggestion_box').show();
-  setSuggestionBoxItems(freqtreeGetItems(''));
+  if (freqtree) {
+    $('#suggestion_box').show();
+    setSuggestionBoxItems(freqtreeGetItems(''));
+  }
 }
 function initSuggestionBox(nrOfInitials) {
+  // Make a search tree from frequents for each list. Each node represents a
+  // prefix of a item text and contains the suggestions for that prefix.
   function freqtreeInsert(tree, text, i) {
     if (tree.items.length < nrOfSuggestions)
       tree.items.push(text);
@@ -1081,11 +1089,18 @@ function initSuggestionBox(nrOfInitials) {
       tree[c] = {items: []};
     freqtreeInsert(tree[c], text, i+1)
   }
-  freqtree = {items: []};
-  for (var i in frequents) {
-    var text = frequents[i];
-    freqtreeInsert(freqtree, text, 0);
+  freqtrees = {};
+  for (var i in frequents_by_list) {
+    var frequents = frequents_by_list[i];
+    var newfreqtree = {items: []};
+    for (var j in frequents) {
+      var text = frequents[j];
+      freqtreeInsert(newfreqtree, text, 0);
+    }
+    freqtrees[i] = newfreqtree;
   }
+
+  // Set up suggestion click handler
   $('.suggestion').click(function(e) {
     e.preventDefault();
     // Trigger enter press in field:

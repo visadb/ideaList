@@ -33,15 +33,15 @@ def setup_module(module):
     client.waits.forElement(id=u"item_3", timeout=u'20000')
 
     # 4th item to test list 1 (with residual additem field from last one)
-    enter_item_text('test item 4', ctrl=True)
+    enter_item_text('test item 4')
     client.waits.forElement(id=u"item_4", timeout=u'20000')
 
     # Refresh to get the newest itemfrequencies
     client.refresh()
 
-    # 5th item to test list 2 (from first suggestion)
+    # 5th item to test list 1 (from first suggestion)
     client.asserts.assertJS(js=u"$('#suggestion_box').is(':hidden')")
-    client.click(id=u'additem_list_2')
+    client.click(xpath=u"//li[@id='item_1']/a[@title='Add item']")
     client.waits.sleep(milliseconds=u'50')
     client.asserts.assertJS(js=u"$('#suggestion_box').is(':visible')")
     client.asserts.assertNode(id=u"suggestion_0")
@@ -49,10 +49,19 @@ def setup_module(module):
     client.waits.forElement(id=u"item_5", timeout=u'20000')
     client.asserts.assertJS(js=u"$('#suggestion_box').is(':hidden')")
 
+    # 6th item to test list 2 (from first suggestion)
+    client.click(id=u'additem_list_2')
+    # There should be no suggestions
+    client.waits.sleep(milliseconds=u'50')
+    client.asserts.assertJS(js=u"$('#suggestion_box').is(':hidden')")
+    enter_item_text('test item 6')
+    client.waits.forElement(id=u"item_6", timeout=u'20000')
+
     client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(0)').attr('id') == 'item_1'")
-    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(1)').attr('id') == 'item_4'")
-    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(2)').attr('id') == 'item_3'")
-    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(3)').attr('id') == 'item_2'")
+    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(1)').attr('id') == 'item_5'")
+    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(2)').attr('id') == 'item_4'")
+    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(3)').attr('id') == 'item_3'")
+    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(4)').attr('id') == 'item_2'")
 
 
 def teardown_module(module):

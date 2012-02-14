@@ -79,10 +79,18 @@ class ItemFrequencyManager(models.Manager):
             return freq
         except ItemFrequency.DoesNotExist:
             return self.create(list=list, text=text, frequency=1)
-    def frequent_list(self, limit=None):
+    def frequents_by_list(self, user, limit=None):
         """ Return the most frequent texts, most frequent first"""
-        return list(self.all().order_by('-frequency')[:limit] \
-                .values_list('text', flat=True))
+        relevant_freqs = ItemFrequency.objects.filter(
+                list__in=user.subscribed_lists.filter(trashed_at__isnull=True)
+                ).order_by('-frequency')[:limit].values_list('list_id','text')
+        freqs_by_list = {}
+        for l, text in relevant_freqs:
+            if l not in freqs_by_list:
+                freqs_by_list[l] = [text]
+            else:
+                freqs_by_list[l].append(text)
+        return freqs_by_list
 class ItemFrequency(models.Model):
     """
     Info about frequency of a certain Item text on a certain List. Used for item
