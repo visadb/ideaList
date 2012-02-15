@@ -761,10 +761,10 @@ var pendingAjaxCalls = 0;
 function setStatusLight() {
   if (pendingAjaxCalls > 0) {
     $('#status-light').attr('class', 'yellow');
-    $('html').addClass('yellow-bg');
+    //$('html').addClass('yellow-bg');
   } else {
     $('#status-light').attr('class', 'green');
-    $('html').removeClass('yellow-bg');
+    //$('html').removeClass('yellow-bg');
   }
 }
 
