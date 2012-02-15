@@ -1,0 +1,6 @@
+#!/bin/sh
+
+BACKUPFILE="/var/backups/django_db_$(date +%a).sql.gz"
+
+# Password in .pgpass
+pg_dump -U django django | gzip > $BACKUPFILE
