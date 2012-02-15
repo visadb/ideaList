@@ -8,6 +8,18 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
+        #NOTE: added the id column manually:
+        # ALTER TABLE "ideaList_itemfrequency" ADD COLUMN "id" INTEGER;
+        # CREATE SEQUENCE "ideaList_itemfrequency_id_seq";
+        # UPDATE "ideaList_itemfrequency" SET id = nextval('"ideaList_itemfrequency_id_seq"');
+        # ALTER TABLE "ideaList_itemfrequency"
+        # ALTER COLUMN "id" SET DEFAULT nextval('"ideaList_itemfrequency_id_seq"');
+        # ALTER TABLE "ideaList_itemfrequency"
+        # ALTER COLUMN "id" SET NOT NULL;
+        # ALTER TABLE "ideaList_itemfrequency" ADD UNIQUE ("id");
+        # ALTER TABLE "ideaList_itemfrequency" DROP CONSTRAINT "ideaList_itemfrequency_id_key" RESTRICT;
+        # ALTER TABLE "ideaList_itemfrequency" ADD PRIMARY KEY ("id");
+
         # Removing unique constraint on 'ItemFrequency', fields ['text']
         db.delete_unique('ideaList_itemfrequency', ['text'])
 
