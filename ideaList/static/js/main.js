@@ -296,13 +296,6 @@ function makeAddItemRow(list_id, pos) {
         var val = addField.val();
         if (val.length == 0)
           return false;
-        var res = /^add_to_(end|begin|\d+)_of_list_(\d+)$/.exec(addField.attr('id'));
-        if (!res || res.length != 3) {
-          debug('addItemHandler called with for invalid element id');
-          return false;
-        }
-        var pos = res[1];
-        var list_id = res[2];
         var position = pos=='begin' ? 0 : (pos=='end' ? -1 : pos);
         $.ajax('add_item/', {
           dataType: "json",
@@ -317,7 +310,7 @@ function makeAddItemRow(list_id, pos) {
           mergeState(data.state);
         }).fail(getAjaxFailHandler('add item'));
       } else {
-        setSuggestionBoxItems(freqtreeGetItems($(this).val()));
+        setSuggestionBoxItems(getSuggestions(list_id, $(this).val()));
       }
     });
   var cancelHtml = $('<a href="#" title="cancel" class="itemaction">&times;</a>')
@@ -443,8 +436,7 @@ function makeSubscription(s) {
     var addItemField = makeAddItemRow(l.id, 'begin');
     itemListHtml.prepend(addItemField);
     $('.additem', addItemField).focus();
-    freqtree = freqtrees[l.id];
-    showAndResetSuggestionBox();
+    showAndResetSuggestionBox(l.id);
   }
   var minimizationButtonHtml = $('<a id="minmax_subscription_'+s.id+'"'
       +' title="minimize/maximize" class="subscriptionaction minmax" href="#">'
@@ -617,8 +609,7 @@ function makeItem(item) {
       subscription.list.items[itemElem.data('id')].position+1);
     itemElem.after(addItemField);
     $('.additem', addItemField).focus();
-    freqtree = freqtrees[subscription.list.id];
-    showAndResetSuggestionBox();
+    showAndResetSuggestionBox(subscription.list.id);
   }
   var itemHtml = $('<li id="item_'+item.id+'" class="item"></li>')
     .data('id', item.id);
@@ -1056,8 +1047,8 @@ function setSuggestionBoxItems(items) {
   }
   prevItems = items;
 }
-function freqtreeGetItems(prefix) {
-  if (!freqtree)
+function getSuggestions(list_id, prefix) {
+  if (!freqtrees[list_id])
     return [];
   prefix = $.trim(prefix.toLowerCase());
   function getItemsHelper(tree, i) {
@@ -1068,12 +1059,13 @@ function freqtreeGetItems(prefix) {
     else
       return getItemsHelper(tree[prefix[i]], i+1);
   }
-  return getItemsHelper(freqtree, 0);
+  return getItemsHelper(freqtrees[list_id], 0);
 }
-function showAndResetSuggestionBox() {
-  if (freqtree) {
+function showAndResetSuggestionBox(list_id) {
+  var suggestions = getSuggestions(list_id, '');
+  if (suggestions.length > 0) {
     $('#suggestion_box').show();
-    setSuggestionBoxItems(freqtreeGetItems(''));
+    setSuggestionBoxItems(suggestions);
   }
 }
 function initSuggestionBox(nrOfInitials) {
