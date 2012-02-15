@@ -16,4 +16,5 @@ urlpatterns = patterns('ideaList.views',
     url(r'^remove_list/$', 'remove_list'),
     url(r'^edit_text/$', 'edit_text'),
     url(r'^undelete/$', 'undelete'),
+    url(r'^get_frequents/$', 'get_frequents'),
 )

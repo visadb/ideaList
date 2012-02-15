@@ -116,6 +116,18 @@ class GetStateViewTest(MyViewTest):
         self.assertEqual(r.status_code, 200)
         self.check_state_in_response(r)
 
+class GetFrequentsViewTest(MyViewTest):
+    def test_login_required(self):
+        self.check_login_required('ideaList.views.get_frequents')
+    def test_get(self):
+        r = self.c.get(reverse('ideaList.views.get_frequents'))
+        self.assertEqual(r.status_code, 200)
+        try:
+            response_data = json.loads(r.content)
+        except ValueError:
+            self.fail('Response was not valid JSON')
+        self.assertIs(type(response_data), dict)
+
 class AddSubscriptionViewTest(MyViewTest):
     def setUp(self):
         super(AddSubscriptionViewTest, self).setUp()

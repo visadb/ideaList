@@ -37,9 +37,7 @@ def main(req):
     agent = 'HTTP_USER_AGENT' in m and m['HTTP_USER_AGENT'] or None
     if agent and ("SymbianOS/9.1" in agent or "NokiaN73" in agent):
         return HttpResponseRedirect(reverse('ideaList.views.basic'))
-    frequents = json.dumps(ItemFrequency.objects.frequents_by_list(req.user, 500))
     return {'init_state': json.dumps(make_state(req.user)),
-            'frequents': frequents,
             'suggestions_per_row': 3,
             'suggestions_per_col': 7}
 
@@ -96,6 +94,12 @@ def undelete(req):
 @login_required
 def get_state(req):
     return state_response(req)
+
+@login_required
+def get_frequents(req):
+    frequents = ItemFrequency.objects.frequents_by_list(req.user)
+    return HttpResponse(status=200, content_type="application/json",
+            content=json.dumps(frequents))
 
 ########## COMMON STUFF: ##########
 

@@ -1081,16 +1081,20 @@ function initSuggestionBox(nrOfInitials) {
       tree[c] = {items: []};
     freqtreeInsert(tree[c], text, i+1)
   }
-  freqtrees = {};
-  for (var i in frequents_by_list) {
-    var frequents = frequents_by_list[i];
-    var newfreqtree = {items: []};
-    for (var j in frequents) {
-      var text = frequents[j];
-      freqtreeInsert(newfreqtree, text, 0);
-    }
-    freqtrees[i] = newfreqtree;
-  }
+
+  $.ajax('get_frequents/', { dataType: "json", type: "GET" })
+    .done(function(frequents_by_list) {
+      freqtrees = {};
+      for (var i in frequents_by_list) {
+        var frequents = frequents_by_list[i];
+        var newfreqtree = {items: []};
+        for (var j in frequents) {
+          var text = frequents[j];
+          freqtreeInsert(newfreqtree, text, 0);
+        }
+        freqtrees[i] = newfreqtree;
+      }
+    }).fail(getAjaxFailHandler('refresh'));
 
   // Set up suggestion click handler
   $('.suggestion').click(function(e) {
