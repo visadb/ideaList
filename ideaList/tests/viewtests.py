@@ -35,7 +35,6 @@ class MainViewTest(MyViewTest):
         r = self.c.get(reverse('ideaList.views.main'))
         self.assertEqual(r.status_code, 200)
         self.assertIn('init_state', r.context)
-        self.assertIn('frequents', r.context)
         self.assertIn('suggestions_per_row', r.context)
         self.assertIn('suggestions_per_col', r.context)
         self.assertIn('ideaList/main.html', [t.name for t in r.templates])
