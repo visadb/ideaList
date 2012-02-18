@@ -4,7 +4,7 @@ def test_move_list():
     client = WindmillTestClient(__name__)
 
     # show arrows
-    client.click(id=u'actions_button')
+    client.click(id=u'more_button')
     client.waits.sleep(milliseconds=u'500')
     client.click(id=u'arrows_button') # Closes dropdown
 
@@ -43,6 +43,6 @@ def test_move_list():
     client.asserts.assertJS(js=u"$('#listlist > .subscription:nth(2)').attr('id') == 'subscription_3'")
 
     # hide arrows
-    client.click(id=u'actions_button')
+    client.click(id=u'more_button')
     client.waits.sleep(milliseconds=u'500')
     client.click(id=u'arrows_button') # Closes dropdown

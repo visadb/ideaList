@@ -953,7 +953,7 @@ function initTopBar() {
       $('.move_item, .move_subscription').fadeIn();
     }
     arrows_on = !arrows_on;
-    $("#actions_button .dropcontent").slideUp(500);
+    $("#more_button .dropcontent").slideUp(500);
   });
   $(".dropdown").click(function(e) {
     $('.dropcontent',this).slideToggle();

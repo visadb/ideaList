@@ -12,9 +12,9 @@ def test_remove_list():
     client.waits.forNotElement(id=u"subscription_2", timeout=u'20000')
 
     #undelete list
-    client.click(id=u"actions_button") # show list menu
+    client.click(id=u"more_button") # show list menu
     client.waits.sleep(milliseconds=u'500')
-    client.click(link=u'Undelete items and lists')
+    client.click(link=u'Deleted stuff')
     client.waits.forPageLoad(timeout=u'20000')
     client.check(xpath=u"//input[@name='list_ids' and @value='2']")
     client.click(name=u'undelete')

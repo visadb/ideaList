@@ -5,7 +5,7 @@ def test_move_item():
 
     # show arrows
     client.asserts.assertJS(js=u"$('#move_item_1_up').is(':hidden')")
-    client.click(id=u'actions_button')
+    client.click(id=u'more_button')
     client.waits.sleep(milliseconds=u'500')
     client.click(id=u'arrows_button') # Closes dropdown
     client.asserts.assertJS(js=u"$('#move_item_1_up').is(':visible')")
@@ -51,6 +51,6 @@ def test_move_item():
     client.asserts.assertJS(js=u"$('#subscription_1 .item:nth(3)').attr('id') == 'item_2'")
 
     # hide arrows
-    client.click(id=u'actions_button')
+    client.click(id=u'more_button')
     client.waits.sleep(milliseconds=u'500')
     client.click(id=u'arrows_button') # Closes dropdown

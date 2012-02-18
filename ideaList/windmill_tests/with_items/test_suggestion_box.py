@@ -27,9 +27,9 @@ def test_unsubscribe():
     client.asserts.assertJS(js=u"$('#remove_button').is(':hidden')")
 
     # purge item
-    client.click(id=u'actions_button')
+    client.click(id=u'more_button')
     client.waits.sleep(milliseconds=u'500')
-    client.click(link=u'Undelete items and lists')
+    client.click(link=u'Deleted stuff')
     client.waits.forPageLoad(timeout=u'20000')
     client.asserts.assertNode(xpath=u"//input[@name='item_ids' and @value='6']")
     client.check(xpath=u"//input[@name='item_ids' and @value='6']")

@@ -13,9 +13,9 @@ def test_remove_item():
     client.asserts.assertJS(js=u"$('#remove_button').is(':hidden')")
 
     #undelete
-    client.click(id=u'actions_button')
+    client.click(id=u'more_button')
     client.waits.sleep(milliseconds=u'500')
-    client.click(link=u'Undelete items and lists')
+    client.click(link=u'Deleted stuff')
     client.waits.forPageLoad(timeout=u'20000')
     client.check(xpath=u"//input[@name='item_ids' and @value='3']")
     client.asserts.assertChecked(xpath=u"//input[@name='item_ids' and @value='3']")
