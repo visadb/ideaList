@@ -75,9 +75,28 @@ class UndeleteViewTest(MyViewTest):
         self.assertIn('trashed_items', r.context)
         self.assertIn('trashed_lists', r.context)
         self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
+    def test_without_action(self):
+        r = self.c.post(reverse('ideaList.views.undelete'),
+                {'item_ids':(self.i1.id,), 'list_ids':(self.l1.id,)})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('msg', r.context)
+        self.assertIn('error', r.context['msg'].lower())
+        self.assertEqual(Item.trash.count(), 2)
+        self.assertEqual(Item.nontrash.count(), 1)
+        self.assertEqual(List.trash.count(), 1)
+        self.assertEqual(List.nontrash.count(), 1)
+        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
     def test_undelete_one_item(self):
         r = self.c.post(reverse('ideaList.views.undelete'),
-                {'item_ids':(self.i1.id,)})
+                {'item_ids':(self.i1.id,), 'undelete':'x'})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.trash.count(), 1)
+        self.assertEqual(Item.trash.all()[0], self.i3)
+        self.assertEqual(Item.nontrash.count(), 2)
+        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
+    def test_purge_one_item(self):
+        r = self.c.post(reverse('ideaList.views.undelete'),
+                {'item_ids':(self.i1.id,), 'purge':'x'})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Item.trash.count(), 1)
         self.assertEqual(Item.trash.all()[0], self.i3)
@@ -85,26 +104,30 @@ class UndeleteViewTest(MyViewTest):
         self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
     def test_undelete_two_items(self):
         r = self.c.post(reverse('ideaList.views.undelete'),
-                {'item_ids':(self.i1.id,self.i3.id)})
+                {'item_ids':(self.i1.id,self.i3.id), 'undelete':'x'})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Item.trash.count(), 0)
         self.assertEqual(Item.nontrash.count(), 3)
         self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
     def test_undelete_item_and_list(self):
         r = self.c.post(reverse('ideaList.views.undelete'),
-                {'item_ids':(self.i1.id,self.i3.id)})
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(Item.trash.count(), 0)
-        self.assertEqual(Item.nontrash.count(), 3)
-        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
-    def test_undelete_two_items_and_an_invalid_id(self):
-        r = self.c.post(reverse('ideaList.views.undelete'),
-                {'item_ids':(self.i1.id,), 'list_ids':(self.l1.id,)})
+                {'item_ids':(self.i1.id,), 'list_ids':(self.l1.id,),
+                 'undelete':'x'})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Item.trash.count(), 1)
         self.assertEqual(Item.nontrash.count(), 2)
         self.assertEqual(List.trash.count(), 0)
         self.assertEqual(List.nontrash.count(), 2)
+        self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
+    def test_undelete_two_items_and_an_invalid_id(self):
+        r = self.c.post(reverse('ideaList.views.undelete'),
+                {'item_ids':(self.i1.id,self.i3.id), 'list_ids':(self.l1.id+9,),
+                 'undelete':'x'})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Item.trash.count(), 0)
+        self.assertEqual(Item.nontrash.count(), 3)
+        self.assertEqual(List.trash.count(), 1)
+        self.assertEqual(List.nontrash.count(), 1)
         self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
 
 class GetStateViewTest(MyViewTest):

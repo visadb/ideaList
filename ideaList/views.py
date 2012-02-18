@@ -52,40 +52,54 @@ def basic(req):
 @render_to('ideaList/undelete.html')
 def undelete(req):
     "Undelete given item_ids and list_ids. Will ignore any invalid ids."
-    msg = ""
+    def make_ctx(msg):
+        items = Item.trash.filter(
+            list__in=[s.list for s in req.user.nontrash_subscriptions.all()]) \
+                    .order_by('-trashed_at')
+        lists = List.trash.filter(
+                pk__in=req.user.subscribed_lists.all()).order_by('-trashed_at')
+        return {'msg':msg,'trashed_items':items,'trashed_lists':lists}
+
     if req.method == 'POST':
+        undelete = 'undelete' in req.POST
+        purge = 'purge' in req.POST
+        if not undelete and not purge:
+            return make_ctx('Error: neither undelete or purge specified')
+        if undelete and purge:
+            return make_ctx('Error: both undelete and purge specified')
+
         if 'item_ids' not in req.POST:
             item_ids = []
         else:
             item_ids = req.POST.getlist('item_ids')
+
         valid_items = get_valid_items(item_ids,user=req.user,manager=Item.trash)
-        for i in valid_items:
-            i.restore()
 
         if 'list_ids' not in req.POST:
             list_ids = []
         else:
             list_ids = req.POST.getlist('list_ids')
         valid_lists = []
+
         for list_id in list_ids:
             try:
                 l = List.trash.get(pk=list_id)
             except ValueError: continue # Invalid list id
             except List.DoesNotExist: continue # No such trashed list
             if l.subscription_for(req.user) == None: continue #!subscribed
-            l.restore()
-            valid_lists.append(l.__unicode__())
-        msg = "Undeleted %d items and %d lists." % (len(valid_items),
-                len(valid_lists))
+            valid_lists.append(l)
 
-    trashed_items = Item.trash.filter(
-            list__in=[s.list for s in req.user.nontrash_subscriptions.all()]) \
-                    .order_by('-trashed_at')
-    trashed_lists = List.trash.filter(
-            pk__in=req.user.subscribed_lists.all()).order_by('-trashed_at')
-    return {'msg': msg,
-            'trashed_items': trashed_items,
-            'trashed_lists': trashed_lists}
+        for x in valid_items + valid_lists:
+            if purge:
+                x.delete()
+            else:
+                x.restore()
+
+        msg = "%s %d items and %d lists." % (purge and "Purged" or "Undeleted",
+                len(valid_items), len(valid_lists))
+        return make_ctx(msg)
+    return make_ctx('')
+
 
 #################################
 ########## AJAX Views: ##########

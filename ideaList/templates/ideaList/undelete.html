@@ -29,7 +29,10 @@
 
 <form action="" method="post">
 {% csrf_token %}
-<div><input type="submit" name="undelete" value="Undelete selected items and lists" /></div>
+<div>
+  <input type="submit" name="undelete" value="Undelete selected items and lists" />
+  <input type="submit" name="purge" value="Purge selected items and lists" />
+</div>
 <h4>Deleted items</h4>
 
 <table id="deleted_items" class="deleted_table">
@@ -37,8 +40,7 @@
     <tr>
       <th></th>
       <th>Text</th>
-      <th>List</th>
-      <th>Trashed at</th>
+      <th>List</th> <th>Trashed at</th>
     </tr>
   </thead>
   <tbody>
@@ -76,7 +78,10 @@
   </tbody>
 </table>
 
-<p><input type="submit" name="undelete" value="Undelete selected items and lists" /></p>
+<p>
+  <input type="submit" name="undelete" value="Undelete selected items and lists" />
+  <input type="submit" name="purge" value="Purge selected items and lists" />
+</p>
 </form>
 
 <div id="debug"></div>
