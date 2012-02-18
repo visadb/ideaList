@@ -18,50 +18,41 @@ def setup_module(module):
     client.asserts.assertNotNode(xpath=u"//input[@class='additem']")
 
     # 1st item to test list 1 (from list's additem button)
+    client.asserts.assertNotNode(id=u'item_1')
     client.click(id=u'additem_list_1')
     enter_item_text('test item 1')
     client.waits.forElement(id=u"item_1", timeout=u'20000')
 
     # 2nd item to test list 1 (from item1's additem button)
+    client.asserts.assertNotNode(id=u'item_2')
     client.click(xpath=u"//li[@id='item_1']/a[@title='Add item']")
     enter_item_text('test item 2')
     client.waits.forElement(id=u"item_2", timeout=u'20000')
 
     # 3rd item to test list 1 (from item1's additem button with ctrl)
+    client.asserts.assertNotNode(id=u'item_3')
     client.click(xpath=u"//li[@id='item_1']/a[@title='Add item']")
     enter_item_text('test item 3', ctrl=True)
     client.waits.forElement(id=u"item_3", timeout=u'20000')
 
     # 4th item to test list 1 (with residual additem field from last one)
+    client.asserts.assertNotNode(id=u'item_4')
     enter_item_text('test item 4')
     client.waits.forElement(id=u"item_4", timeout=u'20000')
 
-    # Refresh to get the newest itemfrequencies
-    client.refresh()
-
-    # 5th item to test list 1 (from first suggestion)
-    client.asserts.assertJS(js=u"$('#suggestion_box').is(':hidden')")
-    client.click(xpath=u"//li[@id='item_1']/a[@title='Add item']")
-    client.waits.sleep(milliseconds=u'50')
-    client.asserts.assertJS(js=u"$('#suggestion_box').is(':visible')")
-    client.asserts.assertNode(id=u"suggestion_0")
-    client.click(id=u"suggestion_0")
-    client.waits.forElement(id=u"item_5", timeout=u'20000')
-    client.asserts.assertJS(js=u"$('#suggestion_box').is(':hidden')")
-
-    # 6th item to test list 2 (from first suggestion)
+    # 5th item to test list 2
+    client.asserts.assertNotNode(id=u'item_5')
     client.click(id=u'additem_list_2')
-    # There should be no suggestions
     client.waits.sleep(milliseconds=u'50')
     client.asserts.assertJS(js=u"$('#suggestion_box').is(':hidden')")
-    enter_item_text('test item 6')
-    client.waits.forElement(id=u"item_6", timeout=u'20000')
+    enter_item_text('test item 5')
+    client.waits.forElement(id=u"item_5", timeout=u'20000')
 
-    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(0)').attr('id') == 'item_1'")
-    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(1)').attr('id') == 'item_5'")
-    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(2)').attr('id') == 'item_4'")
-    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(3)').attr('id') == 'item_3'")
-    client.asserts.assertJS(js=u"$('#subscription_1 > .itemlist > .item:nth(4)').attr('id') == 'item_2'")
+    client.asserts.assertJS(js=u"$('#subscription_1 .item:nth(0)').attr('id') == 'item_1'")
+    client.asserts.assertJS(js=u"$('#subscription_1 .item:nth(1)').attr('id') == 'item_4'")
+    client.asserts.assertJS(js=u"$('#subscription_1 .item:nth(2)').attr('id') == 'item_3'")
+    client.asserts.assertJS(js=u"$('#subscription_1 .item:nth(3)').attr('id') == 'item_2'")
+    client.asserts.assertJS(js=u"$('#subscription_2 .item:nth(0)').attr('id') == 'item_5'")
 
 
 def teardown_module(module):
@@ -69,4 +60,4 @@ def teardown_module(module):
     client = WindmillTestClient(__name__)
     client = client # silence warning
 
-    #TODO: remove items (perhaps directly with django model?)
+    #TODO: remove and purge items

@@ -100,7 +100,7 @@ class UndeleteViewTest(MyViewTest):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Item.trash.count(), 1)
         self.assertEqual(Item.trash.all()[0], self.i3)
-        self.assertEqual(Item.nontrash.count(), 2)
+        self.assertEqual(Item.nontrash.count(), 1)
         self.assertIn('ideaList/undelete.html', [t.name for t in r.templates])
     def test_undelete_two_items(self):
         r = self.c.post(reverse('ideaList.views.undelete'),

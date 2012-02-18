@@ -40,3 +40,5 @@ def teardown_module(module):
     #client.waits.forPageLoad(timeout=u'20000')
     #client.asserts.assertNode(name=u'username')
     #client.asserts.assertNode(name=u'password')
+
+    #TODO: remove and purge lists (will also purge subscriptions and any remaining items)
