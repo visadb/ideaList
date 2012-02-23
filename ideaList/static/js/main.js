@@ -207,7 +207,7 @@ function updateListMenu(newState) {
 }
 
 function refresh(flashOnSuccess) {
-  $.ajax('get_state/', { dataType: "json", type: "GET" })
+  $.ajax('get_state/', { dataType: "json", type: "GET", cache: false })
     .done(function(data) {
       if (flashOnSuccess)
         flashSuccess('refreshed');
@@ -1082,7 +1082,7 @@ function initSuggestionBox(nrOfInitials) {
     freqtreeInsert(tree[c], text, i+1)
   }
 
-  $.ajax('get_frequents/', { dataType: "json", type: "GET" })
+  $.ajax('get_frequents/', { dataType: "json", type: "GET", cache: false })
     .done(function(frequents_by_list) {
       freqtrees = {};
       for (var i in frequents_by_list) {
