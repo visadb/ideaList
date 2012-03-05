@@ -143,6 +143,7 @@
   color: red;
 }
 .itemlist_nojs {
+  display: table; /* Minimize width for nice double-tap zoom on N900 */
   font-weight: normal;
   list-style-type: none;
   padding-top: 0;
