@@ -374,7 +374,7 @@ def remove_items(req):
             return state_response(req, code=code, msg=msg)
         else:
             return HttpResponseRedirect(
-                    reverse('ideaList.views.main')+'?msg='+msg)
+                    reverse('ideaList.views.basic')+'?msg='+msg)
     if req.method != 'POST':
         return my_response(code=400, msg='Only POST supported')
     if 'item_ids' not in req.POST:
