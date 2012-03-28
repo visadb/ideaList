@@ -22,7 +22,7 @@
   <li><b>{{ s.list.name|escape|escape_utf8_scands|safe }}</b>
       <ul class="itemlist_nojs">
         {% for i in s.list.nontrashed_items %}
-          <li>
+          <li {% if i.important %}class="important"{% endif %}>
             <input type="checkbox" name="item_ids" value="{{i.id}}" />
             {{i.text|escape|escape_utf8_scands|safe}}
           </li>

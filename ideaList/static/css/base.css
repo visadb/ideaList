@@ -135,10 +135,10 @@
   padding-left: 20px;
   padding-bottom: 2px; /* So that items can be dragged here even when empty */
 }
-.itemlist > li {
+.itemlist > li, .itemlist_nojs > li {
   white-space: nowrap;
 }
-.itemlist > li.important {
+.itemlist > li.important, .itemlist_nojs > li.important {
   white-space: nowrap;
   color: red;
 }
