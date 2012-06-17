@@ -74,11 +74,6 @@ STATIC_ROOT = ''
 # Example: "http://media.lawrence.com/static/"
 STATIC_URL = '/static/'
 
-# URL prefix for admin static files -- CSS, JavaScript and images.
-# Make sure to use a trailing slash.
-# Examples: "http://foo.com/static/admin/", "/static/admin/".
-ADMIN_MEDIA_PREFIX = '/static/admin/'
-
 # Additional locations of static files
 STATICFILES_DIRS = (
     # '/media/puhveli/visa/koodaus/django/puhveli/ideaList/media',
@@ -112,7 +107,7 @@ MIDDLEWARE_CLASSES = (
     #'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
-ROOT_URLCONF = 'puhveli.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.

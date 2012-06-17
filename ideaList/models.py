@@ -146,9 +146,11 @@ class NonTrashSubscriptionsDescriptor(User.subscriptions.__class__):
         from django.db.models.related import RelatedObject
         related = RelatedObject(User, Subscription, Subscription.user.field)
         super(NonTrashSubscriptionsDescriptor, self).__init__(related)
-    def create_manager(self, instance, superclass):
+    def __get__(self, instance, instance_type=None):
+        if instance is None:
+            return self
         manager = super(NonTrashSubscriptionsDescriptor,
-                self).create_manager(instance, superclass)
+                self).__get__(instance, instance_type)
         manager.core_filters['trashed_at__isnull'] = True
         manager.core_filters['list__trashed_at__isnull'] = True
         return manager
