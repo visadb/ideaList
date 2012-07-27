@@ -1,4 +1,5 @@
 {% extends "ideaList/base.html" %}
+{% load url from future %}
 {% load ideaList_extras %}
 
 {% block extrahead %}
@@ -42,7 +43,8 @@
     <div class="dropcontent">
       <ul id="actions_list">
         <li><a href="#" id="arrows_button">Toggle arrows</a></li>
-        <li><a href="undelete/">Deleted stuff</a></li>
+        <li><a href="{% url 'ideaList.views.undelete' %}">Deleted stuff</a></li>
+        <li><a href="{% url 'ideaList.views.basic' %}">Basic view</a></li>
       </ul>
     </div>
   </li>
