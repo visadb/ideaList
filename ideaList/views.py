@@ -486,9 +486,16 @@ def add_list(req):
     try:
         l = List.objects.create(name=req.POST['name'], owner=req.user)
     except django.db.IntegrityError, e:
-        return state_response(req, code=400, msg='Error creating list: %s' % e)
+        # state_response fails here for some reason...
+        return HttpResponse(status=400, content_type="application/json",\
+                content=json.dumps({'msg':'DB Integrity error: %s' % e}))
+    except:
+        return state_response(req, code=400, msg='Error creating list')
     if 'subscribe' in req.POST and req.POST['subscribe'] == 'true':
-        Subscription.objects.create(user=req.user, list=l);
+        try:
+            Subscription.objects.create(user=req.user, list=l);
+        except Exception, e:
+            return state_response(req, code=400, msg='Error creating subscription: %s' % e)
         return state_response(req, msg='List created and subscribed')
     return state_response(req, msg='List created')
 
