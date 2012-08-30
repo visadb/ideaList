@@ -482,7 +482,11 @@ def add_list(req):
         return state_response(req, code=400, msg='name not provided')
     elif len(req.POST['name']) == 0:
         return state_response(req, code=400, msg='empty name')
-    l = List.objects.create(name=req.POST['name'], owner=req.user)
+    import django.db
+    try:
+        l = List.objects.create(name=req.POST['name'], owner=req.user)
+    except django.db.IntegrityError, e:
+        return state_response(req, code=400, msg='Error creating list: %s' % e)
     if 'subscribe' in req.POST and req.POST['subscribe'] == 'true':
         Subscription.objects.create(user=req.user, list=l);
         return state_response(req, msg='List created and subscribed')
