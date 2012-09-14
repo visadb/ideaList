@@ -24,7 +24,9 @@
         {% for i in s.list.nontrashed_items %}
           <li {% if i.important %}class="important"{% endif %}>
             <input type="checkbox" name="item_ids" value="{{i.id}}" />
-            {{i.text|escape|escape_utf8_scands|safe}}
+            {% if i.url %}<a href="{{ i.url }}">{% endif %}
+              {{i.text|escape|escape_utf8_scands|safe}}
+            {% if i.url %}</a>{% endif %}
           </li>
         {% endfor %}
       </ul>
