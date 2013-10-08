@@ -1,11 +1,11 @@
 from django.conf.urls.defaults import patterns, include, url
-from django.views.generic.simple import redirect_to
+from django.views.generic import RedirectView
 
 #from django.contrib import admin
 #admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^$',          redirect_to, {'url': '/ideaList/', 'permanent': False}),
+    url(r'^$',          RedirectView.as_view(url='/ideaList')),
     url(r'^ideaList/',  include('ideaList.urls')),
     url(r'^login/$',    'django.contrib.auth.views.login'),
     url(r'^logout/$',   'django.contrib.auth.views.logout_then_login'),
