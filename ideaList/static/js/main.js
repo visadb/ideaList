@@ -811,7 +811,7 @@ $(document).ajaxSend(function(event, xhr, settings) {
   }
 });
 
-$.ajaxSetup({timeout:10000});
+$.ajaxSetup({timeout:15000});
 
 // The text that appears in the new item boxes
 var newitemText = "New item..."
