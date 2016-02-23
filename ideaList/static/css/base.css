@@ -164,6 +164,9 @@
 
 .item {
 }
+.itemcheck {
+  transform: scale(2, 1.5) translate(-25%, 0%);
+}
 .itemaction {
   text-decoration: none;
   font-weight: bold;
