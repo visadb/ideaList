@@ -355,7 +355,11 @@ def add_item(req, render):
         if form.is_valid():
             # Success:
             form.save()
-            return state_response(req, msg='item '+str(i.id)+' added')
+            if render:
+                return state_response(req, msg='item '+str(i.id)+' added')
+            else:
+                return HttpResponse('')
+
         elif req.is_ajax():
             return state_response(req, code=400, msg='invalid args')
     else:
