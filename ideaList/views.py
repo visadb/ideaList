@@ -367,7 +367,7 @@ def add_item(req):
 
 @csrf_exempt
 def add_item_ifttt(req):
-    add_item(req)
+    return add_item(req)
 
 
 @login_required
