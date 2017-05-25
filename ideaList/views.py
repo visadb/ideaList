@@ -348,7 +348,7 @@ class ItemForm(ModelForm):
         model = Item
         fields = ('list', 'text', 'position')
 
-def add_item(req):
+def add_item(req, render):
     i = Item()
     if req.method == 'POST':
         form = ItemForm(req.POST, instance=i)
@@ -361,16 +361,19 @@ def add_item(req):
     else:
         form = ItemForm(instance=i)
 
-    return render_to_response('ideaList/additem.html', {'form':form},
-            RequestContext(req))
+    if render:
+        return render_to_response('ideaList/additem.html', {'form':form},
+                RequestContext(req))
+    else:
+        return HttpResponse('')
 
 @login_required
 def add_item_login_required(req):
-    return add_item(req)
+    return add_item(req, True)
 
 @csrf_exempt
 def add_item_ifttt(req):
-    return add_item(req)
+    return add_item(req, False)
 
 
 @login_required
