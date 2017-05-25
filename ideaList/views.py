@@ -348,7 +348,6 @@ class ItemForm(ModelForm):
         model = Item
         fields = ('list', 'text', 'position')
 
-@login_required
 def add_item(req):
     i = Item()
     if req.method == 'POST':
@@ -364,6 +363,10 @@ def add_item(req):
 
     return render_to_response('ideaList/additem.html', {'form':form},
             RequestContext(req))
+
+@login_required
+def add_item_login_required(req):
+    return add_item(req)
 
 @csrf_exempt
 def add_item_ifttt(req):
