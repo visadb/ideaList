@@ -365,6 +365,11 @@ def add_item(req):
     return render_to_response('ideaList/additem.html', {'form':form},
             RequestContext(req))
 
+@csrf_exempt
+def add_item_ifttt(req):
+    add_item(req)
+
+
 @login_required
 @csrf_exempt
 def remove_items(req):
