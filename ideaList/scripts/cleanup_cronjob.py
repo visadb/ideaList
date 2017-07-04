@@ -3,7 +3,7 @@
 import sys
 from os import environ as env
 from datetime import datetime, timedelta
-sys.path.append('/srv/puhveli')
+sys.path.append('/srv/http/puhveli')
 env['DJANGO_SETTINGS_MODULE'] = 'settings'
 from ideaList.models import Item, List, ItemFrequency
 
