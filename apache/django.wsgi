@@ -1,8 +1,8 @@
 import os
 import sys
 
-sys.path.append('/srv')
-sys.path.append('/srv/puhveli')
+sys.path.append('/srv/http')
+sys.path.append('/srv/http/puhveli')
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'puhveli.settings_production'
 
