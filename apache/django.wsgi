@@ -2,7 +2,7 @@ import os
 import sys
 
 path = '/usr/local/wsgi/modules'
-paths = ['/srv/http', '/srv/http/puhveli']
+paths = ['/srv/http', '/srv/http/puhveli', '/srv/http/puhveli/undelete']
 for path in paths:
     if path not in sys.path:
         sys.path.append(path)
