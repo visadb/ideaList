@@ -1,14 +1,9 @@
-<?xml version="1.0" encoding="ISO-8859-1" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
- "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" 
-  lang="{{ LANGUAGE_CODE|default:"en-us" }}"
-  xml:lang="{{ LANGUAGE_CODE|default:"en-us" }}">
+<html>
 {% load i18n %}
-{% load url from future %}
+{% load static %}
 <head>
   <title>{% block title %}ideaList{% endblock %}</title>
-  <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/base.css" />
+  <link rel="stylesheet" type="text/css" href="{% static "css/base.css" %}" />
   <link rel="icon" sizes="128x128" href="/favicon128.png" />
   {% block extrahead %}{% endblock %}
 </head>

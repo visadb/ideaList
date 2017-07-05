@@ -1,24 +1,21 @@
 {% extends "ideaList/base.html" %}
-{% load url from future %}
 {% load ideaList_extras %}
+{% load static %}
 
 {% block extrahead %}
-  <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.js"></script> -->
-  <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui.js"></script> -->
   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-  <!-- <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.17/jquery-ui.min.js"></script> -->
-  <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.17.custom.min.js"></script>
-  <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.jeditable.js"></script>
-  <script type="text/javascript" src="{{ STATIC_URL }}js/main.js"></script>
+  <script type="text/javascript" src="{% static "js/jquery-ui-1.8.17.custom.min.js" %}"></script>
+  <script type="text/javascript" src="{% static "js/jquery.jeditable.js" %}"></script>
+  <script type="text/javascript" src="{% static "js/main.js" %}"></script>
   <script type="text/javascript">
     var init_state = {{ init_state|safe }};
-    var user_id = {{ user.id }};
+    //var user_id = {{ user.id }};
+    var user_id = 1;
     var suggestionsPerRow = {{suggestions_per_row}};
     var suggestionsPerCol = {{suggestions_per_col}};
     var nrOfSuggestions = suggestionsPerRow * suggestionsPerCol;
   </script>
 {% endblock %}
-
 
 {% block user-tools-before %}
 <span id="status-light">&#x25cf;</span>
@@ -27,24 +24,24 @@
 {% block content %}
 <ul id="topnav">
   <li id="refresh_button" title="Refresh" class="symbol_button">
-    <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/reload_32_white.png">
+    <img class="icon navicon" alt="refresh" src="{% static "images/reload_32_white.png" %}" />
   </li>
   <li id="remove_button" title="Remove" class="topnav_itembutton symbol_button gapleft">
-    <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/trash_32_white.png">
+    <img class="icon navicon" alt="refresh" src="{% static "images/trash_32_white.png" %}" />
   </li>
   <li id="important_button" title="Toggle important" class="topnav_itembutton symbol_button gapleft">
-    <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/important_32_white.png">
+    <img class="icon navicon" alt="refresh" src="{% static "images/important_32_white.png" %}" />
   </li>
   <li id="link_button" title="Edit item link" class="topnav_linkbutton symbol_button gapleft">
-    <img class="icon navicon" alt="refresh" src="{{STATIC_URL}}images/link_32_white.png">
+    <img class="icon navicon" alt="refresh" src="{% static "images/link_32_white.png" %}" />
   </li>
   <li id="more_button" class="dropdown gapleft">
     <span>More &#x25bc;</span>
     <div class="dropcontent">
       <ul id="actions_list">
         <li><a href="#" id="arrows_button">Toggle arrows</a></li>
-        <li><a href="{% url 'ideaList.views.undelete' %}">Deleted stuff</a></li>
-        <li><a href="{% url 'ideaList.views.basic' %}">Basic view</a></li>
+        <li><a href="{% url 'undelete' %}">Deleted stuff</a></li>
+        <li><a href="{% url 'basic' %}">Basic view</a></li>
       </ul>
     </div>
   </li>

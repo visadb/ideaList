@@ -1,5 +1,6 @@
 import re
 import json
+import sys
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
@@ -36,7 +37,7 @@ def main(req):
     m = req.META
     agent = 'HTTP_USER_AGENT' in m and m['HTTP_USER_AGENT'] or None
     if agent and ("SymbianOS/9.1" in agent or "NokiaN73" in agent):
-        return HttpResponseRedirect(reverse('ideaList.views.basic'))
+        return HttpResponseRedirect(reverse('basic'))
     return {'init_state': json.dumps(make_state(req.user)),
             'suggestions_per_row': 3,
             'suggestions_per_col': 7}
@@ -44,8 +45,9 @@ def main(req):
 @login_required
 @render_to('ideaList/main_nojs.html')
 def basic(req):
-    msg = 'msg' in req.REQUEST and req.REQUEST['msg'] or ''
-    return {'subscriptions': req.user.nontrash_subscriptions.all(), 'msg':msg}
+    msg = 'msg' in req.GET and req.GET['msg'] or ''
+    nontrash_subs = req.user.subscriptions.filter(trashed_at__isnull=True)
+    return {'subscriptions': nontrash_subs, 'msg':msg}
 
 @login_required
 @csrf_exempt
@@ -53,8 +55,9 @@ def basic(req):
 def undelete(req):
     "Undelete given item_ids and list_ids. Will ignore any invalid ids."
     def make_ctx(msg):
+        nontrash_subs = req.user.subscriptions.filter(trashed_at__isnull=True)
         items = Item.trash.filter(
-            list__in=[s.list for s in req.user.nontrash_subscriptions.all()]) \
+            list__in=[s.list for s in nontrash_subs]) \
                     .order_by('-trashed_at')
         lists = List.trash.filter(
                 pk__in=req.user.subscribed_lists.all()).order_by('-trashed_at')
@@ -125,7 +128,8 @@ def state_response(request, code=200, msg=''):
 def make_state(user):
     # This function is messy to minimize number of SQL queries
 
-    subs = user.nontrash_subscriptions.all().order_by()
+    subs = user.subscriptions.filter(trashed_at__isnull=True).order_by()
+
     # Get all lists now to avoid select_related in above subs query. These are
     # needed in the list dictionary generation anyway.
     lsts = dict([(l.id, l) for l in List.nontrash.all()])
@@ -134,15 +138,14 @@ def make_state(user):
     list_ids = [s.list_id for s in subs]
     itms = Item.nontrash.filter(list__in=list_ids).order_by()
 
-    # Generate subscriptions dictionary
-    items_by_sub = dict([(s.id,
-        filter(lambda i:i.list_id==s.list_id, itms)) for s in subs])
+    items_by_sub = {s.id: list(filter(lambda i:i.list_id==s.list_id, itms)) for s in subs}
     subscriptions = dict([(s.id, s.as_dict(
         lst=lsts[s.list_id].as_dict(items=items_by_sub[s.id]))) for s in subs])
 
+
     # Generate list dictionary
     lists = dict([(l.id, l.as_dict(include_items=False))
-        for l in lsts.itervalues()])
+        for l in iter(lsts.values())])
     return {'subscriptions':subscriptions, 'lists':lists}
 
 # A generic view-template for moving objects with positions
@@ -389,7 +392,7 @@ def remove_items(req):
             return state_response(req, code=code, msg=msg)
         else:
             return HttpResponseRedirect(
-                    reverse('ideaList.views.basic')+'?msg='+msg)
+                    reverse('basic')+'?msg='+msg)
     if req.method != 'POST':
         return my_response(code=400, msg='Only POST supported')
     if 'item_ids' not in req.POST:
@@ -500,7 +503,7 @@ def add_list(req):
     import django.db
     try:
         l = List.objects.create(name=req.POST['name'], owner=req.user)
-    except django.db.IntegrityError, e:
+    except django.db.IntegrityError as e:
         # state_response fails here for some reason...
         return HttpResponse(status=400, content_type="application/json",\
                 content=json.dumps({'msg':'DB Integrity error: %s' % e}))
@@ -509,7 +512,7 @@ def add_list(req):
     if 'subscribe' in req.POST and req.POST['subscribe'] == 'true':
         try:
             Subscription.objects.create(user=req.user, list=l);
-        except Exception, e:
+        except Exception as e:
             return state_response(req, code=400, msg='Error creating subscription: %s' % e)
         return state_response(req, msg='List created and subscribed')
     return state_response(req, msg='List created')

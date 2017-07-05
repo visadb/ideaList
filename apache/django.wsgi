@@ -1,10 +1,13 @@
 import os
 import sys
 
-sys.path.append('/srv/http')
-sys.path.append('/srv/http/puhveli')
+path = '/usr/local/wsgi/modules'
+paths = ['/srv/http', '/srv/http/puhveli']
+for path in paths:
+    if path not in sys.path:
+        sys.path.append(path)
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'puhveli.settings_production'
 
-import django.core.handlers.wsgi
-application = django.core.handlers.wsgi.WSGIHandler()
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()

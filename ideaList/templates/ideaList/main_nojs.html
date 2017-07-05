@@ -1,6 +1,5 @@
 {% extends "ideaList/base.html" %}
 
-{% load url from future %}
 {% load ideaList_extras %}
 
 {% block header %}
@@ -12,9 +11,9 @@
 <p>{{ msg }}</p>
 {% endif %}
 
-<a href="{% url 'ideaList.views.basic' %}">Refresh</a>
+<a href="{% url 'basic' %}">Refresh</a>
 
-<form action="{% url 'ideaList.views.remove_items' %}" method="post">
+<form action="{% url 'remove_items' %}" method="post">
   {% csrf_token %}
   <div><input type="submit" name="remove_items" value="Remove selected items" /></div>
   <ul class="listlist_nojs">
@@ -36,7 +35,7 @@
   <div><input type="submit" name="remove_items" value="Remove selected items" /></div>
 </form>
 
-<p><a href="{% url 'ideaList.views.undelete' %}">Undelete items and lists</a></p>
-<p><a href="{% url 'ideaList.views.main' %}">Advanced view</a></p>
+<p><a href="{% url 'undelete' %}">Undelete items and lists</a></p>
+<p><a href="{% url 'main' %}">Advanced view</a></p>
 
 {% endblock %}

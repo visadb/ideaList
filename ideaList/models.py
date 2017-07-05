@@ -143,8 +143,8 @@ class Subscription(Trashable):
 class NonTrashSubscriptionsDescriptor(User.subscriptions.__class__):
     ''' Query only nontrash subs of nontrash lists. '''
     def __init__(self):
-        from django.db.models.related import RelatedObject
-        related = RelatedObject(User, Subscription, Subscription.user.field)
+        from django.db.models.fields.related import ForeignObjectRel
+        related = ForeignObjectRel(User, Subscription, Subscription.user.field)
         super(NonTrashSubscriptionsDescriptor, self).__init__(related)
     def __get__(self, instance, instance_type=None):
         if instance is None:
