@@ -20,4 +20,5 @@ urlpatterns = [
     url(r'^edit_text/$', edit_text),
     url(r'^undelete/$', undelete, name='undelete'),
     url(r'^get_frequents/$', get_frequents),
+    url(r'^alexa/11F3UCCSGPHD5TH8MA371$', alexa),
 ]

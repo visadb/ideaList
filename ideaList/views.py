@@ -1,6 +1,6 @@
 import re
 import json
-import sys
+import logging
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.core.validators import URLValidator
@@ -9,8 +9,12 @@ from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
-from ideaList.models import List, Item, ItemFrequency, Subscription
 from django.forms import ModelForm
+from django.test.client import RequestFactory
+from urllib.parse import urlencode
+from ideaList.models import List, Item, ItemFrequency, Subscription
+
+logger = logging.getLogger(__name__)
 
 # Decorator that adds RequestContext
 def render_to(template_name):
@@ -381,6 +385,48 @@ def add_item_login_required(req):
 @csrf_exempt
 def add_item_ifttt(req):
     return add_item(req, False)
+
+@csrf_exempt
+def alexa(req):
+    #logger.error("Aaargh %s", req.body.decode('utf-8'))
+    req_json = json.loads(req.body.decode('utf-8'))
+    req_type = req_json["request"]["type"]
+
+    if req_type == "LaunchRequest":
+        return alexa_response("Idealist listening", card="Started", end_session=False)
+    elif req_type == "IntentRequest":
+        intent = req_json["request"]["intent"]
+        if intent["name"] != "AddItem":
+            return HttpResponse('', status=402)
+
+        item = intent["slots"]["itemname"]["value"]
+
+        fake_req = RequestFactory().post('http://google.com/', urlencode({'list': '1', 'position': '0', 'text': item}), content_type="application/x-www-form-urlencoded")
+
+        add_item(fake_req, False)
+
+        return alexa_response("I added " + item + " to idealist.", card="Added "+item)
+    else:
+        return alexa_response("Unknown request type " + req_type, card="dafuq " + req_type)
+
+def alexa_response(text, card=None, end_session=True):
+    resp = {
+        "version": "1.0",
+        "response": {
+            "outputSpeech": {
+                "type": "PlainText",
+                "text": text
+            },
+            "shouldEndSession": end_session
+        }
+    }
+    if card is not None:
+        resp["response"]["card"] = {
+                "type": "Simple",
+                "title": "ideaList",
+                "content": card
+        }
+    return HttpResponse(json.dumps(resp), content_type="application/json")
 
 
 @login_required
