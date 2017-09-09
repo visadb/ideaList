@@ -393,23 +393,30 @@ def alexa(req):
     req_type = req_json["request"]["type"]
 
     if req_type == "LaunchRequest":
-        return alexa_response("Idealist listening", card="Started", end_session=False)
+        return alexa_response("Idealist listening", end_session=False)
     elif req_type == "IntentRequest":
         intent = req_json["request"]["intent"]
-        if intent["name"] != "AddItem":
-            return HttpResponse('', status=402)
+        if intent["name"] == "AddFoodItem":
+            item = intent["slots"]["food_item"]["value"]
+            list_type = "grocery"
+            list_id = '1'
+        elif intent["name"] == "AddHardwareItem":
+            item = intent["slots"]["hardware_item"]["value"]
+            list_type = "hardware"
+            list_id = '7'
+        else:
+            error_msg = "Unknown intent " + intent
+            return alexa_response(error_msg)
 
-        item = intent["slots"]["itemname"]["value"]
-
-        fake_req = RequestFactory().post('http://google.com/', urlencode({'list': '1', 'position': '0', 'text': item}), content_type="application/x-www-form-urlencoded")
+        fake_req = RequestFactory().post('http://google.com/', urlencode({'list': list_id, 'position': '0', 'text': item}), content_type="application/x-www-form-urlencoded")
 
         add_item(fake_req, False)
 
-        return alexa_response("I added " + item + " to idealist.", card="Added "+item)
+        return alexa_response("I added %s to %s list" % (item, list_type))
     else:
-        return alexa_response("Unknown request type " + req_type, card="dafuq " + req_type)
+        return alexa_response("Unknown request type " + req_type)
 
-def alexa_response(text, card=None, end_session=True):
+def alexa_response(text, end_session=True):
     resp = {
         "version": "1.0",
         "response": {
@@ -420,12 +427,6 @@ def alexa_response(text, card=None, end_session=True):
             "shouldEndSession": end_session
         }
     }
-    if card is not None:
-        resp["response"]["card"] = {
-                "type": "Simple",
-                "title": "ideaList",
-                "content": card
-        }
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 
