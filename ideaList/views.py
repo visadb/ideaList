@@ -2,7 +2,7 @@ import re
 import json
 import logging
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound, HttpResponseRedirect

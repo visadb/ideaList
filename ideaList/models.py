@@ -11,7 +11,7 @@ class List(Trashable):
     A list of items (:model:`ideaList.Item`).
     """
     name = models.CharField(max_length=50, unique=True)
-    owner = models.ForeignKey(User, related_name='lists_owned')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lists_owned')
     subscribers = models.ManyToManyField(User,
             related_name='subscribed_lists', through='Subscription')
     def nontrashed_items(self):
@@ -42,7 +42,7 @@ class Item(Trashable):
     """
     A list item (:model:`ideaList.List`)
     """
-    list = models.ForeignKey(List, related_name='items')
+    list = models.ForeignKey(List, on_delete=models.CASCADE, related_name='items')
     text = models.CharField(max_length=200)
     url = models.URLField(blank=True, default="")
     important = models.BooleanField(default=False)
@@ -95,7 +95,7 @@ class ItemFrequency(models.Model):
     """
     Info about frequency of a certain Item text on a certain List. Used for item
     suggestions."""
-    list = models.ForeignKey(List, related_name='itemfrequencies')
+    list = models.ForeignKey(List, on_delete=models.CASCADE, related_name='itemfrequencies')
     text = models.CharField(max_length=200)
     frequency = models.PositiveIntegerField()
     last_changed = models.DateTimeField(auto_now=True)
@@ -120,8 +120,8 @@ class Subscription(Trashable):
     A user's (:model:`django.contrib.auth.User`) subscription of a certain List
     (:model:`ideaList.List`)
     """
-    user = models.ForeignKey(User, related_name='subscriptions')
-    list = models.ForeignKey(List, related_name='subscriptions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
+    list = models.ForeignKey(List, on_delete=models.CASCADE, related_name='subscriptions')
     position = PositionField(collection='user', default=-1)
 
     class Meta:
