@@ -7,7 +7,7 @@ urlpatterns = [
     url(r'^basic/$', basic, name="basic"),
     url(r'^get_state/$', get_state),
     url(r'^add_item/$', add_item_login_required),
-    url(r'^ifttt/UDPN917QKT11OOCGM7ZN/add_item/$', add_item_ifttt),
+    url(r'^alexa/AEKA5AEFAHHEEJA6HEI7/add_item/$', add_item_alexa),
     url(r'^move_item/$', move_item),
     url(r'^remove_items/$', remove_items, name="remove_items"),
     url(r'^set_item_importances/$', set_item_importances),

@@ -383,7 +383,7 @@ def add_item_login_required(req):
     return add_item(req, True)
 
 @csrf_exempt
-def add_item_ifttt(req):
+def add_item_alexa(req):
     return add_item(req, False)
 
 @csrf_exempt
