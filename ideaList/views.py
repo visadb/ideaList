@@ -386,50 +386,6 @@ def add_item_login_required(req):
 def add_item_alexa(req):
     return add_item(req, False)
 
-@csrf_exempt
-def alexa(req):
-    #logger.error("Aaargh %s", req.body.decode('utf-8'))
-    req_json = json.loads(req.body.decode('utf-8'))
-    req_type = req_json["request"]["type"]
-
-    if req_type == "LaunchRequest":
-        return alexa_response("Idealist listening", end_session=False)
-    elif req_type == "IntentRequest":
-        intent = req_json["request"]["intent"]
-        if intent["name"] == "AddFoodItem":
-            item = intent["slots"]["food_item"]["value"]
-            list_type = "grocery"
-            list_id = '1'
-        elif intent["name"] == "AddHardwareItem":
-            item = intent["slots"]["hardware_item"]["value"]
-            list_type = "hardware"
-            list_id = '7'
-        else:
-            error_msg = "Unknown intent " + intent
-            return alexa_response(error_msg)
-
-        fake_req = RequestFactory().post('http://google.com/', urlencode({'list': list_id, 'position': '0', 'text': item}), content_type="application/x-www-form-urlencoded")
-
-        add_item(fake_req, False)
-
-        return alexa_response("I added %s to %s list" % (item, list_type))
-    else:
-        return alexa_response("Unknown request type " + req_type)
-
-def alexa_response(text, end_session=True):
-    resp = {
-        "version": "1.0",
-        "response": {
-            "outputSpeech": {
-                "type": "PlainText",
-                "text": text
-            },
-            "shouldEndSession": end_session
-        }
-    }
-    return HttpResponse(json.dumps(resp), content_type="application/json")
-
-
 @login_required
 @csrf_exempt
 def remove_items(req):
