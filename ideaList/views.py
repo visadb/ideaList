@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse,HttpResponseBadRequest,HttpResponseNotFound, HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
 from django.forms import ModelForm
@@ -23,7 +23,7 @@ def render_to(template_name):
             output = func(request, *args, **kw)
             if not isinstance(output, dict):
                 return output
-            return render_to_response(template_name, output,
+            return render(request, template_name, output,
                     RequestContext(request))
         return wrapper
     return renderer
@@ -373,7 +373,7 @@ def add_item(req, render):
         form = ItemForm(instance=i)
 
     if render:
-        return render_to_response('ideaList/additem.html', {'form':form},
+        return render_to_response(req, 'ideaList/additem.html', {'form':form},
                 RequestContext(req))
     else:
         return HttpResponse('')

@@ -16,11 +16,11 @@
       {% block user-tools-before %}{% endblock %}
       {% trans 'Hi,' %}
       <strong>
-        <a href="{% url 'django.contrib.auth.views.password_change' %}">{% filter force_escape %}{% firstof user.first_name user.username %}{% endfilter %}</a>
+        <a href="/d/passwd/">{% filter force_escape %}{% firstof user.first_name user.username %}{% endfilter %}</a>
       </strong>
       /
       {% block userlinks %}
-      <a href="{% url 'django.contrib.auth.views.logout_then_login' %}">{% trans 'Log out' %}</a>
+      <a href="/d/logout/">{% trans 'Log out' %}</a>
       {% endblock %}
     </div>
     {% endif %}
